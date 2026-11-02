@@ -1,0 +1,14 @@
+{
+  "name": "pixel-budget",
+  "version": "0.1.0",
+  "description": "Application de gestion budgétaire gamifiée, connectée aux comptes bancaires de l'utilisateur (lecture seule, aucun fonds détenu).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
