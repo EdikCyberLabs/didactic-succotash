@@ -13,9 +13,10 @@ habitudes.
 ## Fonctionnalités du prototype
 
 - **Agrégation multi-banques** avec parcours de consentement (banques de démo fictives).
-- **Tableau de bord** : solde total, dépenses et solde du mois, alertes budget.
-- **Dépenses** : catégorisation automatique, répartition (donut), dépenses jour
-  par jour, filtres par période, catégorie et recherche.
+- **Accueil** : cartes de comptes en carrousel (solde total + chaque compte),
+  raccourcis, carte de progression du joueur, dernières transactions.
+- **Détails** : catégorisation automatique, principales dépenses en % du budget,
+  répartition des revenus, comparaison dépensé / reste / épargné, liste filtrable.
 - **Budgets mensuels** par catégorie et **objectifs d'épargne**.
 - **Gamification** :
   - XP et niveaux (avec titres : Apprenti épargnant → Légende de l'épargne) ;
