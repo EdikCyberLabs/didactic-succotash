@@ -34,6 +34,24 @@ npm test    # tests unitaires (node:test, aucune dépendance)
 
 Aucune dépendance à installer (Node ≥ 20).
 
+## Application Android (APK)
+
+L'APK embarque l'application web dans une WebView native : elle fonctionne
+hors ligne et garde ses données sur le téléphone. Le bouton retour d'Android et
+la couleur de la barre d'état suivent l'écran affiché.
+
+- APK prêt à installer : [`dist/PixelBudget-0.1.0.apk`](dist/PixelBudget-0.1.0.apk)
+  (Android 6.0 et plus). Sur le téléphone : autoriser l'installation
+  d'applications de sources inconnues, puis ouvrir le fichier.
+- Reconstruire : `npm run build:apk` (outils requis listés en tête de
+  `android/build-apk.sh` ; pas besoin d'Android Studio ni de Gradle).
+- Icônes : `npm run icons:android` (régénère les icônes depuis la mascotte).
+
+> L'APK fourni est signé avec une **clé de test**. Pour le Play Store, créez
+> votre propre clé de publication et passez-la au script (`KEYSTORE`,
+> `KEY_ALIAS`, `KEYSTORE_PASS`). Le Play Store exige aussi un bundle `.aab` et
+> un niveau d'API cible récent : à prévoir avant la publication.
+
 ## Structure
 
 ```
@@ -47,6 +65,9 @@ src/
     gamification.js    XP, niveaux, quêtes, badges, séries
     dates.js, store.js
   ui/icons.js          icônes et mascotte « Pixou » (SVG, évolue avec le niveau)
+  fonts/               police Bricolage Grotesque embarquée (SIL OFL)
+android/               coquille Android (WebView), ressources et script de build
+dist/                  APK généré
 tests/core.test.js
 docs/ARCHITECTURE.md   réglementation (DSP2/AISP, RGPD) et passage en production
 ```

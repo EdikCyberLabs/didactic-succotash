@@ -458,6 +458,7 @@ function render() {
     const el = app.querySelector(`[data-input="${focused}"]`);
     if (el) { el.focus(); if (el.type === 'search') el.setSelectionRange(el.value.length, el.value.length); }
   }
+  syncStatusBar();
   const carousel = app.querySelector('[data-carousel]');
   if (carousel) {
     const dots = app.querySelectorAll('.dots i');
@@ -472,6 +473,26 @@ function render() {
     }, { passive: true });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Intégration native (APK Android) — sans effet dans un navigateur classique
+// ---------------------------------------------------------------------------
+
+/** Accorde la barre d'état Android à la couleur de fond de l'écran affiché. */
+function syncStatusBar() {
+  if (!window.PixelNative) return;
+  const rgb = getComputedStyle(app.firstElementChild).backgroundColor.match(/\d+/g)?.slice(0, 3).map(Number);
+  if (!rgb) return;
+  const hex = `#${rgb.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+  try { window.PixelNative.setStatusBarColor(hex); } catch { /* pont natif indisponible */ }
+}
+
+/** Bouton « retour » Android : ferme la feuille ouverte ou revient à l'accueil. Renvoie false pour quitter l'app. */
+window.pixelBack = () => {
+  if (ui.modal) { ui.modal = null; render(); return true; }
+  if (state.accounts.length && ui.view !== 'accueil') { go('accueil'); return true; }
+  return false;
+};
 
 // ---------------------------------------------------------------------------
 // Actions

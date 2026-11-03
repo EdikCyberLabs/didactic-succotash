@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PixelBudget</string>
+
+    <color name="mustard">#F2B33D</color>
+
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/mustard</item>
+        <item name="android:colorPrimary">@color/mustard</item>
+        <item name="android:colorPrimaryDark">@color/mustard</item>
+        <item name="android:colorAccent">#7C86C9</item>
+        <item name="android:statusBarColor">@color/mustard</item>
+        <item name="android:navigationBarColor">@color/mustard</item>
+    </style>
+</resources>

@@ -15,9 +15,9 @@ export const EMPTY_STATE = {
 export function loadState() {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY_STATE, ...JSON.parse(raw) } : structuredClone(EMPTY_STATE);
+    return raw ? { ...EMPTY_STATE, ...JSON.parse(raw) } : JSON.parse(JSON.stringify(EMPTY_STATE));
   } catch {
-    return structuredClone(EMPTY_STATE);
+    return JSON.parse(JSON.stringify(EMPTY_STATE));
   }
 }
 

@@ -6,7 +6,9 @@
   "private": true,
   "scripts": {
     "start": "node scripts/serve.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build:apk": "./android/build-apk.sh",
+    "icons:android": "node scripts/make-android-icons.mjs"
   },
   "engines": {
     "node": ">=20"
