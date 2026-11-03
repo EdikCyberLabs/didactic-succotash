@@ -5,6 +5,8 @@ comptes bancaires, suit ses dépenses, fixe des budgets et des objectifs
 d'épargne, et gagne de l'XP, des niveaux et des badges en gardant de bonnes
 habitudes.
 
+![Aperçu de PixelBudget](docs/apercu.png)
+
 > L'application **ne détient aucun fonds**. Elle lit les comptes en lecture
 > seule (agrégation DSP2) et ne peut initier aucun paiement.
 
@@ -43,6 +45,7 @@ src/
     analytics.js       catégorisation, agrégats, budgets
     gamification.js    XP, niveaux, quêtes, badges, séries
     dates.js, store.js
+  ui/icons.js          icônes et mascotte « Pixou » (SVG, évolue avec le niveau)
 tests/core.test.js
 docs/ARCHITECTURE.md   réglementation (DSP2/AISP, RGPD) et passage en production
 ```

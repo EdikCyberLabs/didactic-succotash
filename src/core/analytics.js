@@ -4,24 +4,24 @@
 import { eachDay, endOfMonth, startOfMonth } from './dates.js';
 
 export const CATEGORIES = {
-  alimentation: { label: 'Courses', icon: '🛒', color: '#22c55e' },
-  restaurants: { label: 'Restaurants', icon: '🍔', color: '#f97316' },
-  transport: { label: 'Transport', icon: '🚇', color: '#3b82f6' },
-  logement: { label: 'Logement', icon: '🏠', color: '#a855f7' },
-  abonnements: { label: 'Abonnements', icon: '📺', color: '#ec4899' },
-  shopping: { label: 'Shopping', icon: '🛍️', color: '#eab308' },
-  loisirs: { label: 'Loisirs', icon: '🎮', color: '#14b8a6' },
-  sante: { label: 'Santé', icon: '💊', color: '#ef4444' },
-  revenus: { label: 'Revenus', icon: '💰', color: '#10b981' },
-  transferts: { label: 'Virements internes', icon: '🔁', color: '#94a3b8' },
-  autre: { label: 'Autre', icon: '📦', color: '#64748b' },
+  alimentation: { label: 'Courses', icon: '🛒', color: '#7E9F4F' },
+  restaurants: { label: 'Restaurants', icon: '🍔', color: '#E8735A' },
+  transport: { label: 'Transport', icon: '🚇', color: '#7C86C9' },
+  logement: { label: 'Logement', icon: '🏠', color: '#F2B33D' },
+  abonnements: { label: 'Abonnements', icon: '📺', color: '#E79BB0' },
+  shopping: { label: 'Shopping', icon: '🛍️', color: '#5FB3A8' },
+  loisirs: { label: 'Loisirs', icon: '🎮', color: '#A77BC0' },
+  sante: { label: 'Santé', icon: '💊', color: '#D9826B' },
+  revenus: { label: 'Revenus', icon: '💰', color: '#7E9F4F' },
+  transferts: { label: 'Virements internes', icon: '🔁', color: '#A9A9B8' },
+  autre: { label: 'Autre', icon: '📦', color: '#C9B79C' },
 };
 
 // Règles de catégorisation par mots-clés sur le libellé bancaire.
 // L'ordre compte : la première règle qui correspond l'emporte.
 const RULES = [
   ['transferts', /VIR(EMENT)? (INTERNE|EPARGNE)|VERS LIVRET/],
-  ['revenus', /SALAIRE|REMBOURSEMENT|INTERETS| CAF |PRIME/],
+  ['revenus', /SALAIRE|REMBOURSEMENT|INTERETS| CAF | PRIME /],
   ['logement', /LOYER|EDF|ENGIE|EAU |ASSURANCE HABITATION/],
   ['abonnements', /ABONNEMENT|FORFAIT|STREAMING|MUSIQUE|SALLE DE SPORT/],
   ['alimentation', /SUPERMARCHE|EPICERIE|MARCHE |BOULANGERIE|PRIMEUR/],

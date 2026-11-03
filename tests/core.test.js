@@ -22,6 +22,8 @@ test('catégorisation par libellé', () => {
   assert.equal(categorize('SALAIRE ENTREPRISE'), 'revenus');
   assert.equal(categorize('INTERETS LIVRET'), 'revenus');
   assert.equal(categorize('XYZ INCONNU'), 'autre');
+  assert.equal(categorize('PRIMEUR LEGUMES'), 'alimentation');
+  assert.equal(categorize('PRIME ANNUELLE'), 'revenus');
 });
 
 test('les virements internes ne comptent ni en dépense ni en revenu', () => {

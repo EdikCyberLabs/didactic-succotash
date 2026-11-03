@@ -1,15 +1,16 @@
-import { CATEGORIES, balanceOf, budgetStatus, dailySpending, formatEUR, isExpense, monthSummary, spendingByCategory } from './core/analytics.js';
-import { addDays, addMonths, endOfMonth, formatDay, formatMonth, startOfMonth, toISO } from './core/dates.js';
+import { CATEGORIES, balanceOf, budgetStatus, formatEUR, isExpense, isIncome, spendingByCategory, totalSpent } from './core/analytics.js';
+import { addDays, addMonths, daysBetween, endOfMonth, formatDay, formatMonth, startOfMonth, startOfWeek, toISO } from './core/dates.js';
 import { computeProgress } from './core/gamification.js';
 import { DemoProvider } from './core/providers.js';
 import { clearState, loadState, saveState } from './core/store.js';
+import { icon, mascot } from './ui/icons.js';
 
 const today = toISO(new Date());
 const provider = new DemoProvider({ today });
 const app = document.getElementById('app');
 
 let state = loadState();
-const ui = { view: 'accueil', period: 'mois', category: 'toutes', search: '', modal: null, institutions: [] };
+const ui = { view: 'accueil', period: '30j', category: 'toutes', search: '', limit: 20, modal: null, institutions: [], animate: true };
 
 // L'ouverture quotidienne de l'app alimente la série (streak).
 if (!state.visits.includes(today)) {
@@ -24,6 +25,8 @@ if (!state.visits.includes(today)) {
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const cat = (id) => CATEGORIES[id] || CATEGORIES.autre;
 const pct = (r) => `${Math.round(Math.min(1, Math.max(0, r)) * 100)}%`;
+const PALETTE = ['#F2B33D', '#7C86C9', '#E8735A', '#7E9F4F', '#E79BB0', '#5FB3A8'];
+const INST_COLORS = { 'demo-banque-azur': '#7C86C9', 'demo-neo-pixel': '#E79BB0', 'demo-credit-vert': '#7E9F4F' };
 
 function toast(message) {
   const el = document.createElement('div');
@@ -33,14 +36,22 @@ function toast(message) {
   setTimeout(() => el.remove(), 3800);
 }
 
-function periodRange() {
-  if (ui.period === 'mois-dernier') {
+function go(view) {
+  ui.view = view;
+  ui.animate = true;
+  render();
+  window.scrollTo(0, 0);
+}
+
+const PERIODS = {
+  semaine: () => ({ from: startOfWeek(today), to: today, label: 'Cette semaine' }),
+  '30j': () => ({ from: addDays(today, -29), to: today, label: '30 derniers jours' }),
+  mois: () => ({ from: startOfMonth(today), to: today, label: 'Ce mois-ci' }),
+  'mois-dernier': () => {
     const m = addMonths(today, -1);
     return { from: startOfMonth(m), to: endOfMonth(m), label: formatMonth(m) };
-  }
-  if (ui.period === '30j') return { from: addDays(today, -29), to: today, label: '30 derniers jours' };
-  return { from: startOfMonth(today), to: today, label: formatMonth(today) };
-}
+  },
+};
 
 // Progression + détection des montées de niveau / nouveaux badges.
 function progress() {
@@ -50,7 +61,7 @@ function progress() {
   const fresh = p.badges.filter((b) => b.unlocked && !seen.includes(b.id));
   const firstRun = state.lastLevel === undefined;
   if (!firstRun) {
-    if (p.level > state.lastLevel) toast(`⬆️ Niveau ${p.level} atteint ! « ${p.title} »`);
+    if (p.level > state.lastLevel) toast(`⬆️ Niveau ${p.level} ! Pixou devient « ${p.title} »`);
     fresh.forEach((b) => toast(`${b.icon} Badge débloqué : ${b.title}`));
   }
   if (firstRun || fresh.length || p.level !== state.lastLevel) {
@@ -65,212 +76,304 @@ function progress() {
 // Composants
 // ---------------------------------------------------------------------------
 
-function donut(rows) {
-  const total = rows.reduce((s, r) => s + r.total, 0);
-  if (!total) return '<p class="muted">Aucune dépense sur la période 🎉</p>';
-  const r = 60;
-  const c = 2 * Math.PI * r;
-  let offset = 0;
-  const arcs = rows.map((row) => {
-    const len = (row.total / total) * c;
-    const arc = `<circle r="${r}" cx="80" cy="80" fill="none" stroke="${cat(row.category).color}" stroke-width="22"
-      stroke-dasharray="${len} ${c - len}" stroke-dashoffset="${-offset}" transform="rotate(-90 80 80)"><title>${esc(cat(row.category).label)} : ${formatEUR(row.total)}</title></circle>`;
-    offset += len;
-    return arc;
-  }).join('');
-  const legend = rows.map((row) => `
-    <li><span class="dot" style="background:${cat(row.category).color}"></span>
-      <span>${cat(row.category).icon} ${esc(cat(row.category).label)}</span>
-      <strong>${formatEUR(row.total)}</strong></li>`).join('');
-  return `<div class="donut-wrap">
-    <svg viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Répartition des dépenses">
-      ${arcs}
-      <text x="80" y="76" text-anchor="middle" fill="var(--muted)" font-size="11">Total</text>
-      <text x="80" y="95" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="800">${esc(formatEUR(total))}</text>
-    </svg>
-    <ul class="legend">${legend}</ul>
-  </div>`;
+function topbar(title, { left = '', right = '' } = {}) {
+  return `<header class="topbar">${left || '<span></span>'}<h1>${esc(title)}</h1>${right || '<span></span>'}</header>`;
 }
-
-function bars(days) {
-  const max = Math.max(1, ...days.map((d) => d.total));
-  return `<div class="bars" role="img" aria-label="Dépenses par jour">${days.map((d) =>
-    `<span class="${d.total === 0 ? 'zero' : ''}" style="height:${d.total === 0 ? 4 : Math.max(3, (d.total / max) * 100)}%" title="${formatDay(d.date)} : ${formatEUR(d.total)}"></span>`).join('')}</div>
-    <p class="muted" style="font-size:12px;margin:6px 0 0">Les barres vertes = jours sans dépense (+10 XP chacun)</p>`;
-}
+const backBtn = (to = 'accueil') => `<button class="round" data-view="${to}" aria-label="Retour">${icon('back')}</button>`;
 
 function txRow(tx) {
+  const c = cat(tx.category);
   const account = state.accounts.find((a) => a.id === tx.accountId);
   return `<div class="tx">
-    <div class="ico">${cat(tx.category).icon}</div>
-    <div style="min-width:0"><div class="lbl">${esc(tx.label)}</div>
-      <div class="meta">${formatDay(tx.date)} · ${esc(cat(tx.category).label)}${account ? ` · ${esc(account.institutionName)}` : ''}</div></div>
-    <div class="amt ${tx.amount > 0 ? 'pos' : ''}">${tx.amount > 0 ? '+' : ''}${formatEUR(tx.amount)}</div>
+    <div class="ico" style="background:${c.color}">${icon(tx.category in CATEGORIES ? tx.category : 'autre', 20)}</div>
+    <div style="min-width:0"><div class="lbl">${esc(tx.label.toLowerCase())}</div>
+      <div class="meta">${formatDay(tx.date)} · ${esc(c.label)}${account ? ` · ${esc(account.institutionName.replace(' (démo)', ''))}` : ''}</div></div>
+    <div class="amt">${tx.amount > 0 ? '+ ' : '− '}${formatEUR(Math.abs(tx.amount))}</div>
   </div>`;
 }
 
-function questCard(q) {
-  const statusLabel = { 'reussie': 'Réussie', 'echouee': 'Échouée', 'en-cours': 'En cours' }[q.status];
-  const valueText = q.kind === 'limit'
-    ? `${formatEUR(q.value)} / ${formatEUR(q.targetValue)}`
-    : `${q.value} / ${q.targetValue} jours`;
+function cardDeco(seed) {
+  const plus = (x, y) => `<path d="M${x - 7} ${y}h14M${x} ${y - 7}v14" stroke="#1D1D2C" stroke-width="2.5" stroke-linecap="round"/>`;
+  const c = PALETTE[seed % PALETTE.length];
+  const c2 = PALETTE[(seed + 2) % PALETTE.length];
+  return `<svg class="deco" viewBox="0 0 300 190" preserveAspectRatio="none" aria-hidden="true">
+    <circle cx="268" cy="104" r="34" fill="${c}" opacity=".22"/>
+    ${plus(236, 72)}${plus(276, 52)}${plus(214, 120)}
+    <rect x="252" y="96" width="16" height="16" rx="3" fill="${c}" stroke="#1D1D2C" stroke-width="2"/>
+    <rect x="204" y="86" width="10" height="10" rx="2" fill="${c2}" stroke="#1D1D2C" stroke-width="2"/>
+  </svg>`;
+}
+
+function bankCards() {
+  const total = `<article class="bank-card total">
+      ${cardDeco(1)}
+      <div class="bank"><span>Toutes mes banques</span><span>${state.accounts.length} comptes</span></div>
+      <div><div class="small" style="font-weight:600;position:relative">Solde total</div><div class="bal">${formatEUR(balanceOf(state.accounts))}</div></div>
+      <div class="num"><span>Lecture seule</span>${icon('lock', 18)}</div>
+    </article>`;
+  const cards = state.accounts.map((a, i) => `<article class="bank-card">
+      ${cardDeco(i + 3)}
+      <div class="bank"><span>${esc(a.institutionName.replace(' (démo)', ''))}</span><span class="muted">${a.type === 'epargne' ? 'Épargne' : 'Courant'}</span></div>
+      <div><div class="small" style="font-weight:600;position:relative">${esc(a.name)}</div><div class="bal">${formatEUR(a.balance)}</div></div>
+      <div class="num"><span>${esc(a.iban.slice(0, 4))} •• ${esc(a.iban.slice(-4))}</span><span class="chip" style="background:${INST_COLORS[a.institutionId] || '#F2B33D'}"></span></div>
+    </article>`).join('');
+  const n = state.accounts.length + 1;
+  return `<div class="carousel" data-carousel><span class="spacer"></span>${total}${cards}<span class="spacer"></span></div>
+    <div class="dots" aria-hidden="true">${Array.from({ length: n }, (_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div>`;
+}
+
+function playerCard(p) {
+  return `<button class="player" data-view="quetes" style="width:100%;text-align:left;font:inherit">
+    ${mascot(p.level, 76)}
+    <div>
+      <div class="row"><strong>Niveau ${p.level} · ${esc(p.title)}</strong></div>
+      <div class="bar"><span style="width:${pct(p.progress)}"></span></div>
+      <div class="row"><span>${p.xpIntoLevel} / ${p.xpForNext} XP</span>
+        <span class="streak">${icon('flame', 16)} ${p.streak} j</span></div>
+    </div>
+  </button>`;
+}
+
+/** Colonnes « principales dépenses » : % du budget (proratisé) ou part des dépenses. */
+function columns(from, to) {
+  const rows = spendingByCategory(state.transactions, from, to).slice(0, 4);
+  if (!rows.length) return '<p class="muted">Aucune dépense sur la période 🎉</p>';
+  const all = spendingByCategory(state.transactions, from, to).reduce((s, r) => s + r.total, 0);
+  const days = daysBetween(from, to) + 1;
+  const cols = rows.map((r, i) => {
+    const budget = state.budgets[r.category];
+    const ratio = budget ? r.total / ((budget * days) / 30) : r.total / all;
+    const value = Math.round(ratio * 100);
+    const height = Math.max(26, Math.min(100, value));
+    return `<div class="col" title="${esc(cat(r.category).label)} : ${formatEUR(r.total)}${budget ? ` sur un budget de ${formatEUR(budget)}/mois` : ''}">
+      <span class="ico">${icon(r.category, 22)}</span>
+      <div class="pillar ${value > 100 && budget ? 'over' : ''}" style="height:${height}%;background:${cat(r.category).color};animation-delay:${i * 70}ms">
+        <span class="pct">${value}<sup>%</sup></span></div>
+      <span class="name">${esc(cat(r.category).label)}</span>
+    </div>`;
+  }).join('');
+  return `<div class="cols">${cols}</div>
+    <p class="muted small" style="margin:10px 0 0">% du budget du mois (proratisé) quand il existe, sinon part des dépenses totales.</p>`;
+}
+
+function incomeSource(label) {
+  const l = label.toUpperCase();
+  if (l.includes('SALAIRE')) return 'Salaire';
+  if (l.includes('REMBOURSEMENT')) return 'Remboursements';
+  if (l.includes('INTERETS')) return 'Intérêts';
+  return 'Autres';
+}
+
+function incomes(from, to) {
+  const totals = {};
+  for (const tx of state.transactions) {
+    if (tx.date < from || tx.date > to || !isIncome(tx)) continue;
+    const k = incomeSource(tx.label);
+    totals[k] = (totals[k] || 0) + tx.amount;
+  }
+  const rows = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  const sum = rows.reduce((s, [, v]) => s + v, 0);
+  if (!sum) return { html: '<p class="muted">Aucun revenu sur la période.</p>', sum: 0 };
+  const colors = ['#7C86C9', '#B9BEE6', '#F2B33D', '#E8735A'];
+  const parts = rows.map(([k, v], i) => {
+    const w = (v / sum) * 100;
+    return { k, v, w, color: colors[i % colors.length] };
+  });
+  const html = `
+    <div class="seg" role="img" aria-label="Répartition des revenus">${parts.map((p) => `<span style="width:${p.w}%;background:${p.color}" title="${esc(p.k)} : ${formatEUR(p.v)}"></span>`).join('')}</div>
+    <div class="legend">${parts.map((p) => `<span><i style="background:${p.color}"></i>${esc(p.k)} <em>${Math.round(p.w)}%</em></span>`).join('')}</div>
+    <p class="small" style="margin:8px 0 0"><strong>${formatEUR(sum)}</strong> <span class="muted">reçus sur la période</span></p>`;
+  return { html, sum };
+}
+
+function scallopPath(lobes = 12, r = 41, bump = 12) {
+  const pts = Array.from({ length: lobes }, (_, i) => {
+    const a = (i / lobes) * Math.PI * 2 - Math.PI / 2;
+    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+  });
+  return `M${pts[0].join(' ')}${pts.map((_, i) => ` A${bump} ${bump} 0 0 1 ${pts[(i + 1) % lobes].join(' ')}`).join('')}Z`;
+}
+
+function comparison(from, to, incomeSum) {
+  const spent = totalSpent(state.transactions, from, to);
+  const saved = state.transactions
+    .filter((t) => t.date >= from && t.date <= to && t.category === 'transferts' && t.amount < 0)
+    .reduce((s, t) => s - t.amount, 0);
+  const share = (v) => (incomeSum ? Math.round((v / incomeSum) * 100) : null);
+  const rest = incomeSum ? Math.max(0, 100 - share(spent) - share(saved)) : null;
+  const stroke = 'stroke="#1D1D2C" stroke-width="3" vector-effect="non-scaling-stroke"';
+  const cell = (svg, label, value, color = '#1D1D2C') => `<div class="shape">${svg}
+    <div class="txt" style="color:${color}"><small>${label}</small><b>${value ?? '—'}</b><i>%</i></div></div>`;
+  return `<div class="shapes">
+    ${cell(`<svg viewBox="0 0 100 100"><polygon points="50,3 93,27 93,73 50,97 7,73 7,27" fill="#F2B33D" ${stroke}/></svg>`, 'Dépensé', share(spent))}
+    ${cell(`<svg viewBox="0 0 100 100"><path d="${scallopPath()}" fill="#FFFDF7" ${stroke}/></svg>`, 'Reste', rest)}
+    ${cell(`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#7E9F4F" ${stroke}/></svg>`, 'Épargné', share(saved), '#fff')}
+  </div>
+  <p class="muted small" style="margin:8px 0 0">En % de tes revenus sur la période${incomeSum ? '' : ' (aucun revenu détecté)'}.</p>`;
+}
+
+function questCard(q, i) {
+  const statusLabel = { reussie: 'Réussie', echouee: 'Échouée', 'en-cours': 'En cours' }[q.status];
+  const valueText = q.kind === 'limit' ? `${formatEUR(q.value)} / ${formatEUR(q.targetValue)}` : `${q.value} / ${q.targetValue} jours`;
+  const barColor = q.status === 'echouee' ? '#E8735A' : q.status === 'reussie' ? '#7E9F4F' : '#7C86C9';
   return `<div class="quest">
-    <div class="ico">${q.icon}</div>
-    <div>
-      <div class="row between wrap"><h3>${esc(q.title)}</h3><span class="chip ${q.status}">${statusLabel}</span></div>
-      <div class="muted" style="font-size:13px">${esc(q.description)}</div>
-      <div class="progress ${q.status}" style="margin:8px 0 4px"><span style="width:${pct(q.progress)}"></span></div>
-      <div class="row between" style="font-size:12px"><span class="muted">${valueText}</span><span class="chip xp">+${q.reward} XP</span></div>
+    <div class="badge-ico" style="background:${PALETTE[i % PALETTE.length]}">${q.icon}</div>
+    <div style="min-width:0">
+      <div class="top"><h3>${esc(q.title)}</h3><span class="tag ${q.status}">${statusLabel}</span></div>
+      <div class="muted small">${esc(q.description)}</div>
+      <div class="meter"><span style="width:${pct(q.progress)};background:${barColor}"></span></div>
+      <div class="foot"><span>${valueText}</span><span class="tag xp">+${q.reward} XP</span></div>
     </div>
   </div>`;
-}
-
-function header(p) {
-  return `<header class="player">
-    <div class="avatar" aria-label="Niveau ${p.level}"><div><small>Niv.</small>${p.level}</div></div>
-    <div>
-      <h1>${esc(p.title)}</h1>
-      <div class="xpbar"><span style="width:${pct(p.progress)}"></span></div>
-      <div class="xptext">${p.xpIntoLevel} / ${p.xpForNext} XP · ${p.xp} XP au total</div>
-    </div>
-    <div class="streak" title="Jours consécutifs de suivi">🔥 ${p.streak}<small>série</small></div>
-  </header>`;
-}
-
-function emptyState() {
-  return `<section class="card hero">
-    <div class="big">🏦✨</div>
-    <h2>Connecte ta première banque</h2>
-    <p class="muted">PixelBudget lit tes soldes et tes transactions en <strong>lecture seule</strong>.
-      Aucun argent ne transite par l'application, aucun paiement n'est possible.</p>
-    <button class="btn" data-action="open-connect">Connecter un compte · +100 XP</button>
-  </section>`;
 }
 
 // ---------------------------------------------------------------------------
 // Vues
 // ---------------------------------------------------------------------------
 
+function viewOnboarding() {
+  return `<main class="screen mustard"><div class="onboarding">
+    <div class="art">${mascot(1, 320)}</div>
+    <div>
+      <div class="wordmark">PixelBudget</div>
+      <p class="tagline">Ton argent devient un jeu : dépense mieux, épargne plus, monte de niveau.</p>
+      <div class="reassure">${icon('lock', 16)} Lecture seule · aucun fonds détenu · aucun paiement possible</div>
+      <button class="btn block" data-action="open-connect">Commencer</button>
+    </div>
+  </div></main>`;
+}
+
 function viewAccueil(p) {
-  if (!state.accounts.length) return emptyState();
-  const month = monthSummary(state.transactions, today);
-  const top = spendingByCategory(state.transactions, startOfMonth(today), today);
   const latest = state.transactions.slice(0, 6);
-  const alerts = budgetStatus(state.transactions, state.budgets, startOfMonth(today), today).filter((b) => b.status !== 'ok');
-  return `
-    <div class="grid three">
-      <div class="card stat"><div class="label">Solde total (${state.accounts.length} comptes)</div><div class="value">${formatEUR(balanceOf(state.accounts))}</div></div>
-      <div class="card stat"><div class="label">Dépenses · ${formatMonth(today)}</div><div class="value ${month.expenses > 0 ? 'neg' : ''}">${formatEUR(month.expenses)}</div></div>
-      <div class="card stat"><div class="label">Revenus − dépenses</div><div class="value ${month.net >= 0 ? 'pos' : 'neg'}">${month.net >= 0 ? '+' : ''}${formatEUR(month.net)}</div></div>
-    </div>
-    ${alerts.length ? `<div class="card" style="margin-top:14px;border-color:var(--warn)">
-      <h2>⚠️ Alertes budget</h2>
-      ${alerts.map((a) => `<div class="row between"><span>${cat(a.category).icon} ${esc(cat(a.category).label)}</span>
-        <span class="${a.status === 'depasse' ? 'neg' : ''}">${formatEUR(a.spent)} / ${formatEUR(a.limit)}</span></div>`).join('')}
-    </div>` : ''}
-    <div class="grid two">
-      <section class="card"><h2>Où part ton argent ce mois-ci</h2>${donut(top.slice(0, 6))}</section>
-      <section class="card"><div class="row between"><h2>Quêtes de la semaine</h2><button class="btn ghost small" data-view="quetes">Tout voir</button></div>
-        <div class="grid" style="margin-top:0">${p.quests.slice(0, 2).map(questCard).join('')}</div></section>
-    </div>
-    <section class="card" style="margin-top:14px">
-      <div class="row between"><h2>Dernières opérations</h2><button class="btn ghost small" data-view="depenses">Tout voir</button></div>
-      ${latest.map(txRow).join('')}
-    </section>`;
+  return `<main class="screen peri">
+    ${topbar('Mes comptes', {
+      left: `<button class="lvl-pill" data-view="quetes" aria-label="Niveau ${p.level}">Niv. ${p.level}</button>`,
+      right: `<button class="round" data-view="comptes" aria-label="Gérer mes banques">${icon('sliders')}</button>`,
+    })}
+    ${bankCards()}
+    <nav class="actions" aria-label="Raccourcis">
+      <button class="action" data-view="depenses"><span class="bubble">${icon('chart', 24)}</span>Dépenses</button>
+      <button class="action" data-view="budgets"><span class="bubble">${icon('target', 24)}</span>Budgets</button>
+      <button class="action" data-view="quetes"><span class="bubble">${icon('trophy', 24)}</span>Quêtes</button>
+      <button class="action" data-view="comptes"><span class="bubble">${icon('dots', 24)}</span>Plus</button>
+    </nav>
+    ${playerCard(p)}
+    <div class="section-title"><h2>Transactions</h2><button class="link" data-view="depenses">Tout voir</button></div>
+    ${latest.map(txRow).join('')}
+  </main>`;
 }
 
 function viewDepenses() {
-  if (!state.accounts.length) return emptyState();
-  const { from, to, label } = periodRange();
-  const rows = spendingByCategory(state.transactions, from, to);
+  const { from, to } = PERIODS[ui.period]();
+  const inc = incomes(from, to);
   const q = ui.search.trim().toUpperCase();
   const list = state.transactions.filter((tx) => tx.date >= from && tx.date <= to
     && (ui.category === 'toutes' || tx.category === ui.category)
     && (!q || tx.label.toUpperCase().includes(q)));
   const spent = list.filter(isExpense).reduce((s, tx) => s - tx.amount, 0);
-  return `
-    <div class="card" style="margin-top:14px">
-      <div class="row wrap">
-        <select data-input="period" aria-label="Période">
-          <option value="mois" ${ui.period === 'mois' ? 'selected' : ''}>Ce mois-ci</option>
-          <option value="mois-dernier" ${ui.period === 'mois-dernier' ? 'selected' : ''}>Mois dernier</option>
-          <option value="30j" ${ui.period === '30j' ? 'selected' : ''}>30 derniers jours</option>
-        </select>
-        <select data-input="category" aria-label="Catégorie">
-          <option value="toutes">Toutes catégories</option>
-          ${Object.entries(CATEGORIES).map(([id, c]) => `<option value="${id}" ${ui.category === id ? 'selected' : ''}>${c.icon} ${c.label}</option>`).join('')}
-        </select>
-        <input type="search" placeholder="Rechercher un libellé…" value="${esc(ui.search)}" data-input="search" style="flex:1;min-width:140px" />
-      </div>
+  const usedCats = [...new Set(state.transactions.filter((t) => t.date >= from && t.date <= to).map((t) => t.category))];
+  return `<main class="screen paper">
+    ${topbar('Détails', { left: backBtn(), right: `<button class="round" data-action="focus-search" aria-label="Rechercher">${icon('search')}</button>` })}
+    <div class="section-title" style="margin-top:0"><h2>Principales dépenses</h2></div>
+    <select data-input="period" aria-label="Période" style="border:0;background:none;padding:0;font-weight:600;font-size:14px;margin-top:-6px">
+      ${Object.entries(PERIODS).map(([k, f]) => `<option value="${k}" ${ui.period === k ? 'selected' : ''}>${esc(f().label)}</option>`).join('')}
+    </select>
+    ${columns(from, to)}
+    <div class="section-title"><h2>Revenus</h2></div>
+    ${inc.html}
+    <div class="section-title"><h2>Comparaison</h2></div>
+    ${comparison(from, to, inc.sum)}
+    <div class="section-title"><h2>Opérations</h2><span class="small" style="font-weight:700">${formatEUR(spent)} dépensés</span></div>
+    <div class="filters">
+      <label class="search">${icon('search', 18)}<input type="search" placeholder="Rechercher un libellé…" value="${esc(ui.search)}" data-input="search" aria-label="Rechercher" /></label>
     </div>
-    <div class="grid two">
-      <section class="card"><h2>Répartition · ${esc(label)}</h2>${donut(rows)}</section>
-      <section class="card"><h2>Jour par jour</h2>${bars(dailySpending(state.transactions, from, to))}</section>
+    <div class="chips" role="group" aria-label="Catégories">
+      <button class="chip" data-cat="toutes" aria-pressed="${ui.category === 'toutes'}">Toutes</button>
+      ${usedCats.map((id) => `<button class="chip" data-cat="${id}" aria-pressed="${ui.category === id}">
+        <span style="width:10px;height:10px;border-radius:50%;background:${cat(id).color};border:1.5px solid #1D1D2C"></span>${esc(cat(id).label)}</button>`).join('')}
     </div>
-    <section class="card" style="margin-top:14px">
-      <div class="row between"><h2>${list.length} opérations</h2><strong class="neg">${formatEUR(spent)} dépensés</strong></div>
-      ${list.map(txRow).join('') || '<p class="muted">Aucune opération.</p>'}
-    </section>`;
+    <div class="panel">${list.slice(0, ui.limit).map(txRow).join('') || '<p class="muted">Aucune opération.</p>'}</div>
+    ${list.length > ui.limit ? `<button class="btn block light" data-action="more" style="margin-top:12px">Voir plus (${list.length - ui.limit} restantes)</button>` : ''}
+  </main>`;
 }
 
 function viewBudgets() {
   const statuses = Object.fromEntries(budgetStatus(state.transactions, state.budgets, startOfMonth(today), today).map((s) => [s.category, s]));
   const spendingCats = Object.keys(CATEGORIES).filter((c) => !['revenus', 'transferts'].includes(c));
+  const meterColor = { ok: '#7E9F4F', attention: '#F2B33D', depasse: '#E8735A' };
   const budgets = spendingCats.map((id) => {
     const s = statuses[id];
     return `<div class="budget">
-      <div class="row between"><span>${cat(id).icon} ${esc(cat(id).label)}</span>
-        <label class="row" style="gap:6px"><span class="muted" style="font-size:12px">Plafond/mois</span>
-          <input type="number" min="0" step="10" inputmode="numeric" value="${state.budgets[id] || ''}" placeholder="—" data-budget="${id}" aria-label="Budget ${esc(cat(id).label)}" /></label></div>
-      ${s ? `<div class="progress ${s.status}"><span style="width:${pct(s.ratio)}"></span></div>
-        <div class="muted" style="font-size:12px">${formatEUR(s.spent)} dépensés sur ${formatEUR(s.limit)} · ${s.status === 'depasse' ? 'dépassé 😬' : `reste ${formatEUR(s.limit - s.spent)}`}</div>` : ''}
+      <span class="ico" style="background:${cat(id).color}">${icon(id, 20)}</span>
+      <div>
+        <div class="head"><span>${esc(cat(id).label)}</span>
+          <input type="number" min="0" step="10" inputmode="numeric" value="${state.budgets[id] || ''}" placeholder="— €" data-budget="${id}" aria-label="Budget mensuel ${esc(cat(id).label)}" /></div>
+        ${s ? `<div class="meter"><span style="width:${pct(s.ratio)};background:${meterColor[s.status]}"></span></div>
+          <div class="muted small">${formatEUR(s.spent)} sur ${formatEUR(s.limit)} · ${s.status === 'depasse' ? 'dépassé 😬' : `reste ${formatEUR(s.limit - s.spent)}`}</div>` : ''}
+      </div>
     </div>`;
   }).join('');
 
-  const goals = state.goals.map((g) => `<div class="budget">
-    <div class="row between"><strong>${g.saved >= g.target ? '🏆' : '🌱'} ${esc(g.name)}</strong>
-      <span>${formatEUR(g.saved)} / ${formatEUR(g.target)}</span></div>
-    <div class="progress ${g.saved >= g.target ? 'reussie' : 'en-cours'}"><span style="width:${pct(g.saved / g.target)}"></span></div>
-    <div class="row wrap">
-      <button class="btn ghost small" data-action="goal-add" data-id="${g.id}" data-amount="10">+10 €</button>
-      <button class="btn ghost small" data-action="goal-add" data-id="${g.id}" data-amount="50">+50 €</button>
-      <button class="btn ghost small" data-action="goal-add" data-id="${g.id}" data-amount="-10">−10 €</button>
-      <button class="btn danger small" data-action="goal-delete" data-id="${g.id}">Supprimer</button>
-    </div>
-  </div>`).join('');
-
-  return `
-    <div class="grid two">
-      <section class="card"><h2>Budgets mensuels · ${formatMonth(today)}</h2>
-        <p class="notice">Respecter tous tes budgets sur un mois complet rapporte <strong>+150 XP</strong> et le badge 🎯.</p>
-        ${budgets}</section>
-      <section class="card"><h2>Objectifs d'épargne</h2>
-        <p class="notice">Note ici ce que tu mets de côté (sur ton livret, par exemple). +1 XP tous les 10 € épargnés.
-          L'app ne déplace jamais d'argent : c'est toi qui fais les virements depuis ta banque.</p>
-        ${goals || '<p class="muted">Aucun objectif pour l\'instant.</p>'}
-        <form class="row wrap" data-form="goal" style="margin-top:10px">
-          <input name="name" placeholder="Ex. Vacances d'été" required maxlength="40" style="flex:1;min-width:140px" aria-label="Nom de l'objectif" />
-          <input name="target" type="number" min="1" step="1" placeholder="Montant €" required style="width:110px" aria-label="Montant cible" />
-          <button class="btn small">Créer</button>
-        </form></section>
+  const goals = state.goals.map((g, i) => {
+    const done = g.saved >= g.target;
+    return `<div class="budget">
+      <span class="ico" style="background:${PALETTE[i % PALETTE.length]};font-size:20px">${done ? '🏆' : '🌱'}</span>
+      <div>
+        <div class="head"><span>${esc(g.name)}</span><span class="small">${formatEUR(g.saved)} / ${formatEUR(g.target)}</span></div>
+        <div class="meter"><span style="width:${pct(g.saved / g.target)};background:${done ? '#7E9F4F' : '#7C86C9'}"></span></div>
+        <div class="goal-actions">
+          <button class="btn sm yellow" data-action="goal-add" data-id="${g.id}" data-amount="10">+10 €</button>
+          <button class="btn sm yellow" data-action="goal-add" data-id="${g.id}" data-amount="50">+50 €</button>
+          <button class="btn sm light" data-action="goal-add" data-id="${g.id}" data-amount="-10">−10 €</button>
+          <button class="btn sm danger" data-action="goal-delete" data-id="${g.id}" aria-label="Supprimer l'objectif">${icon('trash', 16)}</button>
+        </div>
+      </div>
     </div>`;
+  }).join('');
+
+  return `<main class="screen paper">
+    ${topbar('Budgets', { left: backBtn() })}
+    <div class="section-title" style="margin-top:0"><h2>${esc(formatMonth(today))}</h2></div>
+    <p class="notice">🎯 Respecte tous tes budgets un mois complet : <strong>+150 XP</strong> et le badge « Maître du budget ».</p>
+    <div class="panel flat">${budgets}</div>
+    <div class="section-title"><h2>Objectifs d'épargne</h2></div>
+    <p class="notice">Note ce que tu mets de côté : +1 XP tous les 10 €. L'app ne déplace jamais d'argent, c'est toi qui fais tes virements.</p>
+    <div class="panel flat">
+      ${goals || '<p class="muted" style="margin-top:0">Aucun objectif pour l\'instant.</p>'}
+      <form class="filters" data-form="goal" style="margin-top:12px">
+        <input name="name" placeholder="Ex. Vacances d'été" required maxlength="40" style="flex:2;min-width:150px" aria-label="Nom de l'objectif" />
+        <input name="target" type="number" min="1" step="1" placeholder="Montant €" required style="flex:1;min-width:100px" aria-label="Montant cible" />
+        <button class="btn block">${icon('plus', 18)} Créer l'objectif</button>
+      </form>
+    </div>
+  </main>`;
 }
 
 function viewQuetes(p) {
-  return `
-    <div class="grid two">
-      <section class="card"><h2>Quêtes de la semaine</h2>
-        <p class="notice">Nouvelles quêtes chaque lundi. Le statut devient définitif le dimanche soir.</p>
-        <div class="grid" style="margin-top:10px">${p.quests.map(questCard).join('')}</div></section>
-      <section class="card"><h2>D'où vient ton XP</h2>
-        ${p.log.map((e) => `<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line)"><span>${esc(e.reason)}</span><span class="chip xp">+${e.amount} XP</span></div>`).join('') || '<p class="muted">Connecte un compte pour gagner tes premiers XP.</p>'}
-        <p class="muted" style="font-size:12px">L'XP est recalculée à partir de tes vraies données : pas de triche possible 😉</p>
-      </section>
+  return `<main class="screen paper">
+    ${topbar('Progression', { left: backBtn() })}
+    <section class="hero-level">
+      ${mascot(p.level, 190)}
+      <h2>Niveau ${p.level}</h2>
+      <div style="font-weight:600">${esc(p.title)}</div>
+      <div class="bar" style="margin:10px 0 4px"><span style="width:${pct(p.progress)}"></span></div>
+      <div class="small" style="display:flex;justify-content:space-between;font-weight:700">
+        <span>${p.xpIntoLevel} / ${p.xpForNext} XP</span><span class="streak">${icon('flame', 16)} série de ${p.streak} j</span></div>
+      <p class="small" style="margin:8px 0 0">Pixou s'équipe en montant de niveau : casquette au niveau 3, couronne au niveau 5.</p>
+    </section>
+    <div class="section-title"><h2>Quêtes de la semaine</h2></div>
+    <p class="muted small" style="margin:-4px 0 0">Nouvelles quêtes chaque lundi, résultat définitif le dimanche soir.</p>
+    ${p.quests.map(questCard).join('')}
+    <div class="section-title"><h2>Badges</h2><span class="small" style="font-weight:700">${p.badges.filter((b) => b.unlocked).length}/${p.badges.length}</span></div>
+    <div class="badges">${p.badges.map((b, i) => `<div class="badge ${b.unlocked ? '' : 'locked'}">
+      <div class="medal" style="background:${PALETTE[i % PALETTE.length]}"><span>${b.icon}</span></div>
+      <strong>${esc(b.title)}</strong><small>${esc(b.description)}</small></div>`).join('')}</div>
+    <div class="section-title"><h2>D'où vient ton XP</h2><span class="small" style="font-weight:700">${p.xp} XP</span></div>
+    <div class="panel">
+      ${p.log.map((e) => `<div class="xp-line"><span>${esc(e.reason)}</span><span class="tag xp">+${e.amount}</span></div>`).join('')}
+      <p class="muted small" style="margin-bottom:0">L'XP est recalculée à partir de tes vraies données : pas de triche possible 😉</p>
     </div>
-    <section class="card" style="margin-top:14px"><h2>Badges · ${p.badges.filter((b) => b.unlocked).length}/${p.badges.length}</h2>
-      <div class="badges">${p.badges.map((b) => `<div class="badge ${b.unlocked ? 'unlocked' : 'locked'}">
-        <div class="ico">${b.icon}</div><strong>${esc(b.title)}</strong><small>${esc(b.description)}</small></div>`).join('')}</div>
-    </section>`;
+  </main>`;
 }
 
 function viewComptes() {
@@ -278,70 +381,95 @@ function viewComptes() {
   for (const a of state.accounts) (byInst[a.institutionId] ||= []).push(a);
   const blocks = Object.entries(byInst).map(([instId, accounts]) => {
     const conn = state.connections.find((c) => c.institutionId === instId);
-    return `<section class="card" style="margin-top:14px">
-      <div class="row between wrap"><h2>${esc(accounts[0].institutionName)}</h2>
-        <div class="row"><button class="btn ghost small" data-action="sync" data-inst="${instId}">🔄 Synchroniser</button>
-        <button class="btn danger small" data-action="disconnect" data-inst="${instId}">Déconnecter</button></div></div>
-      ${accounts.map((a) => `<div class="account"><strong>${esc(a.name)}</strong><strong>${formatEUR(a.balance)}</strong>
-        <span class="muted" style="font-size:12px">${esc(a.iban)}</span><span class="muted" style="font-size:12px">${a.type === 'epargne' ? 'Épargne' : 'Courant'}</span></div>`).join('')}
-      ${conn ? `<p class="muted" style="font-size:12px;margin-bottom:0">Consentement accordé le ${formatDay(conn.connectedAt)} · à renouveler tous les 180 jours (DSP2)</p>` : ''}
+    return `<section class="panel flat">
+      <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px"><span class="round" style="width:38px;height:38px;background:${INST_COLORS[instId] || '#F2B33D'};color:#1D1D2C">${icon('bank', 18)}</span>
+        <strong>${esc(accounts[0].institutionName)}</strong></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn sm light" data-action="sync" data-inst="${instId}" aria-label="Synchroniser">${icon('refresh', 16)}</button>
+          <button class="btn sm danger" data-action="disconnect" data-inst="${instId}" aria-label="Déconnecter">${icon('trash', 16)}</button>
+        </div>
+      </div>
+      ${accounts.map((a) => `<div class="acc"><strong>${esc(a.name)}</strong><strong>${formatEUR(a.balance)}</strong>
+        <span class="muted small">${esc(a.iban)}</span><span class="muted small">${a.type === 'epargne' ? 'Épargne' : 'Courant'}</span></div>`).join('')}
+      ${conn ? `<p class="muted small" style="margin-bottom:0">Consentement accordé le ${formatDay(conn.connectedAt)} · à renouveler tous les 180 jours (DSP2)</p>` : ''}
     </section>`;
   }).join('');
-  return `
-    <section class="card" style="margin-top:14px">
-      <div class="row between wrap"><h2>Mes banques</h2><button class="btn" data-action="open-connect">+ Ajouter une banque</button></div>
-      <p class="notice">🔒 Accès en <strong>lecture seule</strong> (soldes et historique). PixelBudget ne détient pas tes fonds,
-        ne voit jamais tes identifiants bancaires et ne peut initier aucun paiement.
-        <br />Mode démo : les banques et opérations ci-dessous sont fictives.</p>
-    </section>
+  return `<main class="screen paper">
+    ${topbar('Mes banques', { left: backBtn() })}
+    <p class="notice">${'🔒'} Accès en <strong>lecture seule</strong> : PixelBudget ne détient pas tes fonds, ne voit jamais tes
+      identifiants bancaires et ne peut initier aucun paiement. Mode démo : banques et opérations fictives.</p>
     ${blocks}
-    <section class="card" style="margin-top:14px"><h2>Données</h2>
-      <button class="btn danger small" data-action="reset">Effacer toutes mes données locales</button></section>`;
+    <button class="btn block" data-action="open-connect" style="margin-top:16px">${icon('plus', 18)} Ajouter une banque</button>
+    <button class="btn block danger" data-action="reset" style="margin-top:14px">Effacer toutes mes données</button>
+  </main>`;
 }
 
 function modal() {
   if (!ui.modal) return '';
+  let body;
   if (ui.modal.step === 'choose') {
     const connected = new Set(state.connections.map((c) => c.institutionId));
-    return `<div class="modal-backdrop" data-action="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
-      <h3 id="mt">Choisis ta banque</h3>
+    body = `<h3 id="mt">Choisis ta banque</h3>
       ${ui.institutions.map((i) => `<button class="inst" data-action="choose-inst" data-inst="${i.id}" ${connected.has(i.id) ? 'disabled' : ''}>
-        <span style="font-size:24px">${i.logo}</span><span>${esc(i.name)}${connected.has(i.id) ? ' · déjà connectée' : ''}</span></button>`).join('')}
-      <button class="btn ghost" data-action="close-modal">Annuler</button></div></div>`;
+        <span class="logo" style="background:${INST_COLORS[i.id] || '#F2B33D'}"></span><span>${esc(i.name)}${connected.has(i.id) ? ' · déjà connectée' : ''}</span></button>`).join('')}
+      <button class="btn block light" data-action="close-modal">Annuler</button>`;
+  } else {
+    const inst = ui.institutions.find((i) => i.id === ui.modal.institutionId);
+    body = `<h3 id="mt">Autoriser ${esc(inst.name)}</h3>
+      <p style="margin:0">PixelBudget demande à consulter :</p>
+      <ul><li>la liste et le solde de tes comptes</li><li>l'historique de tes opérations</li></ul>
+      <p class="notice">Tu seras redirigé·e vers ta banque pour t'authentifier. PixelBudget ne reçoit jamais tes identifiants
+        et <strong>ne peut effectuer aucun paiement</strong>. Révocable à tout moment, valable 180 jours.</p>
+      <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:14px">
+        <button class="btn light" data-action="close-modal">Refuser</button>
+        <button class="btn" data-action="consent" ${ui.modal.loading ? 'disabled' : ''}>${ui.modal.loading ? 'Connexion…' : 'Autoriser · +100 XP'}</button>
+      </div>`;
   }
-  const inst = ui.institutions.find((i) => i.id === ui.modal.institutionId);
-  return `<div class="modal-backdrop" data-action="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
-    <h3 id="mt">${inst.logo} Autoriser l'accès à ${esc(inst.name)}</h3>
-    <p>PixelBudget demande à consulter :</p>
-    <ul><li>la liste et le solde de tes comptes</li><li>l'historique de tes opérations</li></ul>
-    <p class="notice">Tu seras redirigé·e vers ta banque pour t'authentifier (authentification forte).
-      PixelBudget ne reçoit jamais tes identifiants et <strong>ne peut effectuer aucun paiement</strong>.
-      Tu peux révoquer l'accès à tout moment. Consentement valable 180 jours.</p>
-    <div class="row" style="justify-content:flex-end;margin-top:14px">
-      <button class="btn ghost" data-action="close-modal">Refuser</button>
-      <button class="btn" data-action="consent" ${ui.modal.loading ? 'disabled' : ''}>${ui.modal.loading ? 'Connexion…' : 'Autoriser'}</button>
-    </div></div></div>`;
+  return `<div class="sheet-backdrop" data-action="close-modal"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <div class="grab"></div>${body}</div></div>`;
 }
 
 const NAV = [
-  ['accueil', '🏠', 'Accueil'],
-  ['depenses', '📊', 'Dépenses'],
-  ['budgets', '🎯', 'Budgets'],
-  ['quetes', '⚔️', 'Quêtes'],
-  ['comptes', '🏦', 'Comptes'],
+  ['accueil', 'home', 'Accueil'],
+  ['depenses', 'chart', 'Dépenses'],
+  ['budgets', 'target', 'Budgets'],
+  ['quetes', 'trophy', 'Quêtes'],
+  ['comptes', 'bank', 'Banques'],
 ];
 
 function render() {
   const p = progress();
-  const views = { accueil: viewAccueil, depenses: viewDepenses, budgets: viewBudgets, quetes: viewQuetes, comptes: viewComptes };
   const focused = document.activeElement?.dataset?.input;
-  app.innerHTML = `<div class="shell">${header(p)}${views[ui.view](p)}</div>
-    <nav class="nav"><div class="nav-inner">${NAV.map(([id, i, l]) =>
-      `<button data-view="${id}" ${ui.view === id ? 'aria-current="page"' : ''}><span class="i">${i}</span>${l}</button>`).join('')}</div></nav>
-    ${modal()}`;
+  let html;
+  if (!state.accounts.length) {
+    html = viewOnboarding();
+  } else {
+    const views = { accueil: viewAccueil, depenses: viewDepenses, budgets: viewBudgets, quetes: viewQuetes, comptes: viewComptes };
+    html = `${views[ui.view](p)}
+      <nav class="nav" aria-label="Navigation"><div class="nav-inner">${NAV.map(([id, ic, l]) =>
+        `<button data-view="${id}" ${ui.view === id ? 'aria-current="page"' : ''}>${icon(ic, 20)}${l}</button>`).join('')}</div></nav>`;
+  }
+  app.innerHTML = html + modal();
+  app.firstElementChild.classList.toggle('animate', ui.animate);
+  ui.animate = false;
+
   if (focused) {
     const el = app.querySelector(`[data-input="${focused}"]`);
     if (el) { el.focus(); if (el.type === 'search') el.setSelectionRange(el.value.length, el.value.length); }
+  }
+  const carousel = app.querySelector('[data-carousel]');
+  if (carousel) {
+    const dots = app.querySelectorAll('.dots i');
+    carousel.addEventListener('scroll', () => {
+      const cards = [...carousel.querySelectorAll('.bank-card')];
+      const mid = carousel.scrollLeft + carousel.clientWidth / 2;
+      let best = 0;
+      cards.forEach((c, i) => {
+        if (Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid) < Math.abs(cards[best].offsetLeft + cards[best].offsetWidth / 2 - mid)) best = i;
+      });
+      dots.forEach((d, i) => d.classList.toggle('on', i === best));
+    }, { passive: true });
   }
 }
 
@@ -362,13 +490,16 @@ async function syncInstitution(institutionId) {
 
 app.addEventListener('click', async (e) => {
   const viewBtn = e.target.closest('[data-view]');
-  if (viewBtn) { ui.view = viewBtn.dataset.view; render(); window.scrollTo(0, 0); return; }
+  if (viewBtn) { go(viewBtn.dataset.view); return; }
+
+  const catBtn = e.target.closest('[data-cat]');
+  if (catBtn) { ui.category = catBtn.dataset.cat; ui.limit = 20; render(); return; }
 
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const { action } = el.dataset;
-  // Un clic sur le fond de la modale la ferme, mais pas un clic à l'intérieur.
-  if (action === 'close-modal' && el.classList.contains('modal-backdrop') && e.target !== el) return;
+  // Un clic sur le fond de la feuille la ferme, mais pas un clic à l'intérieur.
+  if (action === 'close-modal' && el.classList.contains('sheet-backdrop') && e.target !== el) return;
 
   switch (action) {
     case 'open-connect':
@@ -381,6 +512,13 @@ app.addEventListener('click', async (e) => {
     case 'close-modal':
       ui.modal = null;
       break;
+    case 'more':
+      ui.limit += 30;
+      break;
+    case 'focus-search':
+      app.querySelector('[data-input="search"]')?.focus();
+      app.querySelector('.filters')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
     case 'consent': {
       const { institutionId } = ui.modal;
       ui.modal.loading = true;
@@ -389,8 +527,9 @@ app.addEventListener('click', async (e) => {
         const conn = await provider.connect(institutionId);
         state.connections.push({ ...conn, connectedAt: today });
         await syncInstitution(institutionId);
-        toast('✅ Compte connecté · +100 XP');
+        toast('✅ Banque connectée · +100 XP');
         ui.view = 'accueil';
+        ui.animate = true;
       } catch (err) {
         toast(`❌ ${err.message}`);
       }
@@ -427,6 +566,7 @@ app.addEventListener('click', async (e) => {
       state = loadState();
       state.visits = [today];
       saveState(state);
+      ui.view = 'accueil';
       break;
     default:
       return;
@@ -436,7 +576,7 @@ app.addEventListener('click', async (e) => {
 
 app.addEventListener('input', (e) => {
   const key = e.target.dataset.input;
-  if (key) { ui[key] = e.target.value; render(); }
+  if (key) { ui[key] = e.target.value; ui.limit = 20; if (key === 'period') ui.animate = true; render(); }
 });
 
 app.addEventListener('change', (e) => {
