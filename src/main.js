@@ -3,6 +3,7 @@ import { addDays, addMonths, daysBetween, endOfMonth, formatDay, formatMonth, st
 import { computeProgress } from './core/gamification.js';
 import { DemoProvider } from './core/providers.js';
 import { clearState, loadState, saveState } from './core/store.js';
+import { mountHero } from './ui/hero.js';
 import { icon, mascot } from './ui/icons.js';
 
 const today = toISO(new Date());
@@ -231,16 +232,36 @@ function questCard(q, i) {
 // Vues
 // ---------------------------------------------------------------------------
 
+// Lettres du logo : légère rotation « à la main », toujours la même d'un affichage à l'autre.
+const TILT = [-3, 2, -1.5, 3, -2, 1.5, -2.5, 2.5, -1, 3, -3];
+function wordmark() {
+  let k = 0;
+  const line = (word) => `<span class="line">${[...word].map((ch) => {
+    const i = k++;
+    return `<span class="ch" style="--r:${TILT[i % TILT.length]}deg;--d:${i * 45}ms">${ch}</span>`;
+  }).join('')}</span>`;
+  return `<h1 class="mark" aria-label="PixelBudget">${line('Pixel')}${line('Budget')}</h1>`;
+}
+
 function viewOnboarding() {
-  return `<main class="screen mustard"><div class="onboarding">
-    <div class="art">${mascot(1, 320)}</div>
-    <div>
-      <div class="wordmark">PixelBudget</div>
-      <p class="tagline">Ton argent devient un jeu : dépense mieux, épargne plus, monte de niveau.</p>
-      <div class="reassure">${icon('lock', 16)} Lecture seule · aucun fonds détenu · aucun paiement possible</div>
-      <button class="btn block" data-action="open-connect">Commencer</button>
-    </div>
-  </div></main>`;
+  return `<main class="hero">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7"/>
+        <feDisplacementMap in="SourceGraphic" scale="4.5"/></filter>
+    </svg>
+    <div class="giant">${mascot(1, 560, { alive: true, look: [0, 9] })}</div>
+    <div class="crowd"></div>
+    <div class="catch" hidden></div>
+    <section class="hero-content">
+      ${wordmark()}
+      <p class="hero-tag">Tes pièces se baladent partout. Rattrape-les : suis tes dépenses, tiens tes budgets, monte de niveau.</p>
+      <div class="hero-cta">
+        <button class="btn hero-btn" data-action="open-connect">Commencer</button>
+        <button class="btn hero-btn light" data-action="tuto">Comment ça marche</button>
+      </div>
+    </section>
+    <footer class="hero-foot">${icon('lock', 14)} Lecture seule · aucun fonds détenu · aucun paiement possible</footer>
+  </main>`;
 }
 
 function viewAccueil(p) {
@@ -359,7 +380,7 @@ function viewQuetes(p) {
       <div class="bar" style="margin:10px 0 4px"><span style="width:${pct(p.progress)}"></span></div>
       <div class="small" style="display:flex;justify-content:space-between;font-weight:700">
         <span>${p.xpIntoLevel} / ${p.xpForNext} XP</span><span class="streak">${icon('flame', 16)} série de ${p.streak} j</span></div>
-      <p class="small" style="margin:8px 0 0">Pixou s'équipe en montant de niveau : casquette au niveau 3, couronne au niveau 5.</p>
+      <p class="small" style="margin:8px 0 0">Pixou s'équipe en montant de niveau : bandeau au niveau 3, couronne au niveau 5.</p>
     </section>
     <div class="section-title"><h2>Quêtes de la semaine</h2></div>
     <p class="muted small" style="margin:-4px 0 0">Nouvelles quêtes chaque lundi, résultat définitif le dimanche soir.</p>
@@ -408,7 +429,19 @@ function viewComptes() {
 function modal() {
   if (!ui.modal) return '';
   let body;
-  if (ui.modal.step === 'choose') {
+  if (ui.modal.step === 'tuto') {
+    const steps = [
+      ['bank', '#7C86C9', 'Connecte tes banques', 'En lecture seule : PixelBudget voit tes soldes et tes opérations, sans jamais toucher à ton argent.'],
+      ['target', '#7E9F4F', 'Fixe tes budgets', 'Choisis un plafond par catégorie et un objectif d\'épargne. Tes dépenses sont classées toutes seules.'],
+      ['trophy', '#E8735A', 'Monte de niveau', 'Quêtes chaque semaine, badges, séries : chaque bonne habitude rapporte de l\'XP et équipe Pixou.'],
+    ];
+    body = `<h3 id="mt">Comment ça marche</h3>
+      ${steps.map(([ic, color, title, text], i) => `<div class="tuto-step">
+        <span class="round" style="background:${color};color:#1D1D2C">${icon(ic, 20)}</span>
+        <div><strong>${i + 1}. ${title}</strong><p class="muted small" style="margin:2px 0 0">${text}</p></div></div>`).join('')}
+      <p class="notice">Astuce : sur l'écran d'accueil, tape les petites pièces pour les rattraper 🪙</p>
+      <button class="btn block" data-action="open-connect">C'est parti</button>`;
+  } else if (ui.modal.step === 'choose') {
     const connected = new Set(state.connections.map((c) => c.institutionId));
     body = `<h3 id="mt">Choisis ta banque</h3>
       ${ui.institutions.map((i) => `<button class="inst" data-action="choose-inst" data-inst="${i.id}" ${connected.has(i.id) ? 'disabled' : ''}>
@@ -438,7 +471,12 @@ const NAV = [
   ['comptes', 'bank', 'Banques'],
 ];
 
+let heroCleanup = null;
+let caughtTotal = 0;
+
 function render() {
+  heroCleanup?.();
+  heroCleanup = null;
   const p = progress();
   const focused = document.activeElement?.dataset?.input;
   let html;
@@ -459,6 +497,22 @@ function render() {
     if (el) { el.focus(); if (el.type === 'search') el.setSelectionRange(el.value.length, el.value.length); }
   }
   syncStatusBar();
+  const hero = app.querySelector('.hero');
+  if (hero) {
+    const chip = hero.querySelector('.catch');
+    const showCount = () => {
+      chip.hidden = caughtTotal === 0;
+      chip.textContent = `🪙 ${caughtTotal} pièce${caughtTotal > 1 ? 's' : ''} rattrapée${caughtTotal > 1 ? 's' : ''}`;
+    };
+    showCount();
+    heroCleanup = mountHero(hero, {
+      onCatch: () => {
+        caughtTotal += 1;
+        showCount();
+        if (caughtTotal === 5) toast('🎉 5 pièces rattrapées ! Prêt·e à faire pareil avec ton vrai budget ?');
+      },
+    });
+  }
   const carousel = app.querySelector('[data-carousel]');
   if (carousel) {
     const dots = app.querySelectorAll('.dots i');
@@ -526,6 +580,9 @@ app.addEventListener('click', async (e) => {
     case 'open-connect':
       ui.institutions = await provider.listInstitutions();
       ui.modal = { step: 'choose' };
+      break;
+    case 'tuto':
+      ui.modal = { step: 'tuto' };
       break;
     case 'choose-inst':
       ui.modal = { step: 'consent', institutionId: el.dataset.inst };

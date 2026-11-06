@@ -12,12 +12,18 @@ const res = fileURLToPath(new URL('../android/res/', import.meta.url));
 const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
 const MUSTARD = '#F2B33D';
 
+// Buste de Pixou recadré sur le visage : le bas du corps déborde et est coupé par le cadre.
+const framed = (px, widthRatio, faceY) => {
+  const w = px * widthRatio;
+  const scale = w / 400; // viewBox du buste : "0 -34 400 474", yeux en (200, 212)
+  const top = px * faceY - (212 + 34) * scale;
+  return `<div style="position:absolute;left:${(px - w) / 2}px;top:${top}px;width:${w}px">${mascot(1, w)}</div>`;
+};
 // Icône classique (avant Android 8) : 48 dp, carré arrondi moutarde.
-const legacy = (px) => `<div style="width:${px}px;height:${px}px;display:grid;place-items:center;background:${MUSTARD};
-  border-radius:${px * 0.22}px;box-sizing:border-box;border:${Math.max(1, px * 0.03)}px solid #1D1D2C">
-  ${mascot(1, px * 0.86)}</div>`;
-// Calque avant de l'icône adaptative : 108 dp, sujet dans la zone sûre centrale de 66 dp.
-const foreground = (px) => `<div style="width:${px}px;height:${px}px;display:grid;place-items:center">${mascot(1, px * 0.7)}</div>`;
+const legacy = (px) => `<div style="position:relative;overflow:hidden;width:${px}px;height:${px}px;background:${MUSTARD};
+  border-radius:${px * 0.22}px;box-sizing:border-box;border:${Math.max(1, px * 0.03)}px solid #1D1D2C">${framed(px, 1.05, 0.5)}</div>`;
+// Calque avant de l'icône adaptative : 108 dp, visage dans la zone sûre centrale de 66 dp.
+const foreground = (px) => `<div style="position:relative;overflow:hidden;width:${px}px;height:${px}px">${framed(px, 0.7, 0.53)}</div>`;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();

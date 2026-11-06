@@ -12,6 +12,8 @@ habitudes.
 
 ## Fonctionnalités du prototype
 
+- **Écran d'accueil animé** : Pixou, la mascotte, suit ton doigt des yeux pendant
+  qu'une foule de petites pièces se balade à ses pieds (tape-les pour les rattraper).
 - **Agrégation multi-banques** avec parcours de consentement (banques de démo fictives).
 - **Accueil** : cartes de comptes en carrousel (solde total + chaque compte),
   raccourcis, carte de progression du joueur, dernières transactions.
@@ -40,7 +42,7 @@ L'APK embarque l'application web dans une WebView native : elle fonctionne
 hors ligne et garde ses données sur le téléphone. Le bouton retour d'Android et
 la couleur de la barre d'état suivent l'écran affiché.
 
-- APK prêt à installer : [`dist/PixelBudget-0.1.0.apk`](dist/PixelBudget-0.1.0.apk)
+- APK prêt à installer : [`dist/PixelBudget-0.2.0.apk`](dist/PixelBudget-0.2.0.apk)
   (Android 6.0 et plus). Sur le téléphone : autoriser l'installation
   d'applications de sources inconnues, puis ouvrir le fichier.
 - Reconstruire : `npm run build:apk` (outils requis listés en tête de
@@ -64,7 +66,9 @@ src/
     analytics.js       catégorisation, agrégats, budgets
     gamification.js    XP, niveaux, quêtes, badges, séries
     dates.js, store.js
-  ui/icons.js          icônes et mascotte « Pixou » (SVG, évolue avec le niveau)
+  ui/icons.js          icônes (SVG)
+  ui/mascot.js         mascotte « Pixou » (SVG, s'équipe selon le niveau)
+  ui/hero.js           animation de l'écran d'accueil (foule de pièces, regard)
   fonts/               police Bricolage Grotesque embarquée (SIL OFL)
 android/               coquille Android (WebView), ressources et script de build
 dist/                  APK généré
