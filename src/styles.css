@@ -104,26 +104,45 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 
 /* ---------- Écran d'accueil (héros) ---------- */
 .hero {
-  --gw: min(102vw, 560px);
   position: relative; min-height: 100vh; min-height: 100svh; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
   background-color: var(--mustard);
   background-image:
     radial-gradient(ellipse 70% 60% at 50% 58%, rgb(255 253 247 / .28), transparent 70%),
     repeating-radial-gradient(circle at 50% 58%, transparent 0 46px, rgb(29 29 44 / .028) 46px 48px);
   user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
 }
-.giant {
-  position: absolute; left: 50%; top: calc(var(--gw) * -0.22); width: var(--gw); z-index: 1;
-  transform: translateX(-50%); pointer-events: none;
-  filter: drop-shadow(28px 22px 0 rgb(29 29 44 / .13));
-  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
-  mask-image: linear-gradient(to bottom, #000 72%, transparent 97%);
-}
-.giant svg { display: block; width: 100%; height: auto; }
 .mascot.alive .blink { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.08); } }
 
-.crowd { position: absolute; inset: 0; z-index: 2; }
+.prints, .crowd { position: absolute; inset: 0; }
+.prints { z-index: 0; pointer-events: none; }
+.crowd { z-index: 1; }
+.print {
+  position: absolute; left: -15px; top: -8px; width: 30px; height: 16px; border-radius: 50%;
+  background: rgb(29 29 44 / .1); animation: fade 2.6s ease-in forwards;
+}
+@keyframes fade { to { opacity: 0; } }
+.giant-top { position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; will-change: transform; }
+.giant-top svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bubble {
+  position: absolute; bottom: calc(100% - 4px); left: 50%; transform: translateX(-50%);
+  padding: 1px 8px; border-radius: 10px; background: var(--cream); border: 2px solid var(--ink);
+  font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; color: var(--ink);
+  animation: bubble .25s cubic-bezier(.3, 1.6, .5, 1) both; pointer-events: none;
+}
+.bubble::after {
+  content: ""; position: absolute; left: 50%; top: 100%; width: 7px; height: 7px; margin: -4px 0 0 -4px;
+  background: var(--cream); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg);
+}
+.bubble.to-left { left: auto; right: -4px; transform: none; animation-name: bubble-side; }
+.bubble.to-right { left: -4px; transform: none; animation-name: bubble-side; }
+.bubble.to-left::after { left: auto; right: 12px; }
+.bubble.to-right::after { left: 16px; }
+@keyframes bubble-side { from { transform: scale(.3); opacity: 0; } }
+.bubble.alarm { color: #fff; background: var(--coral); }
+.bubble.alarm::after { background: var(--coral); }
+@keyframes bubble { from { transform: translateX(-50%) scale(.3); opacity: 0; } }
 .walker {
   position: absolute; left: 0; top: 0; width: 36px; height: 44px; padding: 0; border: 0; background: none;
   cursor: pointer; will-change: transform; touch-action: manipulation;
@@ -133,6 +152,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 .walker .leg-a { animation: step .34s ease-in-out infinite alternate; transform-origin: 16px 32px; }
 .walker .leg-b { animation: step .34s ease-in-out infinite alternate-reverse; transform-origin: 24px 32px; }
 .walker.idle .body, .walker.idle .leg-a, .walker.idle .leg-b { animation: none; }
+.walker.panic .body, .walker.panic .leg-a, .walker.panic .leg-b { animation-duration: .16s; }
 .walker.flip .sprite { transform: scaleX(-1); transform-origin: 20px 0; }
 .walker.hop .sprite { animation: hop .6s cubic-bezier(.3, 1.5, .5, 1); }
 @keyframes bob { to { transform: translateY(-2px); } }
@@ -147,15 +167,26 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 }
 .hero-content {
   position: relative; z-index: 3; pointer-events: none;
-  padding: calc(var(--gw) * 0.7) 16px 84px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 56px 16px 92px; display: flex; flex-direction: column; align-items: center; text-align: center;
 }
 .hero-content button { pointer-events: auto; }
 .mark {
   margin: 0; font-size: clamp(74px, 21vw, 168px); font-weight: 800; line-height: .84; letter-spacing: -.015em;
   text-transform: uppercase; color: var(--ink); filter: url(#rough);
+  /* Liseré moutarde : le titre reste lisible quand Pixou passe dessous. */
+  -webkit-text-stroke: .07em var(--mustard); paint-order: stroke fill;
 }
 .mark .line { display: block; white-space: nowrap; }
-.mark .ch { display: inline-block; transform: rotate(var(--r)); }
+.mark .ch { display: inline-block; position: relative; transform: rotate(var(--r)); }
+.mark .eyes { position: absolute; left: 50%; top: 21%; display: flex; gap: .015em; transform: translateX(-50%); }
+.mark .eyes i {
+  position: relative; display: block; width: .17em; height: .17em; border-radius: 50%;
+  background: var(--cream); border: .035em solid var(--ink); box-sizing: border-box;
+}
+.mark .eyes i::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: .075em; height: .075em; border-radius: 50%; background: var(--ink);
+  transform: translate(calc(-50% + var(--px, 0px)), calc(-50% + var(--py, 0px)));
+}
 .animate .mark .ch { animation: drop .7s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--d); }
 @keyframes drop { from { transform: translateY(-60px) rotate(var(--r)) scale(.6); opacity: 0; } }
 .hero-tag {
@@ -176,7 +207,6 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px s
 .hero-foot .ic { display: inline-block; vertical-align: -2px; margin-right: 2px; }
 .tuto-step { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; margin-bottom: 14px; }
 @media (min-width: 900px) {
-  .hero { --gw: 560px; }
   .hero-tag { font-size: 19px; }
   .hero-btn { padding: 14px 26px; font-size: 15px; }
 }

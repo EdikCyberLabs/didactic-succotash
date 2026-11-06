@@ -238,7 +238,9 @@ function wordmark() {
   let k = 0;
   const line = (word) => `<span class="line">${[...word].map((ch) => {
     const i = k++;
-    return `<span class="ch" style="--r:${TILT[i % TILT.length]}deg;--d:${i * 45}ms">${ch}</span>`;
+    // Le « U » de BUDGET a des yeux qui suivent le doigt.
+    const eyes = ch === 'u' ? '<span class="eyes" aria-hidden="true"><i></i><i></i></span>' : '';
+    return `<span class="ch" style="--r:${TILT[i % TILT.length]}deg;--d:${i * 45}ms">${ch}${eyes}</span>`;
   }).join('')}</span>`;
   return `<h1 class="mark" aria-label="PixelBudget">${line('Pixel')}${line('Budget')}</h1>`;
 }
@@ -249,8 +251,9 @@ function viewOnboarding() {
       <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7"/>
         <feDisplacementMap in="SourceGraphic" scale="4.5"/></filter>
     </svg>
-    <div class="giant">${mascot(1, 560, { alive: true, look: [0, 9] })}</div>
+    <div class="prints"></div>
     <div class="crowd"></div>
+    <div class="giant-top"></div>
     <div class="catch" hidden></div>
     <section class="hero-content">
       ${wordmark()}
