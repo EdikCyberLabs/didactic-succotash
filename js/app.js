@@ -37,12 +37,60 @@
     done: ['📦', 'Livrée'],
   };
 
-  const COLORS = ['#5b4bff', '#0ea5e9', '#0d9488', '#12a66a', '#f08c00', '#e5484d', '#d6409f'];
+  const COLORS = ['#6c72c4', '#dd5f4a', '#5d8736', '#3f86c9', '#cf5a97', '#2f8f86', '#7b4fb0'];
+
+  // Icônes au trait (24 × 24), dessinées pour l'application.
+  const I = (function (paths) {
+    Object.keys(paths).forEach((k) => { paths[k] = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${paths[k]}</svg>`; });
+    return paths;
+  })({
+    home: '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
+    coin: '<circle cx="12" cy="12" r="9"/><path d="M14.6 9.6C14.1 8.6 13.2 8 12 8c-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.2 0-2.1-.6-2.6-1.6M12 6.3V8m0 8v1.7"/>',
+    cart: '<path d="M3 4h2.5l2.2 10.5h9.6L19.5 7H6.3"/><circle cx="9" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/>',
+    clip: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5v-1h6v1M9 10h6M9 14h4"/>',
+    grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+    gear: '<path d="M4 8h8M18 8h2M4 16h2M12 16h8"/><circle cx="15" cy="8" r="2.5"/><circle cx="9" cy="16" r="2.5"/>',
+    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+    box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>',
+    tag: '<path d="M4 4h7.5l8.5 8.5-7.5 7.5L4 11.5z"/><circle cx="8.5" cy="8.5" r="1.2"/>',
+    chart: '<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="9" width="3" height="8" rx="1"/>',
+    idcard: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10.5" r="2"/><path d="M5.5 16c.6-1.5 1.7-2 3-2s2.4.5 3 2M14.5 10h4M14.5 14h3"/>',
+    hourglass: '<path d="M7 3h10M7 21h10M8 3v3.5c0 2 4 3.5 4 5.5s-4 3.5-4 5.5V21M16 3v3.5c0 2-4 3.5-4 5.5s4 3.5 4 5.5V21"/>',
+    alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    flame: '<path d="M12 3c1 3.5 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.3 1.8 2.5-.3-3 .2-5.5 1.2-8z"/>',
+    up: '<path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5"/>',
+    down: '<path d="M4 8l5 5 4-3 7 8"/><path d="M15 18h5v-5"/>',
+    share: '<path d="M12 15V4M8 7.5l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+    download: '<path d="M12 4v11M8 11.5l4 4 4-4M5 20h14"/>',
+    edit: '<path d="M4 20l1-4.5L16.5 4 20 7.5 8.5 19z"/><path d="M14 6.5l3.5 3.5"/>',
+    trash: '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10.5 11v5.5M13.5 11v5.5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    back: '<path d="M14.5 6l-6 6 6 6"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/>'
+  });
+
+  // Illustration d'accueil : un reçu, des pièces et quelques étincelles.
+  const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#25214d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M36 36v20M26 46h20M222 26v14M215 33h14M232 96v16M224 104h16M22 118v12M16 124h12"/>
+    <circle cx="212" cy="62" r="7" fill="#fffdf7"/><circle cx="56" cy="84" r="5" fill="#e8806c"/>
+    <g transform="rotate(-8 130 110)">
+      <path d="M88 40h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#25214d"/>
+      <path d="M82 34h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#fffdf7"/>
+      <path d="M97 56h46" stroke="#6c72c4" stroke-width="7"/><path d="M97 74h66M97 90h38"/>
+      <rect x="97" y="108" width="46" height="46" rx="5" fill="#fff"/>
+      <path d="M105 116h9v9h-9zM126 116h9v9h-9zM105 137h9v9h-9z" fill="#25214d"/><path d="M124 136h5M133 141v6M124 146h4"/>
+      <path d="M153 150h10"/>
+    </g>
+    <circle cx="211" cy="161" r="25" fill="#25214d"/><circle cx="206" cy="156" r="25" fill="#8fb04f"/><path d="M196 156l7 7 13-14"/>
+    <circle cx="51" cy="171" r="19" fill="#25214d"/><circle cx="47" cy="167" r="19" fill="#e8806c"/><circle cx="47" cy="167" r="10"/>
+  </svg>`;
 
   const KIND = {
-    sales: { one: 'vente', title: 'Ventes', ico: '💰', prefix: 'V', who: 'Client', seq: 'sale' },
-    purchases: { one: 'achat', title: 'Achats', ico: '🛒', prefix: 'A', who: 'Fournisseur', seq: 'purchase' },
-    orders: { one: 'commande', title: 'Commandes', ico: '📋', prefix: 'C', who: 'Client', seq: 'order' },
+    sales: { one: 'vente', title: 'Ventes', ico: I.coin, prefix: 'V', who: 'Client', seq: 'sale' },
+    purchases: { one: 'achat', title: 'Achats', ico: I.cart, prefix: 'A', who: 'Fournisseur', seq: 'purchase' },
+    orders: { one: 'commande', title: 'Commandes', ico: I.clip, prefix: 'C', who: 'Client', seq: 'order' },
   };
 
   // ---------------------------------------------------------------- Utilitaires
@@ -77,7 +125,7 @@
   }
 
   // ---------------------------------------------------------------- Données
-  const blank = () => ({ settings: null, sales: [], purchases: [], orders: [], card: {}, seq: { sale: 0, purchase: 0, order: 0 } });
+  const blank = () => ({ settings: null, sales: [], purchases: [], orders: [], products: [], card: {}, seq: { sale: 0, purchase: 0, order: 0 } });
 
   function load() {
     try {
@@ -104,6 +152,21 @@
   const ref = (kind, rec) => `${KIND[kind].prefix}-${String(rec.n).padStart(4, '0')}`;
   const itemsLabel = (rec) => rec.items.map((it) => (it.qty !== 1 ? `${it.qty}× ` : '') + it.name).join(', ');
 
+  // Articles & stock : un article sans quantité (qty null) n'est pas suivi en stock.
+  const norm = (s) => String(s || '').trim().toLowerCase();
+  const findProduct = (name) => db.products.find((p) => norm(p.name) === norm(name));
+  const tracked = (p) => p.qty != null;
+  const isLow = (p) => tracked(p) && p.qty <= (p.min || 0);
+  const fmtQ = (q) => String(Math.round(q * 1000) / 1000).replace('.', ',');
+  function moveStock(kind, items, dir) {
+    if (kind === 'orders') return;
+    const sign = kind === 'sales' ? -dir : dir;
+    items.forEach((it) => {
+      const p = findProduct(it.name);
+      if (p && tracked(p)) p.qty = Math.round((p.qty + sign * it.qty) * 1000) / 1000;
+    });
+  }
+
   function controlCode(rec) {
     const s = `${rec.id}|${total(rec)}|${rec.date}`;
     let h = 2166136261;
@@ -123,9 +186,21 @@
   // ---------------------------------------------------------------- État UI
   const ui = {
     tab: 'home',
-    filter: { sales: 'month', purchases: 'month', orders: 'open' },
-    query: { sales: '', purchases: '', orders: '' },
+    filter: { sales: 'month', purchases: 'month', orders: 'open', stock: 'all' },
+    query: { sales: '', purchases: '', orders: '', stock: '' },
+    month: today().slice(0, 7),
   };
+  const SUB = ['stock', 'report', 'card'];
+
+  let logoImg = null;
+  function loadLogo() {
+    logoImg = null;
+    if (!S().logo) return;
+    const im = new Image();
+    im.onload = () => { logoImg = im; if (ui.tab === 'card') render(); };
+    im.src = S().logo;
+  }
+  const logoHtml = (src) => (src ? `<img src="${esc(src)}" alt="">` : bizType().emoji);
 
   function applyTheme() {
     document.documentElement.style.setProperty('--primary', S().color || COLORS[0]);
@@ -134,19 +209,23 @@
   function renderBrand() {
     const h = new Date().getHours();
     const hello = h < 12 ? 'Bonjour 👋' : h < 18 ? 'Bon après-midi ☀️' : 'Bonsoir 🌙';
-    $('#brand').innerHTML = `<div class="logo">${bizType().emoji}</div>
+    $('#brand').innerHTML = `<div class="logo">${logoHtml(S().logo)}</div>
       <div style="min-width:0"><div class="hello">${hello}</div><div class="name">${esc(S().name || 'Gestio')}</div></div>`;
   }
 
   function render() {
     applyTheme();
     renderBrand();
-    $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === ui.tab));
-    $('#fab').hidden = ui.tab === 'card';
+    const top = SUB.includes(ui.tab) ? 'more' : ui.tab;
+    $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === top));
+    $('#fab').hidden = ['more', 'report', 'card'].includes(ui.tab);
     const v = $('#view');
     if (ui.tab === 'home') v.innerHTML = viewHome();
+    else if (ui.tab === 'more') v.innerHTML = viewMore();
+    else if (ui.tab === 'stock') { v.innerHTML = viewStock(); mountSearch('stock', stockBody); }
+    else if (ui.tab === 'report') v.innerHTML = viewReport();
     else if (ui.tab === 'card') { v.innerHTML = viewCard(); mountCard(); }
-    else { v.innerHTML = viewList(ui.tab); mountList(ui.tab); }
+    else { const kind = ui.tab; v.innerHTML = viewList(kind); mountSearch(kind, () => listBody(kind)); }
   }
 
   // ---------------------------------------------------------------- Accueil
@@ -176,6 +255,7 @@
         <i style="height:${Math.round((x.v / max) * 100)}%"></i>${toDate(x.d).toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase()}</div>`).join('');
 
     const credits = db.sales.filter((s) => s.pay === 'credit');
+    const lowStock = db.products.filter(isLow);
     const open = db.orders.filter((o) => o.status !== 'done').sort((a, b) => (a.due || '9').localeCompare(b.due || '9')).slice(0, 3);
     const recent = [
       ...db.sales.map((r) => ['sales', r]), ...db.purchases.map((r) => ['purchases', r]), ...db.orders.map((r) => ['orders', r]),
@@ -190,20 +270,24 @@
       </div>
 
       <div class="stats">
-        <div class="stat"><div class="ico">🛒</div><div class="val">${esc(fmtN(pToday))}</div><div class="lbl">Achats du jour</div></div>
-        <div class="stat"><div class="ico">${bal >= 0 ? '📈' : '📉'}</div><div class="val ${bal >= 0 ? 'pos' : 'neg'}">${bal > 0 ? '+' : ''}${esc(fmtN(bal))}</div><div class="lbl">Solde du jour</div></div>
-        <div class="stat"><div class="ico">🔥</div><div class="val">${st} jour${st > 1 ? 's' : ''}</div><div class="lbl">Série de ventes</div></div>
+        <div class="stat"><div class="ico">${I.cart}</div><div class="val">${esc(fmtN(pToday))}</div><div class="lbl">Achats du jour</div></div>
+        <div class="stat"><div class="ico">${bal >= 0 ? I.up : I.down}</div><div class="val ${bal >= 0 ? 'pos' : 'neg'}">${bal > 0 ? '+' : ''}${esc(fmtN(bal))}</div><div class="lbl">Solde du jour</div></div>
+        <div class="stat"><div class="ico">${I.flame}</div><div class="val">${st} jour${st > 1 ? 's' : ''}</div><div class="lbl">Série de ventes</div></div>
       </div>
 
       <div class="quick">
-        <button data-act="new" data-kind="sales"><span>💰</span>Vente</button>
-        <button data-act="new" data-kind="purchases"><span>🛒</span>Achat</button>
-        <button data-act="new" data-kind="orders"><span>📋</span>Commande</button>
+        <button data-act="new" data-kind="sales"><span>${I.coin}</span>Vente</button>
+        <button data-act="new" data-kind="purchases"><span>${I.cart}</span>Achat</button>
+        <button data-act="new" data-kind="orders"><span>${I.clip}</span>Commande</button>
       </div>
 
       ${credits.length ? `<button class="row" data-act="credits">
-          <div class="ico">⏳</div><div class="mid"><div class="title">À encaisser</div><div class="sub">${credits.length} vente${credits.length > 1 ? 's' : ''} à crédit</div></div>
+          <div class="ico">${I.hourglass}</div><div class="mid"><div class="title">À encaisser</div><div class="sub">${credits.length} vente${credits.length > 1 ? 's' : ''} à crédit</div></div>
           <div class="amt">${esc(fmt(sum(credits)))}</div></button>` : ''}
+
+      ${lowStock.length ? `<button class="row" data-act="low-stock">
+          <div class="ico">${I.alert}</div><div class="mid"><div class="title">Stock à réapprovisionner</div><div class="sub">${esc(lowStock.map((p) => p.name).join(', '))}</div></div>
+          <div class="amt">${lowStock.length}<small>article${lowStock.length > 1 ? 's' : ''}</small></div></button>` : ''}
 
       <div class="section-title">7 derniers jours <small>${esc(fmt(round(days.reduce((s, x) => s + x.v, 0))))}</small></div>
       <div class="card"><div class="week">${week}</div></div>
@@ -230,15 +314,13 @@
   function rowHtml(kind, r, showKind) {
     const k = KIND[kind];
     const who = r.who || (kind === 'purchases' ? (r.cat || 'Achat') : 'Client de passage');
-    let ico = k.ico;
     let extra = '';
-    if (kind === 'sales') { ico = PAY[r.pay] ? PAY[r.pay][0] : k.ico; if (r.pay === 'credit') extra = ' <span class="badge orange">Crédit</span>'; }
-    if (kind === 'orders') { ico = STATUS[r.status][0]; extra = ' ' + dueBadge(r); }
-    if (showKind) ico = k.ico;
+    if (kind === 'sales' && r.pay === 'credit') extra = ' <span class="badge orange">Crédit</span>';
+    if (kind === 'orders') extra = ' ' + dueBadge(r);
     const sign = kind === 'purchases' ? '−' : '';
     return `<button class="row" data-act="detail" data-kind="${kind}" data-id="${r.id}">
-      <div class="ico">${ico}</div>
-      <div class="mid"><div class="title">${esc(who)}${extra}</div><div class="sub">${esc(itemsLabel(r))}</div></div>
+      <div class="ico">${k.ico}</div>
+      <div class="mid"><div class="title">${esc(who)}${extra}</div><div class="sub">${kind === 'orders' && r.status !== 'done' ? STATUS[r.status][1] + ' · ' : ''}${esc(itemsLabel(r))}</div></div>
       <div class="amt ${kind === 'purchases' && showKind ? 'neg' : ''}">${sign}${esc(fmtN(total(r)))}<small>${esc(niceDate(r.date))}</small></div>
     </button>`;
   }
@@ -262,7 +344,7 @@
   function listBody(kind) {
     const k = KIND[kind];
     const list = filtered(kind);
-    const head = `<div class="card summary"><div><div class="muted small">${list.length} ${k.one}${list.length > 1 ? 's' : ''}</div><b>${esc(fmt(sum(list)))}</b></div><div style="font-size:34px">${k.ico}</div></div>`;
+    const head = `<div class="card summary"><div><div class="muted small">${list.length} ${k.one}${list.length > 1 ? 's' : ''}</div><b>${esc(fmt(sum(list)))}</b></div>${k.ico}</div>`;
     if (!list.length) {
       const any = db[kind].length > 0;
       return head + `<div class="empty"><div class="big">${any ? '🔍' : k.ico}</div><b>${any ? 'Rien à afficher ici' : `Aucune ${k.one} pour l’instant`}</b>${any ? 'Essayez un autre filtre.' : `Appuyez sur + pour ajouter votre première ${k.one}.`}</div>`;
@@ -273,27 +355,163 @@
   function viewList(kind) {
     const chips = kind === 'orders'
       ? [['open', 'En cours'], ['done', 'Livrées'], ['all', 'Toutes']]
-      : [['today', 'Aujourd’hui'], ['week', '7 jours'], ['month', 'Ce mois'], ['all', 'Tout']].concat(kind === 'sales' ? [['credit', '⏳ Crédits']] : []);
+      : [['today', 'Aujourd’hui'], ['week', '7 jours'], ['month', 'Ce mois'], ['all', 'Tout']].concat(kind === 'sales' ? [['credit', 'Crédits']] : []);
     return `
       <div class="chips">${chips.map(([v, l]) => `<button class="chip ${ui.filter[kind] === v ? 'on' : ''}" data-act="filter" data-v="${v}">${l}</button>`).join('')}</div>
-      <input class="search" id="q" type="search" placeholder="🔎 Rechercher…" value="${esc(ui.query[kind])}">
+      <input class="search" id="q" type="search" placeholder="Rechercher…" value="${esc(ui.query[kind])}">
       <div id="list-body" class="view" style="padding:0">${listBody(kind)}</div>`;
   }
 
-  function mountList(kind) {
-    $('#q').addEventListener('input', (e) => { ui.query[kind] = e.target.value; $('#list-body').innerHTML = listBody(kind); });
+  function mountSearch(key, body) {
+    $('#q').addEventListener('input', (e) => { ui.query[key] = e.target.value; $('#list-body').innerHTML = body(); });
+  }
+
+  // ---------------------------------------------------------------- Plus
+  const back = `<button class="back" data-act="go" data-v="more">${I.back} Plus</button>`;
+  function viewMore() {
+    const low = db.products.filter(isLow).length;
+    const m = today().slice(0, 7);
+    const row = (act, v, ico, title, sub) => `<button class="row" data-act="${act}" data-v="${v}">
+      <div class="ico">${ico}</div><div class="mid"><div class="title">${title}</div><div class="sub">${esc(sub)}</div></div><div class="chev">›</div></button>`;
+    return `<div class="list">
+      ${row('go', 'stock', I.box, 'Articles & stock', db.products.length ? `${db.products.length} article${db.products.length > 1 ? 's' : ''}${low ? ` · ${low} à réapprovisionner` : ''}` : 'Vos produits, services et quantités')}
+      ${row('go', 'report', I.chart, 'Rapport du mois', `${fmt(sum(db.sales.filter((x) => x.date.slice(0, 7) === m)))} de ventes ce mois`)}
+      ${row('go', 'card', I.idcard, 'Carte de visite', 'Avec code QR de contact')}
+      ${row('settings', '', I.gear, 'Paramètres', 'Entreprise, logo, devise, sauvegarde')}
+    </div>`;
+  }
+
+  // ---------------------------------------------------------------- Articles & stock
+  function stockBadge(p) {
+    if (!tracked(p)) return '';
+    if (p.qty <= 0) return ' <span class="badge red">Rupture</span>';
+    if (isLow(p)) return ' <span class="badge orange">Stock bas</span>';
+    return '';
+  }
+  function stockBody() {
+    const q = norm(ui.query.stock);
+    let list = db.products.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    if (ui.filter.stock === 'low') list = list.filter(isLow);
+    if (q) list = list.filter((p) => norm(p.name).includes(q));
+    const value = round(db.products.filter(tracked).reduce((t, p) => t + Math.max(0, p.qty) * p.price, 0));
+    const head = `<div class="card summary"><div><div class="muted small">${db.products.length} article${db.products.length > 1 ? 's' : ''} · valeur du stock</div><b>${esc(fmt(value))}</b></div>${I.box}</div>`;
+    if (!list.length) {
+      const any = db.products.length > 0;
+      return head + `<div class="empty"><div class="big">${any ? '👍' : I.box}</div><b>${any ? 'Rien à signaler' : 'Aucun article pour l’instant'}</b>${any ? 'Aucun article ne correspond.' : 'Ajoutez vos produits ou services avec + : ils apparaîtront en raccourci dans vos ventes, et le stock se mettra à jour tout seul.'}</div>`;
+    }
+    return head + `<div class="list">${list.map((p) => `<button class="row" data-act="product" data-id="${p.id}">
+      <div class="ico">${tracked(p) ? I.box : I.tag}</div>
+      <div class="mid"><div class="title">${esc(p.name)}${stockBadge(p)}</div><div class="sub">${esc(fmt(p.price))}</div></div>
+      <div class="amt ${tracked(p) && p.qty <= 0 ? 'neg' : ''}">${tracked(p) ? `${fmtQ(p.qty)}<small>en stock</small>` : '<small>stock non suivi</small>'}</div>
+    </button>`).join('')}</div>`;
+  }
+  function viewStock() {
+    return `${back}
+      <div class="chips">${[['all', 'Tous'], ['low', 'À réapprovisionner']].map(([v, l]) => `<button class="chip ${ui.filter.stock === v ? 'on' : ''}" data-act="filter" data-v="${v}">${l}</button>`).join('')}</div>
+      <input class="search" id="q" type="search" placeholder="Rechercher un article…" value="${esc(ui.query.stock)}">
+      <div id="list-body" class="view" style="padding:0">${stockBody()}</div>`;
+  }
+  function openProduct(id) {
+    const p = id ? db.products.find((x) => x.id === id) : null;
+    openSheet(`
+      ${head(p ? 'Modifier l’article' : 'Nouvel article')}
+      <form id="product-form" novalidate data-id="${id || ''}">
+        <label class="field"><span>Nom de l’article ou du service</span><input id="p-name" value="${esc(p ? p.name : '')}" autocomplete="off"></label>
+        <label class="field" style="margin-top:12px"><span>Prix de vente</span><input id="p-price" type="number" inputmode="decimal" min="0" step="any" value="${p ? p.price : ''}"></label>
+        <div class="grid2" style="margin-top:12px">
+          <label class="field"><span>Quantité en stock</span><input id="p-qty" type="number" inputmode="decimal" step="any" placeholder="Vide = non suivi" value="${p && tracked(p) ? p.qty : ''}"></label>
+          <label class="field"><span>Alerte si stock ≤</span><input id="p-min" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${p && p.min ? p.min : ''}"></label>
+        </div>
+        <p class="muted small" style="margin-top:10px">Le stock baisse à chaque vente et remonte à chaque achat de cet article. Laissez la quantité vide pour un service.</p>
+        <button class="btn" style="margin-top:14px">Enregistrer</button>
+      </form>
+      ${p ? `<button class="btn danger" data-act="product-delete" data-id="${id}">${I.trash} Supprimer l’article</button>` : ''}`);
+    $('#product-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = $('#p-name').value.trim();
+      if (!name) { toast('Donnez un nom à l’article 🙂'); return; }
+      const twin = findProduct(name);
+      if (twin && twin.id !== id) { toast('Un article porte déjà ce nom'); return; }
+      const rec = p || { id: uid() };
+      rec.name = name;
+      rec.price = num($('#p-price').value);
+      rec.qty = $('#p-qty').value === '' ? null : num($('#p-qty').value);
+      rec.min = num($('#p-min').value);
+      if (!p) db.products.push(rec);
+      save(); closeSheet(); render(); toast(p ? 'Article mis à jour ✅' : 'Article ajouté 📦');
+    });
+    if (!p) setTimeout(() => { const el = $('#p-name'); if (el) el.focus(); }, 300);
+  }
+
+  // ---------------------------------------------------------------- Rapport mensuel
+  const inMonth = (list, m) => list.filter((r) => r.date.slice(0, 7) === m);
+  function groupBy(pairs) {
+    const map = new Map();
+    pairs.forEach(([k, v, q]) => { const g = map.get(k) || { v: 0, q: 0 }; g.v += v; g.q += q || 0; map.set(k, g); });
+    return Array.from(map, ([k, g]) => ({ k, v: round(g.v), q: g.q })).sort((a, b) => b.v - a.v);
+  }
+  const barRows = (rows, sub) => {
+    const max = Math.max(1, ...rows.map((r) => r.v));
+    return `<div class="card bars">${rows.map((r) => `<div class="bar-row"><div class="top"><span>${esc(r.k)}${sub ? ` <small>${esc(sub(r))}</small>` : ''}</span><b>${esc(fmtN(r.v))}</b></div><div class="track"><i style="width:${Math.max(2, Math.round((r.v / max) * 100))}%"></i></div></div>`).join('')}</div>`;
+  };
+  function viewReport() {
+    const m = ui.month;
+    const sales = inMonth(db.sales, m), purchases = inMonth(db.purchases, m);
+    const tS = sum(sales), tP = sum(purchases), bal = round(tS - tP);
+    const label = toDate(m + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const nav = `${back}<div class="month-nav"><button data-act="month" data-v="-1" aria-label="Mois précédent">‹</button><b>${esc(label)}</b><button data-act="month" data-v="1" aria-label="Mois suivant" ${m >= today().slice(0, 7) ? 'disabled' : ''}>›</button></div>`;
+    if (!sales.length && !purchases.length) {
+      return nav + `<div class="empty"><div class="big">${I.chart}</div><b>Rien ce mois-ci</b>Les ventes et achats de ce mois apparaîtront ici.</div>`;
+    }
+    const [y, mo] = m.split('-').map(Number);
+    const nDays = new Date(y, mo, 0).getDate();
+    const days = Array.from({ length: nDays }, (_, i) => { const d = `${m}-${pad(i + 1)}`; return { d, n: i + 1, v: sum(sales.filter((x) => x.date === d)) }; });
+    const max = Math.max(1, ...days.map((x) => x.v));
+    const best = days.reduce((a, b) => (b.v > a.v ? b : a));
+    const items = groupBy([].concat(...sales.map((x) => x.items.map((it) => [it.name, it.qty * it.price, it.qty])))).slice(0, 5);
+    const pays = groupBy(sales.map((x) => [`${PAY[x.pay][0]} ${PAY[x.pay][1]}`, total(x)]));
+    const cats = groupBy(purchases.map((x) => [x.cat || 'Autre', total(x)]));
+    return `${nav}
+      <div class="stats">
+        <div class="stat"><div class="ico">${I.coin}</div><div class="val">${esc(fmtN(tS))}</div><div class="lbl">Ventes</div></div>
+        <div class="stat"><div class="ico">${I.cart}</div><div class="val">${esc(fmtN(tP))}</div><div class="lbl">Achats</div></div>
+        <div class="stat"><div class="ico">${bal >= 0 ? I.up : I.down}</div><div class="val ${bal >= 0 ? 'pos' : 'neg'}">${bal > 0 ? '+' : ''}${esc(fmtN(bal))}</div><div class="lbl">Bénéfice estimé</div></div>
+      </div>
+      <div class="card">
+        <div class="kv"><span>Nombre de ventes</span><span>${sales.length}</span></div>
+        <div class="kv"><span>Vente moyenne</span><span>${esc(fmt(sales.length ? round(tS / sales.length) : 0))}</span></div>
+        ${best.v ? `<div class="kv"><span>Meilleur jour 🏆</span><span>${esc(niceDate(best.d))} · ${esc(fmt(best.v))}</span></div>` : ''}
+      </div>
+      <div class="section-title">Ventes par jour <small>${esc(S().currency)}</small></div>
+      <div class="card"><div class="week month">${days.map((x) => `<div class="col ${x.d === today() ? 'today' : ''}" title="${x.n} : ${esc(fmt(x.v))}"><i style="height:${Math.round((x.v / max) * 100)}%"></i>${x.n === 1 || x.n % 5 === 0 ? x.n : '&nbsp;'}</div>`).join('')}</div></div>
+      ${items.length ? `<div class="section-title">Meilleures ventes</div>${barRows(items, (r) => `× ${fmtQ(r.q)}`)}` : ''}
+      ${pays.length ? `<div class="section-title">Paiements</div>${barRows(pays)}` : ''}
+      ${cats.length ? `<div class="section-title">Achats par catégorie</div>${barRows(cats)}` : ''}
+      <button class="btn ghost" data-act="csv">${I.download} Exporter le mois (Excel / CSV)</button>`;
+  }
+  function exportCsv() {
+    const m = ui.month;
+    const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    const n = (v) => String(v).replace('.', ',');
+    const rows = [['Date', 'Type', 'Référence', 'Client / Fournisseur', 'Article', 'Quantité', 'Prix unitaire', 'Total', 'Paiement / Catégorie']];
+    [['sales', 'Vente'], ['purchases', 'Achat']].forEach(([kind, label]) => inMonth(db[kind], m)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)
+      .forEach((r) => r.items.forEach((it) => rows.push([fullDate(r.date), label, ref(kind, r), r.who, it.name, n(it.qty), n(it.price), n(round(it.qty * it.price)), kind === 'sales' ? PAY[r.pay][1] : r.cat]))));
+    const csv = '\ufeff' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `gestio-${m}.csv`);
   }
 
   // ---------------------------------------------------------------- Feuilles (modales)
   let sheetLocked = false;
   function openSheet(html, opts) {
     sheetLocked = !!(opts && opts.locked);
+    $('#sheet').className = 'sheet' + (opts && opts.cls ? ' ' + opts.cls : '');
     $('#sheet').innerHTML = html;
     $('#sheet').scrollTop = 0;
     $('#sheet-backdrop').hidden = false;
   }
   function closeSheet() { $('#sheet-backdrop').hidden = true; $('#sheet').innerHTML = ''; sheetLocked = false; pending = null; }
-  const head = (title) => `<div class="sheet-head"><h2>${title}</h2><button class="x" data-act="close" aria-label="Fermer">✕</button></div>`;
+  const head = (title) => `<div class="sheet-head"><h2>${title}</h2><button class="x" data-act="close" aria-label="Fermer">${I.x}</button></div>`;
 
   let pending = null;
   function ask(msg, okLabel, ok, cancel) {
@@ -315,6 +533,7 @@
     const src = kind === 'purchases' ? db.purchases : db.sales.concat(db.orders);
     const map = new Map();
     src.slice().sort((a, b) => a.at - b.at).forEach((r) => r.items.forEach((it) => map.set(it.name, it.price)));
+    db.products.forEach((p) => { if (kind !== 'purchases') map.set(p.name, p.price); else if (!map.has(p.name)) map.set(p.name, ''); });
     return map;
   }
   function knownPeople(kind) {
@@ -326,7 +545,7 @@
       <input class="l-name" list="dl-items" placeholder="Article ou service" value="${esc(it ? it.name : '')}" autocomplete="off">
       <input class="l-qty" type="number" inputmode="decimal" min="0" step="any" value="${it ? it.qty : 1}" aria-label="Quantité">
       <input class="l-price" type="number" inputmode="decimal" min="0" step="any" placeholder="Prix" value="${it ? it.price : ''}" aria-label="Prix unitaire">
-      <button type="button" class="del" data-act="line-del" aria-label="Supprimer la ligne">✕</button>
+      <button type="button" class="del" data-act="line-del" aria-label="Supprimer la ligne">${I.x}</button>
     </div>`;
 
   const chipGroup = (name, opts, val) => `<div class="chips" data-group="${name}">${opts.map(([v, l]) =>
@@ -355,6 +574,8 @@
       ${head(`${rec ? 'Modifier' : 'Nouvelle'} ${k.one}`.replace('Nouvelle achat', 'Nouvel achat'))}
       <form id="entry-form" novalidate>
         <label class="field"><span>${k.who}</span><input id="f-who" list="dl-people" placeholder="Facultatif" value="${esc(rec ? rec.who : '')}" autocomplete="off"></label>
+        ${kind !== 'purchases' && db.products.length ? `<div class="chips" id="quick-items" style="margin-top:12px">${db.products.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map((p) =>
+          `<button type="button" class="chip" data-act="quick-item" data-id="${p.id}">${I.plus} ${esc(p.name)}</button>`).join('')}</div>` : ''}
         <div style="margin-top:12px">
           <div class="line-head"><span>Article</span><span>Qté</span><span>Prix unit.</span><span></span></div>
           <div class="lines" id="lines" style="margin-top:5px">${(rec ? rec.items : [null]).map(lineHtml).join('')}</div>
@@ -380,7 +601,7 @@
       $('#f-total').textContent = fmt(total({ items: readLines() }));
     });
     form.addEventListener('submit', (e) => { e.preventDefault(); submitForm(); });
-    if (!rec) setTimeout(() => { const el = $('#lines .l-name'); if (el) el.focus(); }, 300);
+    if (!rec && !$('#quick-items')) setTimeout(() => { const el = $('#lines .l-name'); if (el) el.focus(); }, 300);
   }
 
   function readLines() {
@@ -398,8 +619,10 @@
     if (!items.length || total({ items }) <= 0) { toast('Ajoutez au moins un article avec un prix 🙂'); return; }
     const before = sum(db.sales.filter((s) => s.date === today()));
     const rec = id ? db[kind].find((r) => r.id === id) : { id: uid(), n: ++db.seq[k.seq], at: Date.now() };
+    if (id) moveStock(kind, rec.items, -1);
     rec.who = $('#f-who').value.trim();
     rec.items = items;
+    moveStock(kind, items, 1);
     rec.date = $('#f-date').value || today();
     rec.note = $('#f-note').value.trim();
     if (kind === 'sales') rec.pay = picked('pay') || 'cash';
@@ -438,8 +661,8 @@
     if (kind === 'sales') {
       info = `<div class="kv"><span>Paiement</span><span>${PAY[r.pay][0]} ${PAY[r.pay][1]}</span></div>
               <div class="kv"><span>Code de contrôle</span><span>${controlCode(r)}</span></div>`;
-      actions = `<button class="btn" data-act="receipt" ${d}>🧾 Reçu avec code QR</button>
-        ${r.pay === 'credit' ? `<button class="btn ghost" data-act="paid" ${d}>✅ Marquer comme payé</button>` : ''}`;
+      actions = `<button class="btn" data-act="receipt" ${d}>${I.receipt} Reçu avec code QR</button>
+        ${r.pay === 'credit' ? `<button class="btn ghost" data-act="paid" ${d}>${I.check} Marquer comme payé</button>` : ''}`;
     } else if (kind === 'purchases') {
       info = `<div class="kv"><span>Catégorie</span><span>${esc(r.cat || '—')}</span></div>`;
     } else {
@@ -449,8 +672,8 @@
         <div class="kv"><span>Acompte</span><span>${esc(fmt(r.deposit || 0))}</span></div>
         <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>`;
       actions = `<div class="steps">${Object.entries(STATUS).map(([v, s]) => `<button class="${r.status === v ? 'on' : ''}" data-act="status" data-v="${v}" ${d}>${s[0]}<br>${s[1]}</button>`).join('')}</div>
-        ${r.saleId ? '<p class="muted small" style="text-align:center">💰 Déjà transformée en vente</p>' : `<button class="btn" data-act="to-sale" ${d}>💰 Transformer en vente</button>`}
-        <button class="btn ghost" data-act="receipt" ${d}>🧾 Bon de commande avec QR</button>`;
+        ${r.saleId ? '<p class="muted small" style="text-align:center">💰 Déjà transformée en vente</p>' : `<button class="btn" data-act="to-sale" ${d}>${I.coin} Transformer en vente</button>`}
+        <button class="btn ghost" data-act="receipt" ${d}>${I.receipt} Bon de commande avec QR</button>`;
     }
     openSheet(`
       ${head(`${k.ico} ${ref(kind, r)}`)}
@@ -464,8 +687,8 @@
       <div class="total-box"><span>Total</span><b>${esc(fmt(total(r)))}</b></div>
       ${actions}
       <div class="btn-row">
-        <button class="btn plain" data-act="edit" ${d}>✏️ Modifier</button>
-        <button class="btn danger" data-act="delete" ${d}>🗑️ Supprimer</button>
+        <button class="btn plain" data-act="edit" ${d}>${I.edit} Modifier</button>
+        <button class="btn danger" data-act="delete" ${d}>${I.trash} Supprimer</button>
       </div>`);
   }
 
@@ -517,6 +740,15 @@
     ctx.arcTo(x, y + h, x, y, r);
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
+  }
+  function drawLogo(ctx, x, y, size, r) {
+    const s = Math.min(logoImg.width, logoImg.height);
+    ctx.save();
+    rrect(ctx, x, y, size, size, r);
+    ctx.clip();
+    ctx.fillStyle = '#fff'; ctx.fillRect(x, y, size, size);
+    ctx.drawImage(logoImg, (logoImg.width - s) / 2, (logoImg.height - s) / 2, s, s, x, y, size, size);
+    ctx.restore();
   }
   function shade(hex, amt) {
     const n = parseInt(hex.slice(1), 16);
@@ -583,7 +815,7 @@
     };
     const dash = () => { ctx.strokeStyle = '#c9cddd'; ctx.lineWidth = 2; ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y); ctx.stroke(); ctx.setLineDash([]); y += 38; };
 
-    center(bizType().emoji, 60, 400, INK, 50);
+    if (logoImg) { drawLogo(ctx, W / 2 - 42, 14, 84, 18); y += 50; } else center(bizType().emoji, 60, 400, INK, 50);
     center(S().name || 'Mon entreprise', 34, 800, INK, 34);
     if (S().address) center(S().address, 21, 400, GREY, 28);
     if (S().phone) center('Tél : ' + S().phone, 21, 400, GREY, 28);
@@ -631,12 +863,12 @@
     receiptCanvas = drawReceipt(kind, r);
     receiptCanvas.dataset.name = `${kind === 'orders' ? 'commande' : 'recu'}-${docRef(kind, r)}.png`;
     openSheet(`
-      ${head(kind === 'orders' ? '🧾 Bon de commande' : '🧾 Reçu')}
+      ${head(kind === 'orders' ? 'Bon de commande' : 'Reçu')}
       <img class="preview ticket" alt="Aperçu du reçu" src="${receiptCanvas.toDataURL('image/png')}">
       <p class="muted small" style="text-align:center">Le code QR contient le résumé du reçu. Votre client peut le scanner pour le vérifier.</p>
       <div class="btn-row">
-        <button class="btn" data-act="receipt-share">📤 Partager</button>
-        <button class="btn ghost" data-act="receipt-dl">📥 Télécharger</button>
+        <button class="btn" data-act="receipt-share">${I.share} Partager</button>
+        <button class="btn ghost" data-act="receipt-dl">${I.download} Télécharger</button>
       </div>
       <button class="btn plain" data-act="detail" data-kind="${kind}" data-id="${id}">← Retour</button>`);
   }
@@ -694,8 +926,9 @@
       ctx.fillStyle = 'rgba(255,255,255,.08)';
       ctx.beginPath(); ctx.arc(W - 90, 60, 230, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.arc(120, H + 60, 210, 0, 7); ctx.fill();
-      font(ctx, 40, 400); ctx.fillStyle = '#fff'; ctx.fillText(emoji, 64, 104);
-      font(ctx, 30, 700); ctx.fillText(fit(ctx, biz, 560), 124, 100);
+      ctx.fillStyle = '#fff';
+      if (logoImg) drawLogo(ctx, 64, 62, 54, 14); else { font(ctx, 40, 400); ctx.fillText(emoji, 64, 104); }
+      font(ctx, 30, 700); ctx.fillStyle = '#fff'; ctx.fillText(fit(ctx, biz, 560), 132, 100);
       font(ctx, 58, 800); ctx.fillText(fit(ctx, name, 640), 64, 268);
       font(ctx, 28, 500); ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fillText(fit(ctx, role, 640), 64, 314);
       list(64, 400, 44, 25, '#fff', 640);
@@ -706,7 +939,9 @@
       ctx.fillStyle = c.color; ctx.fillRect(0, 0, W, 16);
       font(ctx, 56, 800); ctx.fillStyle = INK; ctx.fillText(fit(ctx, name, 640), 70, 160);
       font(ctx, 28, 600); ctx.fillStyle = c.color; ctx.fillText(fit(ctx, role, 640), 70, 206);
-      font(ctx, 26, 500); ctx.fillStyle = GREY; ctx.fillText(fit(ctx, `${emoji}  ${biz}`, 640), 70, 258);
+      font(ctx, 26, 500); ctx.fillStyle = GREY;
+      if (logoImg) { drawLogo(ctx, 70, 230, 38, 10); ctx.fillStyle = GREY; ctx.fillText(fit(ctx, biz, 590), 120, 258); }
+      else ctx.fillText(fit(ctx, `${emoji}  ${biz}`, 640), 70, 258);
       ctx.fillStyle = '#e6e8f2'; ctx.fillRect(70, 292, 90, 4);
       list(70, 362, 46, 25, INK, 640);
       drawQR(ctx, qr, W - 270, 190, 200, INK);
@@ -718,7 +953,8 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, 350, H);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(175, 232, 96, 0, 7); ctx.fill();
-      font(ctx, 96, 400); ctx.fillStyle = '#fff'; ctx.fillText(emoji, 175, 266);
+      if (logoImg) drawLogo(ctx, 175 - 84, 232 - 84, 168, 84); else { font(ctx, 96, 400); ctx.fillStyle = '#fff'; ctx.fillText(emoji, 175, 266); }
+      ctx.fillStyle = '#fff';
       font(ctx, 32, 800);
       wrap(ctx, biz, 290, 2).forEach((l, i) => ctx.fillText(l, 175, 394 + i * 40));
       ctx.textAlign = 'left';
@@ -734,7 +970,7 @@
   function viewCard() {
     const c = cardData();
     const f = (id, label, type, ph, val) => `<label class="field"><span>${label}</span><input data-card="${id}" type="${type}" placeholder="${ph}" value="${esc(val)}" autocomplete="off"></label>`;
-    return `
+    return `${back}
       <canvas id="card-canvas" class="preview"></canvas>
       <div class="chips" data-group="tpl">${CARD_TPL.map(([v, l]) => `<button class="chip ${c.tpl === v ? 'on' : ''}" data-act="card-tpl" data-v="${v}">${l}</button>`).join('')}</div>
       <div class="swatches">${COLORS.map((col) => `<button style="background:${col}" class="${c.color === col ? 'on' : ''}" data-act="card-color" data-v="${col}" aria-label="Couleur ${col}"></button>`).join('')}</div>
@@ -750,8 +986,8 @@
       </div>
       <p class="muted small" style="text-align:center">Le code QR ajoute votre contact directement dans le téléphone de la personne qui le scanne.</p>
       <div class="btn-row">
-        <button class="btn" data-act="card-share">📤 Partager</button>
-        <button class="btn ghost" data-act="card-dl">📥 Télécharger</button>
+        <button class="btn" data-act="card-share">${I.share} Partager</button>
+        <button class="btn ghost" data-act="card-dl">${I.download} Télécharger</button>
       </div>`;
   }
   function mountCard() {
@@ -769,11 +1005,49 @@
     `<button type="button" class="${t.id === val ? 'on' : ''}" data-act="pick" data-v="${t.id}"><span>${t.emoji}</span>${t.label}</button>`).join('')}</div>`;
   const currencySelect = (val) => `<select id="s-currency">${CURRENCIES.map(([c]) => `<option ${c === val ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
 
+  let draftLogo = '';
+  function pickLogo(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        const k = Math.min(1, 240 / Math.max(im.width, im.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.max(1, Math.round(im.width * k)); cv.height = Math.max(1, Math.round(im.height * k));
+        const ctx = cv.getContext('2d');
+        ctx.drawImage(im, 0, 0, cv.width, cv.height);
+        let url = cv.toDataURL('image/png');
+        if (url.length > 200000) { // photo lourde : JPEG sur fond blanc
+          ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+          url = cv.toDataURL('image/jpeg', 0.85);
+        }
+        draftLogo = url;
+        showDraftLogo();
+      };
+      im.onerror = () => toast('Cette image ne peut pas être lue ⚠️');
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+  function showDraftLogo() {
+    $('#s-logo').innerHTML = logoHtml(draftLogo);
+    $('[data-act="logo-clear"]').hidden = !draftLogo;
+  }
+
   function openSettings() {
     const s = S();
+    draftLogo = s.logo || '';
     openSheet(`
-      ${head('⚙️ Paramètres')}
+      ${head('Paramètres')}
       <label class="field"><span>Nom de l’entreprise</span><input id="s-name" value="${esc(s.name)}"></label>
+      <div class="field"><span>Logo</span><div class="logo-row">
+        <div class="logo" id="s-logo">${logoHtml(draftLogo)}</div>
+        <button type="button" class="btn ghost sm" data-act="logo-pick">${I.image} Choisir une image</button>
+        <button type="button" class="btn plain sm" data-act="logo-clear" ${draftLogo ? '' : 'hidden'}>Retirer</button>
+      </div></div>
       <div class="field"><span>Type d’activité</span>${typePicker(s.type)}</div>
       <div class="grid2">
         <label class="field"><span>Devise</span>${currencySelect(s.currency)}</label>
@@ -787,12 +1061,14 @@
       <div class="section-title">Sauvegarde</div>
       <p class="muted small">Vos données restent sur ce téléphone. Exportez-les régulièrement pour ne rien perdre.</p>
       <div class="btn-row">
-        <button class="btn ghost" data-act="export">📤 Exporter</button>
-        <button class="btn ghost" data-act="import">📥 Importer</button>
+        <button class="btn ghost" data-act="export">${I.share} Exporter</button>
+        <button class="btn ghost" data-act="import">${I.download} Importer</button>
       </div>
-      <button class="btn danger" data-act="reset">🗑️ Tout effacer</button>
-      <input type="file" id="import-file" accept="application/json,.json" hidden>`);
+      <button class="btn danger" data-act="reset">${I.trash} Tout effacer</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+      <input type="file" id="logo-file" accept="image/*" hidden>`);
     $('#import-file').addEventListener('change', importFile);
+    $('#logo-file').addEventListener('change', pickLogo);
   }
 
   function readSettings() {
@@ -810,9 +1086,9 @@
     const d = onb.data;
     let body;
     if (onb.step === 0) {
-      body = `<div class="big">👋</div><h2>Bienvenue sur Gestio</h2>
-        <p>Vos ventes, achats, commandes, reçus et cartes de visite — au même endroit, en toute simplicité.</p>
-        ${dots}<button class="btn" data-act="onb-next">C’est parti 🚀</button>`;
+      body = `<div class="art">${ART}</div><h1 class="wordmark">Gestio</h1>
+        <p>Ventes, achats, commandes, reçus et cartes de visite : toute votre activité dans la poche.</p>
+        ${dots}<button class="btn" data-act="onb-next">C’est parti</button>`;
     } else if (onb.step === 1) {
       body = `<div class="big">🏪</div><h2>Votre entreprise</h2><p>Dites-nous en un peu plus.</p>
         <div class="left view" style="padding:0;margin-top:14px">
@@ -828,7 +1104,7 @@
         </div>
         ${dots}<button class="btn" data-act="onb-next">Terminer ✨</button>`;
     }
-    openSheet(`<div class="onb">${body}</div>`, { locked: true });
+    openSheet(`<div class="onb">${body}</div>`, { locked: true, cls: onb.step === 0 ? 'full sun' : 'full' });
   }
 
   function onbNext() {
@@ -864,6 +1140,7 @@
         if (!d || !d.settings || !Array.isArray(d.sales) || !Array.isArray(d.purchases) || !Array.isArray(d.orders)) throw new Error('format');
         ask('Remplacer toutes les données actuelles par cette sauvegarde ?', 'Remplacer', () => {
           db = Object.assign(blank(), d);
+          loadLogo();
           save(); render(); toast('Sauvegarde restaurée ✅');
         }, openSettings);
       } catch (err) { toast('Ce fichier n’est pas une sauvegarde Gestio ⚠️'); }
@@ -904,6 +1181,35 @@
     edit: (d) => openForm(d.kind, d.id),
     filter: (d) => { ui.filter[ui.tab] = d.v; render(); },
     credits: () => { ui.tab = 'sales'; ui.filter.sales = 'credit'; render(); },
+    'low-stock': () => { ui.tab = 'stock'; ui.filter.stock = 'low'; render(); window.scrollTo(0, 0); },
+    go: (d) => { ui.tab = d.v; render(); window.scrollTo(0, 0); },
+    settings: () => openSettings(),
+    product: (d) => openProduct(d.id),
+    'product-delete': (d) => ask('Supprimer cet article ? Vos ventes et achats passés ne changent pas.', 'Supprimer', () => {
+      db.products = db.products.filter((p) => p.id !== d.id);
+      save(); render(); toast('Article supprimé 🗑️');
+    }, () => openProduct(d.id)),
+    'quick-item': (d) => {
+      const p = db.products.find((x) => x.id === d.id);
+      const lines = $$('#lines .line');
+      let line = lines.find((l) => norm($('.l-name', l).value) === norm(p.name));
+      if (line) { const q = $('.l-qty', line); q.value = num(q.value) + 1; }
+      else {
+        line = lines.find((l) => !$('.l-name', l).value.trim() && !$('.l-price', l).value);
+        if (!line) { $('#lines').insertAdjacentHTML('beforeend', lineHtml()); line = $('#lines .line:last-child'); }
+        $('.l-name', line).value = p.name; $('.l-qty', line).value = 1; $('.l-price', line).value = p.price;
+      }
+      $('#f-total').textContent = fmt(total({ items: readLines() }));
+    },
+    month: (d) => {
+      const [y, mo] = ui.month.split('-').map(Number);
+      const dt = new Date(y, mo - 1 + Number(d.v), 1);
+      ui.month = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}`;
+      render();
+    },
+    csv: exportCsv,
+    'logo-pick': () => $('#logo-file').click(),
+    'logo-clear': () => { draftLogo = ''; showDraftLogo(); },
     pick: (d, el) => { $$('.on', el.parentNode).forEach((x) => x.classList.remove('on')); el.classList.add('on'); },
     'line-add': () => { $('#lines').insertAdjacentHTML('beforeend', lineHtml()); $('#lines .line:last-child .l-name').focus(); },
     'line-del': (d, el) => {
@@ -913,6 +1219,7 @@
     },
     delete: (d) => {
       ask(`Supprimer cette ${KIND[d.kind].one} ?`.replace('cette achat', 'cet achat'), 'Supprimer', () => {
+        moveStock(d.kind, db[d.kind].find((r) => r.id === d.id).items, -1);
         db[d.kind] = db[d.kind].filter((r) => r.id !== d.id);
         if (d.kind === 'sales') db.orders.forEach((o) => { if (o.saleId === d.id) delete o.saleId; });
         save(); render(); toast('Supprimé 🗑️');
@@ -931,6 +1238,7 @@
       const o = db.orders.find((x) => x.id === d.id);
       const sale = { id: uid(), n: ++db.seq.sale, at: Date.now(), who: o.who, items: o.items.map((it) => Object.assign({}, it)), date: today(), note: `Commande ${ref('orders', o)}`, pay: 'cash' };
       db.sales.push(sale);
+      moveStock('sales', sale.items, 1);
       o.saleId = sale.id; o.status = 'done';
       save(); render(); confetti(60); toast('Commande transformée en vente 💰');
       openDetail('sales', sale.id);
@@ -947,8 +1255,9 @@
       if (!s.name) { toast('Le nom de l’entreprise est requis'); return; }
       Object.assign(db.settings, s, {
         phone: $('#s-phone').value.trim(), address: $('#s-address').value.trim(),
-        footer: $('#s-footer').value.trim(), color: picked('color') || COLORS[0],
+        footer: $('#s-footer').value.trim(), color: picked('color') || COLORS[0], logo: draftLogo,
       });
+      loadLogo();
       save(); closeSheet(); render(); toast('Paramètres enregistrés ✅');
     },
     export: exportData,
@@ -957,7 +1266,7 @@
       ask('Effacer définitivement toutes les données de l’application ?', 'Tout effacer', () => {
         try { localStorage.removeItem(KEY); } catch (e) { /* stockage indisponible */ }
         db = blank(); onb.step = 0; ui.tab = 'home';
-        render(); openOnboarding();
+        loadLogo(); render(); openOnboarding();
       }, openSettings);
     },
     'confirm-yes': () => { const p = pending; closeSheet(); if (p) p.ok(); },
@@ -965,9 +1274,9 @@
     'onb-next': onbNext,
     'fab-menu': () => openSheet(`${head('Ajouter')}
       <div class="quick">
-        <button data-act="new" data-kind="sales"><span>💰</span>Vente</button>
-        <button data-act="new" data-kind="purchases"><span>🛒</span>Achat</button>
-        <button data-act="new" data-kind="orders"><span>📋</span>Commande</button>
+        <button data-act="new" data-kind="sales"><span>${I.coin}</span>Vente</button>
+        <button data-act="new" data-kind="purchases"><span>${I.cart}</span>Achat</button>
+        <button data-act="new" data-kind="orders"><span>${I.clip}</span>Commande</button>
       </div>`),
   };
 
@@ -978,11 +1287,13 @@
     if (tab) { ui.tab = tab.dataset.tab; render(); window.scrollTo(0, 0); return; }
     if (e.target.id === 'sheet-backdrop' && !sheetLocked) closeSheet();
   });
-  $('#fab').addEventListener('click', () => (ui.tab === 'home' ? actions['fab-menu']() : openForm(ui.tab)));
+  $('#fab').addEventListener('click', () => (ui.tab === 'home' ? actions['fab-menu']() : ui.tab === 'stock' ? openProduct() : openForm(ui.tab)));
   $('#btn-settings').addEventListener('click', () => { if (db.settings) openSettings(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheetLocked && !$('#sheet-backdrop').hidden) closeSheet(); });
 
   // ---------------------------------------------------------------- Démarrage
+  $$('[data-icon]').forEach((el) => { (el.querySelector('span') || el).innerHTML = I[el.dataset.icon]; });
+  loadLogo();
   render();
   if (!db.settings) openOnboarding();
 

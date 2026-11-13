@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Gestio</title>
   <meta name="description" content="Gestion simple pour petites entreprises : ventes, achats, commandes, reçus QR et cartes de visite.">
-  <meta name="theme-color" content="#5b4bff">
+  <meta name="theme-color" content="#f4f2ec">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -17,19 +17,19 @@
   <div id="app">
     <header class="topbar">
       <div class="brand" id="brand"></div>
-      <button class="icon-btn" id="btn-settings" aria-label="Paramètres">⚙️</button>
+      <button class="icon-btn" id="btn-settings" data-icon="gear" aria-label="Paramètres"></button>
     </header>
 
     <main id="view" class="view"></main>
 
-    <button class="fab" id="fab" aria-label="Ajouter">+</button>
+    <button class="fab" id="fab" data-icon="plus" aria-label="Ajouter"></button>
 
     <nav class="tabbar" id="tabbar">
-      <button data-tab="home" class="active"><span>🏠</span>Accueil</button>
-      <button data-tab="sales"><span>💰</span>Ventes</button>
-      <button data-tab="purchases"><span>🛒</span>Achats</button>
-      <button data-tab="orders"><span>📋</span>Commandes</button>
-      <button data-tab="card"><span>🪪</span>Carte</button>
+      <button data-tab="home" data-icon="home" class="active"><span></span>Accueil</button>
+      <button data-tab="sales" data-icon="coin"><span></span>Ventes</button>
+      <button data-tab="purchases" data-icon="cart"><span></span>Achats</button>
+      <button data-tab="orders" data-icon="clip"><span></span>Commandes</button>
+      <button data-tab="more" data-icon="grid"><span></span>Plus</button>
     </nav>
   </div>
 
