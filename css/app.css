@@ -153,7 +153,8 @@ body.is-home #app { background: var(--bg); }
 .stat.s-sales .lbl, .stat.s-sales .cmp { color: color-mix(in srgb, var(--on-tint) 60%, transparent); }
 .stat.s-profit { background: var(--band); color: #fff; }
 .stat.s-profit .lbl { color: #9a9aa3; }
-.stat .cmp { font-size: 11px; font-weight: 650; margin-top: 3px; color: var(--muted); }
+.stat .cmp { font-size: 11px; font-weight: 650; margin-top: 3px; color: var(--muted); display: inline-flex; align-items: center; gap: 3px; }
+.stat .cmp .i { font-size: 13px; }
 .stat .cmp.up { color: var(--green-text); } .stat .cmp.down { color: var(--red); }
 .stat.s-profit .cmp.up { color: #8fd06a; } .stat.s-profit .cmp.down { color: #ff8a78; }
 .cmp-note { margin-top: 8px !important; }
@@ -179,6 +180,7 @@ body.is-home #app { background: var(--bg); }
 /* ---------- Listes ---------- */
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
+.chip .i { font-size: 16px; }
 .chip { flex: none; padding: 9px 15px; border-radius: 99px; background: var(--card); font-size: 14px; font-weight: 550; display: inline-flex; align-items: center; gap: 5px; }
 .chip.on { background: var(--band); color: #fff; }
 :root[data-theme="dark"] .chip.on { background: var(--tint); color: var(--on-tint); }
@@ -214,7 +216,8 @@ body.is-home #app { background: var(--bg); }
 .badge.dark { background: var(--band); color: #fff; }
 
 .empty { text-align: center; padding: 34px 16px; color: var(--muted); }
-.empty .big { font-size: 46px; margin-bottom: 8px; color: var(--text); }
+.empty .big { font-size: 30px; width: 64px; height: 64px; margin: 0 auto 12px; border-radius: 50%; background: var(--card); display: grid; place-items: center; color: var(--text); }
+.empty .big .i { stroke-width: 1.6; }
 .empty b { display: block; color: var(--text); font-size: 17px; margin-bottom: 4px; }
 
 /* ---------- Boutons ---------- */
@@ -292,7 +295,7 @@ details.more > .grid2, details.more > .field { margin-bottom: 12px; }
 details.more .field input { background: var(--bg); }
 .emoji-pick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .emoji-pick button { padding: 10px 2px; border-radius: 18px; font-size: 11.5px; font-weight: 600; background: var(--card); color: var(--text); }
-.emoji-pick button span { display: block; font-size: 24px; margin-bottom: 2px; }
+.emoji-pick button span { display: block; font-size: 22px; margin-bottom: 4px; }
 .emoji-pick button.on { background: var(--band); color: #fff; }
 .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
 .swatches button { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); transition: transform .15s; }
@@ -310,6 +313,7 @@ details.more .field input { background: var(--bg); }
 .preview.ticket { max-width: 300px; margin-left: auto; margin-right: auto; }
 
 .steps { display: flex; gap: 6px; }
+.steps button .i { font-size: 18px; margin-bottom: 2px; }
 .steps button { flex: 1; padding: 10px 2px; border-radius: 16px; font-size: 12px; font-weight: 600; background: var(--card); }
 .steps button.on { background: var(--band); color: #fff; }
 
@@ -343,7 +347,8 @@ details.more .field input { background: var(--bg); }
 .mini3 small { display: block; font-size: 12px; color: var(--muted); font-weight: 550; }
 .mini3 b { display: block; font-size: 17px; letter-spacing: -.035em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tips { display: flex; flex-direction: column; gap: 10px; }
-.tips p { font-size: 15px; line-height: 1.45; }
+.tips p { font-size: 15px; line-height: 1.45; display: flex; gap: 12px; align-items: flex-start; }
+.tips p .i { flex: none; width: 34px; height: 34px; padding: 8px; border-radius: 50%; background: var(--bg); margin-top: -4px; }
 .tips p + p { border-top: 1px solid var(--line); padding-top: 10px; }
 .share-text { width: 100%; padding: 13px 15px; border-radius: 16px; border: 0; background: var(--card); color: var(--text); font: inherit; line-height: 1.45; resize: vertical; outline: none; }
 
@@ -383,6 +388,7 @@ details.more .field input { background: var(--bg); }
 .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .key { height: 60px; border-radius: 18px; background: color-mix(in srgb, #fff 42%, var(--tint)); color: var(--on-tint); font-size: 24px; font-weight: 550; display: grid; place-items: center; transition: transform .12s var(--ease); }
 .key.op { background: color-mix(in srgb, #fff 18%, var(--tint)); font-size: 18px; }
+.key .i { font-size: 24px; stroke-width: 1.6; }
 .keypad-wrap .btn { margin-top: 10px; background: var(--band) !important; color: #fff !important; }
 .keypad-wrap .btn:disabled { opacity: .45; }
 

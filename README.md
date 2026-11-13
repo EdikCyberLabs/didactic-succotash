@@ -2,7 +2,7 @@
 
 Application mobile de caisse et de gestion pour tous les types d'entreprise : commerce, restauration, services, beauté, artisans, santé, formation, transport, agriculture…
 
-Le design reprend un langage « portefeuille » : panneau d'accueil lavande avec un gros montant, bande noire avec pastille de tendance et boutons pilules, feuille gris clair à poignée, cartes sans bordure, courbe de revenus verte, clavier numérique lavande pour la caisse. Police Inter.
+Le design reprend un langage « portefeuille » : panneau d'accueil lavande avec un gros montant, bande noire avec pastille de tendance et boutons pilules, feuille gris clair à poignée, cartes sans bordure, courbe de revenus verte, clavier numérique lavande pour la caisse. Police Inter, icônes Lucide.
 
 ## Fonctionnalités
 
@@ -38,4 +38,5 @@ Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement stati
 | `sw.js` | Cache hors ligne (changer `VERSION` à chaque mise à jour) |
 | `manifest.webmanifest`, `icons/` | Installation sur l'écran d'accueil |
 | `fonts/` | Police Inter (licence SIL OFL 1.1) |
+| `js/icons.js` | Icônes [Lucide](https://lucide.dev) (licence ISC, voir `icons/LICENSE-lucide.txt`), générées depuis le paquet `lucide-static` |
 | `vendor/qrcode.js` | Génération des codes QR ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), licence MIT) |

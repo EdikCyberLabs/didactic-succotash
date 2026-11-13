@@ -7,18 +7,18 @@
   const KEY = 'gestio.v1';
 
   const TYPES = [
-    { id: 'shop', emoji: '🏪', label: 'Commerce', cats: ['Marchandises'] },
-    { id: 'food', emoji: '🍽️', label: 'Restauration', cats: ['Ingrédients', 'Boissons', 'Énergie'] },
-    { id: 'service', emoji: '💼', label: 'Services', cats: ['Matériel', 'Logiciels', 'Sous-traitance'] },
-    { id: 'beauty', emoji: '💇', label: 'Beauté', cats: ['Produits', 'Matériel'] },
-    { id: 'fashion', emoji: '👗', label: 'Mode', cats: ['Tissus', 'Fournitures', 'Main-d’œuvre'] },
-    { id: 'tech', emoji: '📱', label: 'Tech', cats: ['Appareils', 'Accessoires', 'Pièces'] },
-    { id: 'build', emoji: '🔨', label: 'Artisans & BTP', cats: ['Matériaux', 'Outillage', 'Sous-traitance'] },
-    { id: 'health', emoji: '🩺', label: 'Santé', cats: ['Consommables', 'Matériel médical'] },
-    { id: 'edu', emoji: '🎓', label: 'Formation', cats: ['Supports', 'Location de salle'] },
-    { id: 'transport', emoji: '🚚', label: 'Transport', cats: ['Carburant', 'Entretien', 'Péages'] },
-    { id: 'farm', emoji: '🌾', label: 'Agriculture', cats: ['Semences', 'Intrants', 'Main-d’œuvre'] },
-    { id: 'other', emoji: '✨', label: 'Autre', cats: ['Stock'] },
+    { id: 'shop', icon: 'store', label: 'Commerce', cats: ['Marchandises'] },
+    { id: 'food', icon: 'utensils', label: 'Restauration', cats: ['Ingrédients', 'Boissons', 'Énergie'] },
+    { id: 'service', icon: 'briefcase', label: 'Services', cats: ['Matériel', 'Logiciels', 'Sous-traitance'] },
+    { id: 'beauty', icon: 'scissors', label: 'Beauté', cats: ['Produits', 'Matériel'] },
+    { id: 'fashion', icon: 'shirt', label: 'Mode', cats: ['Tissus', 'Fournitures', 'Main-d’œuvre'] },
+    { id: 'tech', icon: 'smartphone', label: 'Tech', cats: ['Appareils', 'Accessoires', 'Pièces'] },
+    { id: 'build', icon: 'hammer', label: 'Artisans & BTP', cats: ['Matériaux', 'Outillage', 'Sous-traitance'] },
+    { id: 'health', icon: 'stethoscope', label: 'Santé', cats: ['Consommables', 'Matériel médical'] },
+    { id: 'edu', icon: 'cap', label: 'Formation', cats: ['Supports', 'Location de salle'] },
+    { id: 'transport', icon: 'truck', label: 'Transport', cats: ['Carburant', 'Entretien', 'Péages'] },
+    { id: 'farm', icon: 'wheat', label: 'Agriculture', cats: ['Semences', 'Intrants', 'Main-d’œuvre'] },
+    { id: 'other', icon: 'sparkles', label: 'Autre', cats: ['Stock'] },
   ];
   const COMMON_CATS = ['Loyer', 'Salaires', 'Transport', 'Marketing', 'Impôts & taxes', 'Autre'];
 
@@ -28,18 +28,18 @@
   ];
 
   const PAY = {
-    cash: ['💵', 'Espèces'],
-    mobile: ['📲', 'Mobile Money'],
-    card: ['💳', 'Carte'],
-    bank: ['🏦', 'Virement'],
-    credit: ['⏳', 'À crédit'],
+    cash: ['cash', 'Espèces'],
+    mobile: ['smartphone', 'Mobile Money'],
+    card: ['card', 'Carte'],
+    bank: ['bank', 'Virement'],
+    credit: ['clock', 'À crédit'],
   };
 
   const STATUS = {
-    new: ['🆕', 'Nouvelle'],
-    prep: ['🔧', 'En cours'],
-    ready: ['✅', 'Prête'],
-    done: ['📦', 'Livrée'],
+    new: ['inbox', 'Nouvelle'],
+    prep: ['timer', 'En cours'],
+    ready: ['ready', 'Prête'],
+    done: ['truck', 'Livrée'],
   };
 
   // Teintes douces pour le panneau du haut (le texte reste noir dessus).
@@ -47,50 +47,18 @@
   // Couleurs franches pour les cartes de visite.
   const CARD_COLORS = ['#25233a', '#6c72c4', '#dd5f4a', '#5d8736', '#3f86c9', '#cf5a97', '#2f8f86'];
 
-  // Icônes au trait (24 × 24), dessinées pour l'application.
-  const I = (function (paths) {
-    Object.keys(paths).forEach((k) => { paths[k] = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${paths[k]}</svg>`; });
-    return paths;
-  })({
-    home: '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
-    coin: '<circle cx="12" cy="12" r="9"/><path d="M14.6 9.6C14.1 8.6 13.2 8 12 8c-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.2 0-2.1-.6-2.6-1.6M12 6.3V8m0 8v1.7"/>',
-    cart: '<path d="M3 4h2.5l2.2 10.5h9.6L19.5 7H6.3"/><circle cx="9" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/>',
-    clip: '<rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5v-1h6v1M9 10h6M9 14h4"/>',
-    grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
-    gear: '<path d="M4 8h8M18 8h2M4 16h2M12 16h8"/><circle cx="15" cy="8" r="2.5"/><circle cx="9" cy="16" r="2.5"/>',
-    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
-    box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>',
-    tag: '<path d="M4 4h7.5l8.5 8.5-7.5 7.5L4 11.5z"/><circle cx="8.5" cy="8.5" r="1.2"/>',
-    chart: '<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="9" width="3" height="8" rx="1"/>',
-    idcard: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10.5" r="2"/><path d="M5.5 16c.6-1.5 1.7-2 3-2s2.4.5 3 2M14.5 10h4M14.5 14h3"/>',
-    hourglass: '<path d="M7 3h10M7 21h10M8 3v3.5c0 2 4 3.5 4 5.5s-4 3.5-4 5.5V21M16 3v3.5c0 2-4 3.5-4 5.5s4 3.5 4 5.5V21"/>',
-    alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/>',
-    flame: '<path d="M12 3c1 3.5 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.3 1.8 2.5-.3-3 .2-5.5 1.2-8z"/>',
-    up: '<path d="M4 16l5-5 4 3 7-8"/><path d="M15 6h5v5"/>',
-    down: '<path d="M4 8l5 5 4-3 7 8"/><path d="M15 18h5v-5"/>',
-    share: '<path d="M12 15V4M8 7.5l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
-    download: '<path d="M12 4v11M8 11.5l4 4 4-4M5 20h14"/>',
-    edit: '<path d="M4 20l1-4.5L16.5 4 20 7.5 8.5 19z"/><path d="M14 6.5l3.5 3.5"/>',
-    trash: '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13M10.5 11v5.5M13.5 11v5.5"/>',
-    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-    back: '<path d="M14.5 6l-6 6 6 6"/>',
-    x: '<path d="M6 6l12 12M18 6L6 18"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>',
-    image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/>',
-    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
-    user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5"/>',
-    repeat: '<path d="M4 12a7 7 0 0 1 12-5l2 2M20 12a7 7 0 0 1-12 5l-2-2"/><path d="M18 4v5h-5M6 20v-5h5"/>',
-    message: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
-    save: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
-    pos: '<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 8h8M8 12h1.5M11.25 12h1.5M14.5 12H16M8 15.5h1.5M11.25 15.5h1.5M14.5 15.5H16"/>',
-    scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M12 8.5v7M8.5 12h7"/>',
-    arrowUp: '<path d="M12 17V7M7.5 11.5L12 7l4.5 4.5"/>',
-    arrowDown: '<path d="M12 7v10M7.5 12.5L12 17l4.5-4.5"/>',
-    arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    invoice: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h5"/>',
-    minus: '<path d="M6 12h12"/>',
-    dots: '<circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>'
-  });
+  // Icônes Lucide (js/icons.js) : en SVG pour l'interface, en tracés pour les images générées.
+  const I = {};
+  Object.keys(window.GESTIO_ICONS || {}).forEach((k) => { I[k] = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${window.GESTIO_ICONS[k]}</svg>`; });
+  function drawIcon(ctx, key, x, y, size, color, width) {
+    const paths = (window.GESTIO_ICON_PATHS || {})[key];
+    if (!paths || typeof Path2D === 'undefined') return;
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(size / 24, size / 24);
+    ctx.strokeStyle = color; ctx.lineWidth = width || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    paths.forEach((d) => ctx.stroke(new Path2D(d)));
+    ctx.restore();
+  }
 
   // Illustration d'accueil : un reçu, des pièces et quelques étincelles.
   const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#111114" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -160,7 +128,7 @@
   let db = load();
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
-    catch (e) { toast('⚠️ Sauvegarde impossible sur cet appareil'); }
+    catch (e) { toast(' Sauvegarde impossible sur cet appareil'); }
   }
 
   const S = () => db.settings || {};
@@ -304,7 +272,7 @@
     im.onload = () => { logoImg = im; if (ui.tab === 'card') render(); };
     im.src = S().logo;
   }
-  const logoHtml = (src) => (src ? `<img src="${esc(src)}" alt="">` : bizType().emoji);
+  const logoHtml = (src) => (src ? `<img src="${esc(src)}" alt="">` : I[bizType().icon]);
 
   function applyTheme() {
     const c = COLORS.includes(S().color) ? S().color : COLORS[0];
@@ -424,7 +392,7 @@
 
         <div class="section-title">Activité récente <button class="link" data-act="go" data-v="sales" aria-label="Toutes les ventes">${I.arrowR}</button></div>
         ${recent.length ? `<div class="list">${recent.map(([k, r]) => rowHtml(k, r, true)).join('')}</div>`
-          : `<div class="card empty"><div class="big">🌱</div><b>Tout commence ici</b>Touchez « Vendre » pour enregistrer votre première vente.</div>`}
+          : `<div class="card empty"><div class="big">${I.sprout}</div><b>Tout commence ici</b>Touchez « Vendre » pour enregistrer votre première vente.</div>`}
       </section>
     `;
   }
@@ -442,7 +410,7 @@
     const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', decimals() ? ',' : '00', '0', '⌫'];
     return `<div class="keypad-wrap">
       <div class="keypad-display"><input id="kp-label" placeholder="Libellé (facultatif)" value="${esc(cart.label)}" autocomplete="off"><b class="num">${esc(cart.entry ? cart.entry.replace('.', ',') : '0')}</b></div>
-      <div class="keypad">${keys.map((k) => `<button class="key ${/\d/.test(k) && k !== '00' ? '' : 'op'}" data-act="key" data-v="${k}" aria-label="${k === '⌫' ? 'Effacer' : k}">${k}</button>`).join('')}</div>
+      <div class="keypad">${keys.map((k) => `<button class="key ${/\d/.test(k) && k !== '00' ? '' : 'op'}" data-act="key" data-v="${k}" aria-label="${k === '⌫' ? 'Effacer' : k}">${k === '⌫' ? I.del : k}</button>`).join('')}</div>
       <button class="btn" data-act="kp-add" ${v > 0 ? '' : 'disabled'}>${I.plus} Ajouter${v ? ` ${esc(fmt(round(v)))}` : ''}</button>
     </div>`;
   }
@@ -479,7 +447,7 @@
     openSheet(`${head('Encaisser')}
       <div class="total-box"><span>À payer</span><b class="num">${esc(fmt(t))}</b></div>
       <label class="field"><span>Client</span><input id="co-who" list="dl-people" value="${esc(cart.who)}" placeholder="Client de passage" autocomplete="off"></label>
-      <div class="field"><span>Paiement</span>${chipGroup('pay', Object.entries(PAY).map(([v, x]) => [v, v === 'credit' ? '⏳ Plus tard (facture)' : `${x[0]} ${x[1]}`]), 'cash')}</div>
+      <div class="field"><span>Paiement</span>${payChips('cash', 'Plus tard (facture)')}</div>
       <label class="field" id="due-wrap" hidden><span>Échéance de paiement</span><input id="f-due" type="date" value="${addDays(today(), S().terms || 7)}"></label>
       <label class="field"><span>Montant reçu (pour rendre la monnaie)</span><input id="co-given" type="number" inputmode="decimal" min="0" step="any" placeholder="${t}"></label>
       <p class="muted small" id="co-change"></p>
@@ -547,7 +515,7 @@
     const head = `<div class="card summary"><div><div class="muted small">${list.length} ${k.one}${list.length > 1 ? 's' : ''}</div><b>${esc(fmt(sum(list)))}</b></div>${k.ico}</div>`;
     if (!list.length) {
       const any = db[kind].length > 0;
-      return head + `<div class="empty"><div class="big">${any ? '🔍' : k.ico}</div><b>${any ? 'Rien à afficher ici' : `Aucune ${k.one} pour l’instant`}</b>${any ? 'Essayez un autre filtre.' : `Appuyez sur + pour ajouter votre première ${k.one}.`}</div>`;
+      return head + `<div class="empty"><div class="big">${any ? I.search : k.ico}</div><b>${any ? 'Rien à afficher ici' : `Aucune ${k.one} pour l’instant`}</b>${any ? 'Essayez un autre filtre.' : `Appuyez sur + pour ajouter votre première ${k.one}.`}</div>`;
     }
     if (kind === 'orders') return head + `<div class="list">${list.map((r) => rowHtml(kind, r)).join('')}</div>`;
     const perDay = {};
@@ -624,7 +592,7 @@
     const owed = round(db.sales.reduce((a, r) => a + owedSale(r), 0));
     const lateSum = round(db.sales.filter((r) => invStatus(r)[0] === 'late').reduce((a, r) => a + owedSale(r), 0));
     const headH = `<div class="card summary"><div><div class="muted small">Reste à encaisser${lateSum ? ` · dont ${esc(fmt(lateSum))} en retard` : ''}</div><b class="num">${esc(fmt(owed))}</b></div>${I.invoice}</div>`;
-    if (!list.length) return headH + `<div class="empty"><div class="big">👍</div><b>${f === 'open' || f === 'late' ? 'Rien à encaisser ici' : 'Aucune facture'}</b>Chaque vente peut être envoyée en facture. Choisissez « Plus tard » comme paiement pour suivre ce qu’on vous doit.</div>`;
+    if (!list.length) return headH + `<div class="empty"><div class="big">${I.ok}</div><b>${f === 'open' || f === 'late' ? 'Rien à encaisser ici' : 'Aucune facture'}</b>Chaque vente peut être envoyée en facture. Choisissez « Plus tard » comme paiement pour suivre ce qu’on vous doit.</div>`;
     return headH + `<div class="list">${list.slice(0, 200).map(invRow).join('')}</div>`;
   }
   function viewInvoices() {
@@ -650,7 +618,7 @@
     const head = `<div class="card summary"><div><div class="muted small">${db.products.length} article${db.products.length > 1 ? 's' : ''} · valeur du stock</div><b>${esc(fmt(value))}</b></div>${I.box}</div>`;
     if (!list.length) {
       const any = db.products.length > 0;
-      return head + `<div class="empty"><div class="big">${any ? '👍' : I.box}</div><b>${any ? 'Rien à signaler' : 'Aucun article pour l’instant'}</b>${any ? 'Aucun article ne correspond.' : 'Ajoutez vos produits ou services avec + : ils apparaîtront en raccourci dans vos ventes, et le stock se mettra à jour tout seul.'}</div>`;
+      return head + `<div class="empty"><div class="big">${any ? I.ok : I.box}</div><b>${any ? 'Rien à signaler' : 'Aucun article pour l’instant'}</b>${any ? 'Aucun article ne correspond.' : 'Ajoutez vos produits ou services avec + : ils apparaîtront en raccourci dans vos ventes, et le stock se mettra à jour tout seul.'}</div>`;
     }
     return head + `<div class="list">${list.map((p) => `<button class="row" data-act="product" data-id="${p.id}">
       <div class="ico">${tracked(p) ? I.box : I.tag}</div>
@@ -686,7 +654,7 @@
     $('#product-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const name = $('#p-name').value.trim();
-      if (!name) { toast('Donnez un nom à l’article 🙂'); return; }
+      if (!name) { toast('Donnez un nom à l’article'); return; }
       const twin = findProduct(name);
       if (twin && twin.id !== id) { toast('Un article porte déjà ce nom'); return; }
       const rec = p || { id: uid() };
@@ -696,7 +664,7 @@
       rec.qty = $('#p-qty').value === '' ? null : num($('#p-qty').value);
       rec.min = num($('#p-min').value);
       if (!p) db.products.push(rec);
-      save(); closeSheet(); render(); toast(p ? 'Article mis à jour ✅' : 'Article ajouté 📦');
+      save(); closeSheet(); render(); toast(p ? 'Article mis à jour' : 'Article ajouté');
     });
     if (!p) setTimeout(() => { const el = $('#p-name'); if (el) el.focus(); }, 300);
   }
@@ -767,7 +735,7 @@
   const pctChange = (cur, before) => (before ? Math.round(((cur - before) / Math.abs(before)) * 100) : null);
   const delta = (cur, before) => {
     const d = pctChange(cur, before);
-    return d === null ? '' : `<div class="cmp">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)} %</div>`;
+    return d === null ? '' : `<div class="cmp ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? I.up : I.down} ${d >= 0 ? '+' : '−'}${Math.abs(d)} %</div>`;
   };
 
   function insights(p, cur, base) {
@@ -775,27 +743,27 @@
     const t = today();
     const isCurrent = t >= p.start && t <= p.end;
     const word = { week: 'la semaine dernière', month: 'le mois dernier', year: 'l’année dernière' }[p.type];
-    if (!cur.sales.length) out.push('Aucune vente enregistrée sur cette période.');
+    if (!cur.sales.length) out.push(['inbox', 'Aucune vente enregistrée sur cette période.']);
     const d = pctChange(cur.tS, base.tS);
-    if (d !== null && cur.tS) out.push(d >= 0 ? `📈 Ventes en hausse de ${d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.` : `📉 Ventes en baisse de ${-d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.`);
-    if (cur.tP > cur.tS && cur.tS > 0) out.push('⚠️ Vos dépenses dépassent vos ventes sur cette période. Vérifiez vos prix et vos achats.');
+    if (d !== null && cur.tS) out.push(d >= 0 ? ['up', `Ventes en hausse de ${d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.`] : ['down', `Ventes en baisse de ${-d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.`]);
+    if (cur.tP > cur.tS && cur.tS > 0) out.push(['alert', 'Vos dépenses dépassent vos ventes sur cette période. Vérifiez vos prix et vos achats.']);
     const top = cur.items[0];
-    if (top) out.push(`🏆 ${top.k} est votre meilleure vente : ${fmtQ(top.q)} vendu${top.q > 1 ? 's' : ''} pour ${fmt(top.v)}.`);
-    if (cur.bestDay && cur.sales.length > 1) out.push(`📅 Meilleur jour : ${toDate(cur.bestDay.k).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}, avec ${fmt(cur.bestDay.v)}.`);
+    if (top) out.push(['trophy', `${top.k} est votre meilleure vente : ${fmtQ(top.q)} vendu${top.q > 1 ? 's' : ''} pour ${fmt(top.v)}.`]);
+    if (cur.bestDay && cur.sales.length > 1) out.push(['calendar', `Meilleur jour : ${toDate(cur.bestDay.k).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}, avec ${fmt(cur.bestDay.v)}.`]);
     const weak = cur.items.filter((g) => g.mk && g.v > 0 && g.pct < 25).sort((a, b) => a.pct - b.pct)[0];
-    if (weak) out.push(`💡 ${weak.k} rapporte peu : ${weak.pct} % de marge. Pensez à revoir son prix ou son coût.`);
-    else if (cur.items.length && !db.products.some((x) => x.cost)) out.push('💡 Indiquez le coût de revient de vos plats dans « Articles & stock » pour voir ce que chacun vous rapporte vraiment.');
-    if (cur.owed > 0) out.push(`⏳ ${fmt(cur.owed)} de ventes de cette période ne sont pas encore payés. Pensez à relancer.`);
-    if (cur.clients[0] && cur.clients[0].v > 0) out.push(`💛 Meilleur client : ${cur.clients[0].k}, ${fmt(cur.clients[0].v)}.`);
+    if (weak) out.push(['bulb', `${weak.k} rapporte peu : ${weak.pct} % de marge. Pensez à revoir son prix ou son coût.`]);
+    else if (cur.items.length && !db.products.some((x) => x.cost)) out.push(['bulb', 'Indiquez le coût de revient de vos plats dans « Articles & stock » pour voir ce que chacun vous rapporte vraiment.']);
+    if (cur.owed > 0) out.push(['hourglass', `${fmt(cur.owed)} de ventes de cette période ne sont pas encore payés. Pensez à relancer.`]);
+    if (cur.clients[0] && cur.clients[0].v > 0) out.push(['heart', `Meilleur client : ${cur.clients[0].k}, ${fmt(cur.clients[0].v)}.`]);
     const elapsed = isCurrent ? daysBetween(p.start, t) + 1 : 99;
     if (elapsed >= 4) {
       const sold = new Set(cur.items.map((g) => norm(g.k)));
       const idle = db.products.filter((x) => !sold.has(norm(x.name)) && db.sales.some((r) => r.items.some((it) => norm(it.name) === norm(x.name)))).map((x) => x.name);
-      if (idle.length) out.push(`🔎 Pas vendu sur cette période : ${idle.slice(0, 3).join(', ')}${idle.length > 3 ? '…' : ''}.`);
+      if (idle.length) out.push(['searchX', `Pas vendu sur cette période : ${idle.slice(0, 3).join(', ')}${idle.length > 3 ? '…' : ''}.`]);
     }
     if (isCurrent) {
       const soon = db.orders.filter((o) => !o.saleId && o.due && o.due >= t && o.due <= addDays(t, 7));
-      if (soon.length) out.push(`📋 ${soon.length} commande${soon.length > 1 ? 's' : ''} à livrer dans les 7 prochains jours, pour ${fmt(sum(soon))}.`);
+      if (soon.length) out.push(['clip', `${soon.length} commande${soon.length > 1 ? 's' : ''} à livrer dans les 7 prochains jours, pour ${fmt(sum(soon))}.`]);
     }
     return out.slice(0, 7);
   }
@@ -813,7 +781,7 @@
       return nav + `<div class="empty"><div class="big">${I.chart}</div><b>Rien sur cette période</b>Les ventes et les dépenses enregistrées apparaîtront ici.</div>`;
     }
     const word = { week: 'la semaine dernière', month: 'le mois dernier', year: 'l’année dernière' }[p.type];
-    const pays = groupBy(cur.sales.map((x) => [x.pay === 'credit' ? '⏳ Pas encore payé' : `${PAY[x.pay][0]} ${PAY[x.pay][1]}`, total(x)]));
+    const pays = groupBy(cur.sales.map((x) => [x.pay === 'credit' ? 'Pas encore payé' : PAY[x.pay][1], total(x)]));
     const cats = groupBy(cur.purchases.map((x) => [x.cat || 'Autre', total(x)]));
     return `${nav}
       <div class="stats">
@@ -821,7 +789,7 @@
         <div class="stat s-exp"><div class="lbl">Dépenses</div><div class="val">${esc(fmtN(cur.tP))}</div>${delta(cur.tP, base.tP)}</div>
         <div class="stat s-profit"><div class="lbl">Résultat</div><div class="val">${cur.profit > 0 ? '+' : ''}${esc(fmtN(cur.profit))}</div>${delta(cur.profit, base.profit)}</div>
       </div>
-      ${base.tS || base.tP ? `<p class="muted small cmp-note">▲▼ : comparé à ${word}${isCurrent ? ' à la même date' : ''}. Résultat = ventes hors taxes − dépenses.</p>` : '<p class="muted small cmp-note">Résultat = ventes hors taxes − dépenses.</p>'}
+      ${base.tS || base.tP ? `<p class="muted small cmp-note">Variation comparée à ${word}${isCurrent ? ' à la même date' : ''}. Résultat = ventes hors taxes − dépenses.</p>` : '<p class="muted small cmp-note">Résultat = ventes hors taxes − dépenses.</p>'}
       <div class="section-title">Compte de résultat</div>
       <div class="card pl">
         <div class="kv"><span>Chiffre d’affaires hors taxes</span><b>${esc(fmt(cur.ht))}</b></div>
@@ -843,7 +811,7 @@
         <div class="kv"><span>Clients servis</span><span>${new Set(cur.sales.map((r) => norm(r.who) || r.id)).size}</span></div>
       </div>
       <div class="section-title">Points clés</div>
-      <div class="card tips">${insights(p, cur, base).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
+      <div class="card tips">${insights(p, cur, base).map(([ic, x]) => `<p>${I[ic]}<span>${esc(x)}</span></p>`).join('')}</div>
       <div class="section-title">Ventes par ${p.type === 'year' ? 'mois' : 'jour'} <small>${esc(S().currency)}</small></div>
       <div class="card"><div class="week ${p.type === 'month' ? 'month' : ''}">${dayBars(p, cur.sales)}</div></div>
       ${cur.items.length ? `<div class="section-title">Meilleures ventes</div>${barRows(cur.items.slice(0, 6), (r) => `× ${fmtQ(r.q)}${r.mk ? ` · rapporte ${fmtN(r.m)}` : ''}`)}` : ''}
@@ -867,7 +835,7 @@
     if (cur.owed) L.push(`Pas encore payé : ${fmt(cur.owed)}`);
     if (cur.items.length) L.push('', 'Meilleures ventes :', ...cur.items.slice(0, 5).map((g) => `- ${g.k} × ${fmtQ(g.q)} : ${fmt(g.v)}`));
     const tips = insights(p, cur, comparable(p));
-    if (tips.length) L.push('', 'Points clés :', ...tips.map((x) => `- ${x}`));
+    if (tips.length) L.push('', 'Points clés :', ...tips.map((x) => `- ${x[1]}`));
     return L.join('\n');
   }
 
@@ -906,7 +874,7 @@
     const headH = `<div class="card summary"><div><div class="muted small">On vous doit</div><b>${esc(fmt(owedTotal))}</b></div>${I.user}</div>`;
     if (!list.length && !anon.length) {
       const any = clientList().length > 0;
-      return headH + `<div class="empty"><div class="big">${any ? '👍' : I.user}</div><b>${any ? (owedOnly ? 'Personne ne vous doit d’argent' : 'Aucun client trouvé') : 'Aucun client pour l’instant'}</b>${any ? '' : 'Indiquez le nom du client quand vous enregistrez une vente ou une commande : il apparaîtra ici avec tout son historique.'}</div>`;
+      return headH + `<div class="empty"><div class="big">${any ? I.ok : I.users}</div><b>${any ? (owedOnly ? 'Personne ne vous doit d’argent' : 'Aucun client trouvé') : 'Aucun client pour l’instant'}</b>${any ? '' : 'Indiquez le nom du client quand vous enregistrez une vente ou une commande : il apparaîtra ici avec tout son historique.'}</div>`;
     }
     return headH + `<div class="list">${list.map(clientRow).join('')}
       ${anon.length ? `<div class="day-head"><span>Ventes sans nom de client</span><span>${esc(fmtN(round(anon.reduce((a, r) => a + owedSale(r), 0))))}</span></div>${anon.map((r) => rowHtml('sales', r)).join('')}` : ''}</div>`;
@@ -959,12 +927,12 @@
     $('#client-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const name = $('#ct-name').value.trim();
-      if (!name) { toast('Indiquez le nom du client 🙂'); return; }
+      if (!name) { toast('Indiquez le nom du client'); return; }
       const k = key || norm(name);
       if (!key && clientList().some((x) => x.key === k)) { toast('Ce client existe déjà'); return; }
       db.contacts = db.contacts || {};
       db.contacts[k] = { name: c ? c.name : name, phone: $('#ct-phone').value.trim(), email: $('#ct-email').value.trim(), address: $('#ct-address').value.trim(), note: $('#ct-note').value.trim() };
-      save(); render(); openClient(k); toast(c ? 'Fiche mise à jour ✅' : 'Client ajouté ✅');
+      save(); render(); openClient(k); toast(c ? 'Fiche mise à jour' : 'Client ajouté');
     });
     if (!c) setTimeout(() => { const el = $('#ct-name'); if (el) el.focus(); }, 250);
   }
@@ -992,7 +960,7 @@
     if (navigator.share) {
       try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
-    try { await navigator.clipboard.writeText(text); toast('Texte copié : collez-le dans WhatsApp 📋'); return; } catch (e) { /* refusé */ }
+    try { await navigator.clipboard.writeText(text); toast('Texte copié : collez-le dans WhatsApp'); return; } catch (e) { /* refusé */ }
     let ta = $('#share-text');
     if (!ta) {
       openSheet(`${head(esc(title))}<textarea id="share-text" class="share-text" rows="12" readonly>${esc(text)}</textarea><p class="muted small">Sélectionnez le texte puis copiez-le.</p>`);
@@ -1023,7 +991,7 @@
       if (hay.includes(q) || (isNum && String(total(r)).includes(digits))) recs.push([kind, r]);
     }));
     recs.sort((a, b) => b[1].date.localeCompare(a[1].date) || b[1].at - a[1].at);
-    if (!cl.length && !recs.length) return `<div class="empty"><div class="big">🔍</div><b>Aucun résultat</b>Vérifiez l’orthographe ou essayez un autre mot.</div>`;
+    if (!cl.length && !recs.length) return `<div class="empty"><div class="big">${I.searchX}</div><b>Aucun résultat</b>Vérifiez l’orthographe ou essayez un autre mot.</div>`;
     return `${cl.map(clientRow).join('')}
       ${recs.length ? `<div class="day-head"><span>${recs.length} opération${recs.length > 1 ? 's' : ''}</span><span>${esc(fmtN(round(recs.reduce((a, [k, r]) => a + (k === 'purchases' ? 0 : total(r)), 0))))}</span></div>` : ''}
       ${recs.slice(0, 50).map(([k, r]) => rowHtml(k, r, true)).join('')}`;
@@ -1076,8 +1044,11 @@
       <button type="button" class="del" data-act="line-del" aria-label="Supprimer la ligne">${I.x}</button>
     </div>`;
 
-  const chipGroup = (name, opts, val) => `<div class="chips" data-group="${name}">${opts.map(([v, l]) =>
-    `<button type="button" class="chip ${v === val ? 'on' : ''}" data-act="pick" data-v="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
+  const chipGroup = (name, opts, val) => `<div class="chips" data-group="${name}">${opts.map(([v, l, ic]) =>
+    `<button type="button" class="chip ${v === val ? 'on' : ''}" data-act="pick" data-v="${esc(v)}">${ic ? I[ic] : ''}${esc(l)}</button>`).join('')}</div>`;
+  const payChips = (val, laterLabel, noCredit) => chipGroup('pay', Object.entries(PAY).filter(([v]) => !(noCredit && v === 'credit'))
+    .map(([v, x]) => [v, v === 'credit' ? laterLabel : x[1], x[0]]), val);
+  const payLabel = (r) => (r.pay === 'credit' ? `${I.clock} Pas encore payé` : `${I[PAY[r.pay][0]]} ${PAY[r.pay][1]}`);
   const picked = (name) => { const el = $(`#sheet [data-group="${name}"] .on`); return el ? el.dataset.v : ''; };
 
   let formCtx = null;
@@ -1089,7 +1060,7 @@
     formCtx = { kind, id, items };
     let extra = '';
     if (kind === 'sales') {
-      extra = `<div class="field"><span>Paiement</span>${chipGroup('pay', Object.entries(PAY).map(([v, p]) => [v, v === 'credit' ? '⏳ Plus tard (facture)' : `${p[0]} ${p[1]}`]), rec ? rec.pay : 'cash')}</div>
+      extra = `<div class="field"><span>Paiement</span>${payChips(rec ? rec.pay : 'cash', 'Plus tard (facture)')}</div>
         <label class="field" id="due-wrap" style="margin-top:12px" ${rec && rec.pay === 'credit' ? '' : 'hidden'}><span>Échéance de paiement</span><input id="f-due" type="date" value="${rec && rec.due ? rec.due : addDays(today(), S().terms || 7)}"></label>`;
     } else if (kind === 'purchases') {
       const cats = expenseCats();
@@ -1166,7 +1137,7 @@
     const k = KIND[kind];
     const items = readLines().map((it) => ({ name: it.name || 'Article', qty: it.qty || 1, price: it.price }));
     const fr = formRec();
-    if (!items.length || total({ items, disc: fr.disc, tax: fr.tax }) <= 0) { toast('Ajoutez au moins un article avec un prix 🙂'); return; }
+    if (!items.length || total({ items, disc: fr.disc, tax: fr.tax }) <= 0) { toast('Ajoutez au moins un article avec un prix'); return; }
     const before = sum(db.sales.filter((s) => s.date === today()));
     const rec = id ? db[kind].find((r) => r.id === id) : { id: uid(), n: ++db.seq[k.seq], at: Date.now() };
     if (id) moveStock(kind, rec.items, -1);
@@ -1191,15 +1162,15 @@
     closeSheet();
     ui.tab = ui.tab === 'home' ? 'home' : kind;
     render();
-    if (id) { toast('Modifications enregistrées ✅'); return; }
+    if (id) { toast('Modifications enregistrées'); return; }
     if (kind === 'sales') {
       const after = sum(db.sales.filter((s) => s.date === today()));
       const goal = S().goal || 0;
-      if (goal && before < goal && after >= goal) { confetti(160); toast('🎉 Objectif du jour atteint !'); }
-      else { confetti(40); toast(`Vente enregistrée : +${fmt(total(rec))} 🎉`); }
+      if (goal && before < goal && after >= goal) { confetti(160); toast(' Objectif du jour atteint !'); }
+      else { confetti(40); toast(`Vente enregistrée : +${fmt(total(rec))}`); }
       openDetail('sales', rec.id);
     } else {
-      toast(kind === 'purchases' ? 'Dépense enregistrée ✅' : 'Commande enregistrée 📋');
+      toast(kind === 'purchases' ? 'Dépense enregistrée' : 'Commande enregistrée');
     }
   }
 
@@ -1213,7 +1184,7 @@
     let actions = '';
     if (kind === 'sales') {
       const owed = owedSale(r);
-      info = `<div class="kv"><span>Paiement</span><span>${r.pay === 'credit' ? '⏳ Pas encore payé' : `${PAY[r.pay][0]} ${PAY[r.pay][1]}`}</span></div>
+      info = `<div class="kv"><span>Paiement</span><span>${payLabel(r)}</span></div>
         ${(r.payments || []).map((v) => `<div class="kv"><span>Versement du ${esc(fullDate(v.date))}</span><span>${esc(fmt(v.amount))} · ${esc(PAY[v.method] ? PAY[v.method][1] : '')}</span></div>`).join('')}
         ${owed > 0 ? `<div class="kv"><span>Reste à payer</span><b class="neg">${esc(fmt(owed))}</b></div>` : ''}
         ${owed > 0 && r.due ? `<div class="kv"><span>Échéance</span><span>${esc(niceDate(r.due))} <span class="badge ${invStatus(r)[2]}">${invStatus(r)[1]}</span></span></div>` : ''}
@@ -1229,7 +1200,7 @@
         <div class="kv"><span>Livraison prévue</span><span>${r.due ? esc(niceDate(r.due)) : '—'}</span></div>
         <div class="kv"><span>Acompte</span><span>${esc(fmt(r.deposit || 0))}</span></div>
         <div class="kv"><span>${r.saleId ? 'Reste payé à la livraison' : 'Reste à payer'}</span><b>${esc(fmt(rest))}</b></div>`;
-      actions = `<div class="steps">${Object.entries(STATUS).map(([v, s]) => `<button class="${r.status === v ? 'on' : ''}" data-act="status" data-v="${v}" ${d}>${s[0]}<br>${s[1]}</button>`).join('')}</div>
+      actions = `<div class="steps">${Object.entries(STATUS).map(([v, s]) => `<button class="${r.status === v ? 'on' : ''}" data-act="status" data-v="${v}" ${d}>${I[s[0]]}<br>${s[1]}</button>`).join('')}</div>
         ${r.saleId ? `<button class="btn ghost" data-act="detail" data-kind="sales" data-id="${r.saleId}">${I.coin} Voir la vente</button>` : `<button class="btn" data-act="to-sale" ${d}>${I.check} Livrer et encaisser</button>`}
         <button class="btn ghost" data-act="receipt" ${d}>${I.receipt} Bon de commande avec QR</button>`;
     }
@@ -1262,7 +1233,7 @@
         <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>
       </div>
       <label class="field"><span>Montant reçu</span><input id="c-amount" type="number" inputmode="decimal" min="0" step="any" value="${rest}"></label>
-      <div class="field"><span>Moyen de paiement</span>${chipGroup('pay', Object.entries(PAY).filter(([v]) => v !== 'credit').map(([v, x]) => [v, `${x[0]} ${x[1]}`]), 'cash')}</div>
+      <div class="field"><span>Moyen de paiement</span>${payChips('cash', '', true)}</div>
       <button class="btn" data-act="cash-in-save" data-id="${id}">${I.check} Enregistrer le paiement</button>
       <button class="btn plain" data-act="detail" data-kind="sales" data-id="${id}">${I.back} Retour</button>`);
   }
@@ -1276,7 +1247,7 @@
         <div class="kv"><span>Acompte reçu</span><span>${esc(fmt(o.deposit || 0))}</span></div>
         <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>
       </div>
-      ${rest > 0 ? `<div class="field"><span>Le client paie le reste…</span>${chipGroup('pay', Object.entries(PAY).map(([v, x]) => [v, v === 'credit' ? '⏳ Plus tard' : `${x[0]} ${x[1]}`]), 'cash')}</div>` : ''}
+      ${rest > 0 ? `<div class="field"><span>Le client paie le reste…</span>${payChips('cash', 'Plus tard')}</div>` : ''}
       <p class="muted small">La commande devient une vente datée d’aujourd’hui et compte dans votre bilan.</p>
       <button class="btn" data-act="deliver" data-id="${id}">${I.check} Confirmer la livraison</button>
       <button class="btn plain" data-act="detail" data-kind="orders" data-id="${id}">${I.back} Retour</button>`);
@@ -1364,7 +1335,7 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast('Enregistré dans vos téléchargements 📥');
+    toast('Enregistré dans vos téléchargements');
   }
   async function downloadCanvas(canvas, filename) {
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
@@ -1405,7 +1376,9 @@
     };
     const dash = () => { ctx.strokeStyle = '#c9cddd'; ctx.lineWidth = 2; ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y); ctx.stroke(); ctx.setLineDash([]); y += 38; };
 
-    if (logoImg) { drawLogo(ctx, W / 2 - 42, 14, 84, 18); y += 50; } else center(bizType().emoji, 60, 400, INK, 50);
+    if (logoImg) drawLogo(ctx, W / 2 - 42, 14, 84, 18);
+    else { ctx.fillStyle = '#ecebf5'; ctx.beginPath(); ctx.arc(W / 2, 56, 42, 0, 7); ctx.fill(); drawIcon(ctx, bizType().icon, W / 2 - 22, 34, 44, INK, 1.8); }
+    y += 50;
     center(S().name || 'Mon entreprise', 34, 800, INK, 34);
     if (S().address) center(S().address, 21, 400, GREY, 28);
     if (S().phone) center('Tél : ' + S().phone, 21, 400, GREY, 28);
@@ -1470,7 +1443,8 @@
 
     ctx.fillStyle = tint; ctx.fillRect(0, 0, W, 220);
     let ly = 64;
-    if (logoImg) { drawLogo(ctx, P, 44, 64, 18); } else { font(ctx, 44, 400); ctx.textAlign = 'left'; ctx.fillText(bizType().emoji, P, 92); }
+    if (logoImg) drawLogo(ctx, P, 44, 64, 18);
+    else { ctx.fillStyle = 'rgba(255,255,255,.6)'; rrect(ctx, P, 44, 64, 64, 18); ctx.fill(); drawIcon(ctx, bizType().icon, P + 16, 60, 32, INK, 1.8); }
     font(ctx, 28, 700); txt(fit(ctx, S().name || 'Mon entreprise', 420), P + 84, ly + 6, 28, 700);
     ly += 36;
     [S().address, [S().phone, S().email].filter(Boolean).join(' · '), S().taxId ? `N° fiscal : ${S().taxId}` : ''].filter(Boolean).forEach((l) => {
@@ -1580,20 +1554,20 @@
 
   function drawCard(canvas) {
     const c = cardData();
-    const W = 1050, H = 600, INK = '#171a2b', GREY = '#6d7286';
+    const W = 1050, H = 600, INK = '#111114', GREY = '#6b6c75';
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
     const name = c.name || 'Votre nom';
     const role = c.role || 'Votre fonction';
     const biz = S().name || 'Mon entreprise';
-    const emoji = bizType().emoji;
-    const contacts = [['📞', c.phone], ['✉️', c.email], ['📍', c.address], ['🌐', c.web]].filter((x) => x[1]);
+    const bizIcon = bizType().icon;
+    const contacts = [['phone', c.phone], ['mail', c.email], ['pin', c.address], ['globe', c.web]].filter((x) => x[1]);
     const qr = vcard(c);
     const list = (x, y, gap, px, col, maxW) => contacts.forEach(([ico, t], i) => {
-      font(ctx, px, 400); ctx.fillStyle = col;
-      ctx.fillText(ico, x, y + i * gap);
-      ctx.fillText(fit(ctx, t, maxW - px * 1.7), x + px * 1.7, y + i * gap);
+      drawIcon(ctx, ico, x, y + i * gap - px * 0.92, px, col, 2);
+      font(ctx, px, 400); ctx.fillStyle = col; ctx.textAlign = 'left';
+      ctx.fillText(fit(ctx, t, maxW - px * 1.7), x + px * 1.6, y + i * gap);
     });
 
     if (c.tpl === 'gradient') {
@@ -1604,7 +1578,7 @@
       ctx.beginPath(); ctx.arc(W - 90, 60, 230, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.arc(120, H + 60, 210, 0, 7); ctx.fill();
       ctx.fillStyle = '#fff';
-      if (logoImg) drawLogo(ctx, 64, 62, 54, 14); else { font(ctx, 40, 400); ctx.fillText(emoji, 64, 104); }
+      if (logoImg) drawLogo(ctx, 64, 62, 54, 14); else drawIcon(ctx, bizIcon, 66, 64, 46, '#fff', 1.8);
       font(ctx, 30, 700); ctx.fillStyle = '#fff'; ctx.fillText(fit(ctx, biz, 560), 132, 100);
       font(ctx, 58, 800); ctx.fillText(fit(ctx, name, 640), 64, 268);
       font(ctx, 28, 500); ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.fillText(fit(ctx, role, 640), 64, 314);
@@ -1617,8 +1591,8 @@
       font(ctx, 56, 800); ctx.fillStyle = INK; ctx.fillText(fit(ctx, name, 640), 70, 160);
       font(ctx, 28, 600); ctx.fillStyle = c.color; ctx.fillText(fit(ctx, role, 640), 70, 206);
       font(ctx, 26, 500); ctx.fillStyle = GREY;
-      if (logoImg) { drawLogo(ctx, 70, 230, 38, 10); ctx.fillStyle = GREY; ctx.fillText(fit(ctx, biz, 590), 120, 258); }
-      else ctx.fillText(fit(ctx, `${emoji}  ${biz}`, 640), 70, 258);
+      if (logoImg) drawLogo(ctx, 70, 230, 38, 10); else drawIcon(ctx, bizIcon, 72, 232, 32, GREY, 2);
+      ctx.fillStyle = GREY; ctx.fillText(fit(ctx, biz, 590), 120, 258);
       ctx.fillStyle = '#e6e8f2'; ctx.fillRect(70, 292, 90, 4);
       list(70, 362, 46, 25, INK, 640);
       drawQR(ctx, qr, W - 270, 190, 200, INK);
@@ -1630,7 +1604,7 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, 350, H);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.beginPath(); ctx.arc(175, 232, 96, 0, 7); ctx.fill();
-      if (logoImg) drawLogo(ctx, 175 - 84, 232 - 84, 168, 84); else { font(ctx, 96, 400); ctx.fillStyle = '#fff'; ctx.fillText(emoji, 175, 266); }
+      if (logoImg) drawLogo(ctx, 175 - 84, 232 - 84, 168, 84); else drawIcon(ctx, bizIcon, 175 - 44, 232 - 44, 88, '#fff', 1.6);
       ctx.fillStyle = '#fff';
       font(ctx, 32, 800);
       wrap(ctx, biz, 290, 2).forEach((l, i) => ctx.fillText(l, 175, 394 + i * 40));
@@ -1679,7 +1653,7 @@
 
   // ---------------------------------------------------------------- Paramètres & bienvenue
   const typePicker = (val) => `<div class="emoji-pick" data-group="type">${TYPES.map((t) =>
-    `<button type="button" class="${t.id === val ? 'on' : ''}" data-act="pick" data-v="${t.id}"><span>${t.emoji}</span>${t.label}</button>`).join('')}</div>`;
+    `<button type="button" class="${t.id === val ? 'on' : ''}" data-act="pick" data-v="${t.id}"><span>${I[t.icon]}</span>${t.label}</button>`).join('')}</div>`;
   const currencySelect = (val) => `<select id="s-currency">${CURRENCIES.map(([c]) => `<option ${c === val ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
 
   let draftLogo = '';
@@ -1703,7 +1677,7 @@
         draftLogo = url;
         showDraftLogo();
       };
-      im.onerror = () => toast('Cette image ne peut pas être lue ⚠️');
+      im.onerror = () => toast('Cette image ne peut pas être lue');
       im.src = reader.result;
     };
     reader.readAsDataURL(file);
@@ -1809,7 +1783,7 @@
       d.name = $('#s-name').value.trim();
       d.owner = $('#s-owner').value.trim();
       d.type = picked('type') || 'other';
-      if (!d.name) { toast('Donnez un nom à votre entreprise 🙂'); return; }
+      if (!d.name) { toast('Donnez un nom à votre entreprise'); return; }
     }
     if (onb.step === 2) {
       d.currency = $('#s-currency').value;
@@ -1817,7 +1791,7 @@
       d.tax = num($('#s-tax').value);
       db.settings = { name: d.name, owner: d.owner, type: d.type, currency: d.currency, goal: d.goal, taxRate: d.tax, terms: 7, color: COLORS[0], phone: '', email: '', address: '', taxId: '', footer: '' };
       save(); closeSheet(); render(); confetti(120);
-      toast(`Bienvenue, ${d.name} ! 🎉`);
+      toast(`Bienvenue, ${d.name} !`);
       return;
     }
     onb.step++;
@@ -1830,7 +1804,7 @@
     const file = new File([blob], name, { type: 'application/json' });
     const done = () => { db.lastBackup = Date.now(); save(); if ($('#sheet-backdrop').hidden) render(); };
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Sauvegarde Gestio' }); done(); toast('Sauvegarde envoyée ✅'); return; }
+      try { await navigator.share({ files: [file], title: 'Sauvegarde Gestio' }); done(); toast('Sauvegarde envoyée'); return; }
       catch (e) { if (e.name === 'AbortError') return; }
     }
     downloadBlob(blob, name);
@@ -1847,9 +1821,9 @@
         ask('Remplacer toutes les données actuelles par cette sauvegarde ?', 'Remplacer', () => {
           db = Object.assign(blank(), d);
           loadLogo();
-          save(); render(); toast('Sauvegarde restaurée ✅');
+          save(); render(); toast('Sauvegarde restaurée');
         }, openSettings);
-      } catch (err) { toast('Ce fichier n’est pas une sauvegarde Gestio ⚠️'); }
+      } catch (err) { toast('Ce fichier n’est pas une sauvegarde Gestio'); }
     };
     reader.readAsText(file);
   }
@@ -1900,14 +1874,14 @@
     'cash-in-save': (d) => {
       const r = db.sales.find((x) => x.id === d.id);
       const amt = Math.min(round(num($('#c-amount').value)), owedSale(r));
-      if (!(amt > 0)) { toast('Indiquez le montant reçu 🙂'); return; }
+      if (!(amt > 0)) { toast('Indiquez le montant reçu'); return; }
       const method = picked('pay') || 'cash';
       r.payments = (r.payments || []).concat({ date: today(), amount: amt, method });
       r.paid = round((r.paid || 0) + amt);
       const full = owedSale(r) <= 0;
       if (full) r.pay = method;
       save(); render(); openDetail('sales', r.id);
-      if (full) { confetti(50); toast('Vente entièrement payée 💵'); } else toast(`${fmt(amt)} encaissés · reste ${fmt(owedSale(r))}`);
+      if (full) { confetti(50); toast('Vente entièrement payée'); } else toast(`${fmt(amt)} encaissés · reste ${fmt(owedSale(r))}`);
     },
     deliver: (d) => {
       const o = db.orders.find((x) => x.id === d.id);
@@ -1920,7 +1894,7 @@
       db.sales.push(sale);
       moveStock('sales', sale.items, 1);
       o.saleId = sale.id; o.status = 'done';
-      save(); render(); confetti(60); toast('Commande livrée et ajoutée aux ventes 📦');
+      save(); render(); confetti(60); toast('Commande livrée et ajoutée aux ventes');
       openDetail('sales', sale.id);
     },
     'low-stock': () => { ui.tab = 'stock'; ui.filter.stock = 'low'; render(); window.scrollTo(0, 0); },
@@ -1929,7 +1903,7 @@
     product: (d) => openProduct(d.id),
     'product-delete': (d) => ask('Supprimer cet article ? Vos ventes et achats passés ne changent pas.', 'Supprimer', () => {
       db.products = db.products.filter((p) => p.id !== d.id);
-      save(); render(); toast('Article supprimé 🗑️');
+      save(); render(); toast('Article supprimé');
     }, () => openProduct(d.id)),
     'quick-item': (d) => {
       const p = db.products.find((x) => x.id === d.id);
@@ -1993,7 +1967,7 @@
       render();
       const after = sum(db.sales.filter((x) => x.date === today()));
       const goal = S().goal || 0;
-      if (goal && before < goal && after >= goal) { confetti(160); toast('🎉 Objectif du jour atteint !'); }
+      if (goal && before < goal && after >= goal) { confetti(160); toast(' Objectif du jour atteint !'); }
       else { confetti(40); toast(`Vente enregistrée : +${fmt(total(sale))}`); }
       openDetail('sales', sale.id);
     },
@@ -2012,7 +1986,7 @@
         moveStock(d.kind, db[d.kind].find((r) => r.id === d.id).items, -1);
         db[d.kind] = db[d.kind].filter((r) => r.id !== d.id);
         if (d.kind === 'sales') db.orders.forEach((o) => { if (o.saleId === d.id) delete o.saleId; });
-        save(); render(); toast('Supprimé 🗑️');
+        save(); render(); toast('Supprimé');
       }, () => openDetail(d.kind, d.id));
     },
     status: (d) => {
@@ -2037,7 +2011,7 @@
         footer: $('#s-footer').value.trim(), color: picked('color') || COLORS[0], logo: draftLogo,
       });
       loadLogo();
-      save(); closeSheet(); render(); toast('Paramètres enregistrés ✅');
+      save(); closeSheet(); render(); toast('Paramètres enregistrés');
     },
     export: exportData,
     import: () => $('#import-file').click(),
