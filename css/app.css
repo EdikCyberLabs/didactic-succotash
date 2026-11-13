@@ -462,3 +462,61 @@ details.more .field input { background: var(--bg); }
 
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- Carrousel de bienvenue ---------- */
+.onb-welcome { display: flex; flex-direction: column; }
+.onb-welcome > .btn { margin-top: 10px; }
+.slider { position: relative; overflow: hidden; margin: 0 -18px 12px; touch-action: pan-y; user-select: none; -webkit-user-select: none; outline: none; }
+.slider:focus-visible { box-shadow: inset 0 0 0 2px var(--on-tint); border-radius: 20px; }
+.slides { display: flex; transition: transform .6s var(--ease); will-change: transform; }
+.slide { flex: 0 0 100%; min-width: 0; padding: 0 22px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.slide h2 { font-size: 28px; letter-spacing: -.045em; line-height: 1.1; margin: 4px 0 8px; text-wrap: balance; }
+.slide .wordmark { margin: 4px 0 8px !important; animation: none !important; }
+.slide p { font-weight: 500; opacity: .75; max-width: 34ch; text-wrap: pretty; min-height: 4.2em; }
+.slide-visual { height: 232px; width: 100%; display: grid; place-items: center; margin-bottom: 8px; }
+.slide-visual .art svg { width: 220px; animation: none; }
+.slide[aria-hidden="false"] .slide-visual > * { animation: slidein .7s var(--ease) both; }
+@keyframes slidein { from { opacity: 0; transform: translateY(14px) scale(.96); } }
+.slider-dots { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+.slider-dots button { width: 8px; height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--on-tint) 22%, transparent); overflow: hidden; transition: width .35s var(--ease); padding: 0; }
+.slider-dots button.on { width: 30px; }
+.slider-dots button i { display: block; height: 100%; width: 0; background: var(--on-tint); border-radius: 99px; }
+.slider-dots button.on i { width: 100%; }
+.slider-dots button.run i { width: 0; animation: dotfill var(--slide-ms, 4200ms) linear forwards; }
+@keyframes dotfill { to { width: 100%; } }
+
+/* Mini-maquettes des diapositives (dans les couleurs de l'application) */
+.mock { position: relative; width: 236px; border-radius: 26px; text-align: left; box-shadow: 0 18px 40px rgba(17, 17, 20, .18); }
+.mock-pos { background: #0f0f12; color: #fff; padding: 16px; }
+.mp-top { display: flex; justify-content: space-between; align-items: baseline; }
+.mp-top span { color: #5d5d66; font-size: 20px; font-weight: 600; letter-spacing: -.03em; }
+.mp-top b { font-size: 38px; letter-spacing: -.055em; }
+.mp-line { display: flex; justify-content: space-between; background: #2a2a30; border-radius: 14px; padding: 9px 12px; margin: 10px 0; font-size: 13px; font-weight: 600; }
+.mp-line b { color: #9a9aa3; }
+.mp-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--tint); border-radius: 16px; padding: 8px; }
+.mp-keys i { font-style: normal; height: 30px; border-radius: 10px; background: color-mix(in srgb, #fff 45%, var(--tint)); color: #111114; display: grid; place-items: center; font-weight: 600; font-size: 14px; }
+.mock-inv { background: #fff; color: #111114; padding: 16px 16px 14px; overflow: hidden; }
+.mock-inv::before { content: ""; position: absolute; inset: 0 0 auto; height: 50px; background: var(--tint); }
+.mi-head { position: relative; display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 26px; }
+.mi-head b { font-size: 20px; letter-spacing: -.03em; }
+.mi-head span { font-size: 11px; font-weight: 600; color: #3d3d46; }
+.mock-inv > i { display: block; height: 8px; border-radius: 99px; background: #ececf0; margin-bottom: 9px; }
+.mock-inv > i.short { width: 60%; }
+.mi-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.mi-qr { width: 58px; height: 58px; display: block; }
+.mi-qr svg { width: 100%; height: 100%; display: block; }
+.mi-foot div { background: #111114; color: #fff; border-radius: 14px; padding: 7px 12px; text-align: right; }
+.mi-foot small { display: block; font-size: 10px; color: #9a9aa3; }
+.mi-foot b { font-size: 20px; letter-spacing: -.04em; }
+.mi-stamp { position: absolute; right: 14px; top: 64px; transform: rotate(-8deg); border: 2px solid #3d7a1d; color: #3d7a1d; border-radius: 8px; padding: 2px 8px; font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; background: #fff; }
+.mock-chart { background: #fff; color: #111114; padding: 14px 14px 16px; }
+.mc-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #8a8b93; }
+.mock-chart .spark { width: 100%; height: 96px; margin: 8px 0 6px; }
+.mock-chart b { font-size: 30px; letter-spacing: -.05em; }
+.mock-cloud { width: auto; background: none; box-shadow: none; display: flex; align-items: center; gap: 6px; }
+.mcl-phone { width: 54px; height: 54px; border-radius: 18px; background: #0f0f12; color: #fff; display: grid; place-items: center; font-size: 26px; }
+.mcl-dash { width: 22px; height: 0; border-top: 2.5px dashed #111114; opacity: .5; }
+.mcl-cloud { position: relative; width: 104px; height: 104px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 46px; color: #111114; box-shadow: 0 18px 40px rgba(17, 17, 20, .18); }
+.mcl-cloud i { position: absolute; right: 4px; bottom: 6px; width: 32px; height: 32px; border-radius: 50%; background: var(--green); color: #fff; display: grid; place-items: center; font-size: 17px; border: 3px solid var(--tint); }
+@media (max-height: 700px) { .slide-visual { height: 180px; } .mock { transform: scale(.82); } .slide-visual .art svg { width: 170px; } }
+@media (prefers-reduced-motion: reduce) { .slides { transition: none; } }

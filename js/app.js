@@ -1779,16 +1779,8 @@
     let html, cls = 'full';
     if (onb.step === 'welcome') {
       cls = 'full sun';
-      html = `<div class="onb">
-        <div class="art">${ART}</div>
-        <h1 class="wordmark">Gestio</h1>
-        <p>Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.</p>
-        <ul class="perks">
-          <li>${I.pos}<span>Encaissez en quelques touches</span></li>
-          <li>${I.invoice}<span>Factures et reçus avec code QR</span></li>
-          <li>${I.chart}<span>Résultats et trésorerie en un coup d’œil</span></li>
-          ${cloud ? `<li>${I.cloudUp}<span>Données sauvegardées en ligne, sans inscription</span></li>` : ''}
-        </ul>
+      html = `<div class="onb onb-welcome">
+        ${welcomeSlider(cloud)}
         <button class="btn" data-act="onb-go" data-v="business">Créer mon entreprise</button>
         ${cloud ? `<button class="btn ghost" data-act="onb-go" data-v="join">${I.users} Rejoindre une entreprise</button>
         <button class="btn plain" data-act="auth" data-v="signin">J’ai déjà un compte · <u>Se connecter</u></button>` : ''}
@@ -1834,9 +1826,94 @@
         <button class="btn" data-act="onb-join" ${onb.joining ? 'disabled' : ''}>${onb.joining ? 'Connexion à l’entreprise…' : `${I.login} Rejoindre`}</button>`, 'welcome');
     }
     openSheet(html, { locked: true, cls });
+    if (onb.step === 'welcome') startSlider();
     const first = $('#sheet input');
     if (first && onb.step !== 'welcome') setTimeout(() => { if (document.activeElement === document.body) first.focus(); }, 300);
   }
+  // Carrousel de bienvenue : défilement automatique, points de progression, glisser au doigt.
+  function welcomeSlider(cloud) {
+    let qr = '';
+    try { qr = qrMatrix('Gestio').createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch (e) { qr = ''; }
+    const slides = [
+      { v: `<div class="art">${ART}</div>`, t: '<h1 class="wordmark">Gestio</h1>', p: 'Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.' },
+      { v: `<div class="mock mock-pos"><div class="mp-top"><span>FCFA</span><b>7 000</b></div>
+          <div class="mp-line"><span>Coupe + brushing</span><b>× 2</b></div>
+          <div class="mp-keys">${['1', '2', '3', '4', '5', '6'].map((k) => `<i>${k}</i>`).join('')}</div></div>`,
+        t: '<h2>Encaissez en quelques touches</h2>', p: 'Articles en un geste, montant libre au clavier, monnaie à rendre et stock mis à jour.' },
+      { v: `<div class="mock mock-inv"><div class="mi-head"><b>FACTURE</b><span>N° F-0042</span></div>
+          <i></i><i></i><i class="short"></i>
+          <div class="mi-foot"><span class="mi-qr">${qr}</span><div><small>Total</small><b>42 480</b></div></div>
+          <span class="mi-stamp">Payée</span></div>`,
+        t: '<h2>Factures et reçus professionnels</h2>', p: 'Remise, taxe, échéance et code QR de vérification. Partagez-les en un instant sur WhatsApp.' },
+      { v: `<div class="mock mock-chart"><div class="mc-head"><span>Cette semaine</span><span class="mini-pill">${I.up} +24 %</span></div>
+          ${spark([2, 4, 3, 6, 5, 8, 11])}<b>197 980</b></div>`,
+        t: '<h2>Suivez vos résultats</h2>', p: 'Ventes, dépenses, résultat et trésorerie, avec des conseils pour progresser.' },
+    ];
+    if (cloud) {
+      slides.push({ v: `<div class="mock mock-cloud"><span class="mcl-phone">${I.smartphone}</span><span class="mcl-dash"></span><span class="mcl-cloud">${I.cloud}<i>${I.check}</i></span><span class="mcl-dash"></span><span class="mcl-phone">${I.smartphone}</span></div>`,
+        t: '<h2>Vos données en sécurité</h2>', p: 'Sauvegarde en ligne automatique, sans inscription. Toute l’équipe partage les mêmes chiffres.' });
+    }
+    return `<div class="slider" id="slider" tabindex="0" aria-roledescription="carrousel" aria-label="Présentation de Gestio">
+      <div class="slides">${slides.map((x, i) => `<div class="slide" role="group" aria-roledescription="diapositive" aria-label="${i + 1} sur ${slides.length}" aria-hidden="${i ? 'true' : 'false'}">
+        <div class="slide-visual">${x.v}</div>${x.t}<p>${x.p}</p></div>`).join('')}</div>
+      <div class="slider-dots">${slides.map((x, i) => `<button class="${i ? '' : 'on'}" data-act="slide" data-v="${i}" aria-label="Diapositive ${i + 1}"><i></i></button>`).join('')}</div>
+    </div>`;
+  }
+  const SLIDE_MS = 4200;
+  const slider = { i: 0, timer: null, n: 0, paused: false };
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function showSlide(i, user) {
+    const el = $('#slider');
+    if (!el) return;
+    slider.i = (i + slider.n) % slider.n;
+    $('.slides', el).style.transform = `translateX(${-slider.i * 100}%)`;
+    $$('.slide', el).forEach((x, k) => x.setAttribute('aria-hidden', k === slider.i ? 'false' : 'true'));
+    $$('.slider-dots button', el).forEach((b, k) => { b.classList.toggle('on', k === slider.i); b.classList.remove('run'); });
+    const on = $$('.slider-dots button', el)[slider.i];
+    if (!slider.paused && !reducedMotion()) { void on.offsetWidth; on.classList.add('run'); }
+    if (user) restartSlider();
+  }
+  function restartSlider() {
+    clearInterval(slider.timer);
+    if (reducedMotion()) return;
+    slider.timer = setInterval(() => {
+      if (!$('#slider')) { clearInterval(slider.timer); return; }
+      if (!slider.paused && !document.hidden) showSlide(slider.i + 1);
+    }, SLIDE_MS);
+  }
+  function startSlider() {
+    const el = $('#slider');
+    if (!el) return;
+    slider.n = $$('.slide', el).length;
+    slider.paused = false;
+    el.style.setProperty('--slide-ms', `${SLIDE_MS}ms`);
+    showSlide(0);
+    restartSlider();
+    // Glisser au doigt ; toucher le carrousel met la lecture en pause.
+    let x0 = null, dx = 0;
+    const track = $('.slides', el);
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.slider-dots')) return;
+      x0 = e.clientX; dx = 0; slider.paused = true; track.style.transition = 'none';
+      $$('.slider-dots button', el).forEach((b) => b.classList.remove('run'));
+    });
+    el.addEventListener('pointermove', (e) => { if (x0 === null) return; dx = e.clientX - x0; track.style.transform = `translateX(calc(${-slider.i * 100}% + ${dx}px))`; });
+    const end = () => {
+      if (x0 === null) return;
+      track.style.transition = '';
+      x0 = null; slider.paused = false;
+      const w = el.clientWidth || 1;
+      showSlide(Math.abs(dx) > w * 0.18 ? slider.i + (dx < 0 ? 1 : -1) : slider.i, true);
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('pointerleave', end);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') showSlide(slider.i + 1, true);
+      if (e.key === 'ArrowLeft') showSlide(slider.i - 1, true);
+    });
+  }
+
   function onbNext() {
     const d = onb.data;
     if (onb.step === 'business') {
@@ -2455,6 +2532,7 @@
     auth: (d) => openAuth(d.v, db.settings ? 'app' : 'onb'),
     'auth-submit': () => authSubmit(),
     'pw-toggle': (d, el) => { const i = $('#' + d.v); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.innerHTML = show ? I.eyeOff : I.eye; el.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe'); },
+    slide: (d) => showSlide(+d.v, true),
     'onb-go': (d) => { onb.step = d.v; auth.from = ''; openOnboarding(); },
     'onb-finish': () => { onb.step = 'welcome'; closeSheet(); ui.tab = 'home'; ui.introDone = false; render(); confetti(120); toast(`Bienvenue, ${S().name} !`); },
     'onb-join': async () => {
