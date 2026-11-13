@@ -1,0 +1,68 @@
+# Installe ou met à jour le schéma Supabase (supabase/schema.sql) du projet de l'application.
+# Utilise un jeton d'accès Supabase (Account › Access Tokens) enregistré dans les secrets GitHub Actions.
+# Le script est idempotent : le relancer ne supprime aucune donnée.
+name: Supabase schema
+
+on:
+  push:
+    paths:
+      - supabase/schema.sql
+      - .github/workflows/supabase-schema.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-schema
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REF: sktrzibeinhbblnovrct
+      # Premier secret renseigné parmi les noms usuels.
+      SUPABASE_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN || secrets.SUPABASE_TOKEN || secrets.SUPABASE_PAT || secrets.SUPABASE_MANAGEMENT_TOKEN || secrets.SUPABASE_API_TOKEN || secrets.SUPABASE_SECRET }}
+      DB_URL: ${{ secrets.SUPABASE_DB_URL || secrets.DATABASE_URL || secrets.SUPABASE_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secrets found
+        run: |
+          echo "Access token: $([ -n "$SUPABASE_TOKEN" ] && echo found || echo missing)"
+          echo "Database URL: $([ -n "$DB_URL" ] && echo found || echo missing)"
+          if [ -z "$SUPABASE_TOKEN" ] && [ -z "$DB_URL" ]; then
+            echo "::error::No Supabase secret found. Add SUPABASE_ACCESS_TOKEN (Supabase › Account › Access Tokens) or SUPABASE_DB_URL in Settings › Secrets and variables › Actions."
+            exit 1
+          fi
+
+      - name: Apply supabase/schema.sql
+        run: |
+          set -euo pipefail
+          if [ -n "$SUPABASE_TOKEN" ]; then
+            jq -Rs '{query: .}' supabase/schema.sql > /tmp/query.json
+            code=$(curl -sS -o /tmp/out.json -w '%{http_code}' -X POST \
+              "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_TOKEN" -H "Content-Type: application/json" \
+              --data @/tmp/query.json)
+            echo "Management API: HTTP $code"
+            head -c 2000 /tmp/out.json; echo
+            [ "$code" -lt 300 ] || { echo "::error::Schema not applied (HTTP $code)"; exit 1; }
+          else
+            sudo apt-get install -y -q postgresql-client >/dev/null
+            psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+          fi
+
+      - name: Verify
+        run: |
+          set -euo pipefail
+          Q="select (select count(*) from information_schema.tables where table_schema='public' and table_name in ('businesses','members','records')) as tables, (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('create_business','join_business','my_business','is_member')) as functions, (select count(*) from pg_policies where schemaname='public') as policies"
+          if [ -n "$SUPABASE_TOKEN" ]; then
+            jq -n --arg q "$Q" '{query: $q}' > /tmp/v.json
+            curl -sS -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_TOKEN" -H "Content-Type: application/json" --data @/tmp/v.json
+            echo
+          else
+            psql "$DB_URL" -c "$Q"
+          fi
