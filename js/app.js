@@ -126,9 +126,18 @@
     return blank();
   }
   let db = load();
-  function save() {
+  function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
-    catch (e) { toast(' Sauvegarde impossible sur cet appareil'); }
+    catch (e) { toast('Sauvegarde impossible sur cet appareil'); }
+  }
+  // Chaque enregistrement local déclenche aussi une synchronisation (si elle est active).
+  function save() { saveLocal(); scheduleSync(); }
+  // Numéros de pièces : on repart du plus grand numéro connu, y compris ceux reçus des autres appareils.
+  const SEQ = { sales: 'sale', purchases: 'purchase', orders: 'order' };
+  function nextN(kind) {
+    const n = Math.max(db.seq[SEQ[kind]] || 0, ...db[kind].map((r) => r.n || 0)) + 1;
+    db.seq[SEQ[kind]] = n;
+    return n;
   }
 
   const S = () => db.settings || {};
@@ -559,6 +568,7 @@
       ${row('go', 'orders', I.clip, 'Commandes & devis', `${db.orders.filter((o) => o.status !== 'done').length} en cours`)}
       ${row('go', 'stock', I.box, 'Articles & stock', db.products.length ? `${db.products.length} article${db.products.length > 1 ? 's' : ''}${low ? ` · ${low} à réapprovisionner` : ''}` : 'Produits, services, prix et stock')}
       ${row('go', 'card', I.idcard, 'Carte de visite', 'Avec code QR de contact')}
+      ${syncReady() ? row('sync', '', I.cloud, 'Synchronisation', syncSummary()) : ''}
       ${row('settings', '', I.gear, 'Paramètres', 'Entreprise, taxes, devise, sauvegarde')}
     </div>`;
   }
@@ -1006,7 +1016,12 @@
     $('#sheet').scrollTop = 0;
     $('#sheet-backdrop').hidden = false;
   }
-  function closeSheet() { $('#sheet-backdrop').hidden = true; $('#sheet').innerHTML = ''; sheetLocked = false; pending = null; }
+  function closeSheet() {
+    $('#sheet-backdrop').hidden = true; $('#sheet').innerHTML = ''; sheetLocked = false; pending = null;
+    if (sync.pendingRender) { sync.pendingRender = false; if (db.settings) render(); }
+    // Sans entreprise configurée (fenêtre de connexion fermée), on revient à l'accueil de bienvenue.
+    if (!db.settings) setTimeout(() => { if (!db.settings && $('#sheet-backdrop').hidden) openOnboarding(); }, 0);
+  }
   const head = (title) => `<div class="sheet-head"><h2>${title}</h2><button class="x" data-act="close" aria-label="Fermer">${I.x}</button></div>`;
 
   let pending = null;
@@ -1139,7 +1154,7 @@
     const fr = formRec();
     if (!items.length || total({ items, disc: fr.disc, tax: fr.tax }) <= 0) { toast('Ajoutez au moins un article avec un prix'); return; }
     const before = sum(db.sales.filter((s) => s.date === today()));
-    const rec = id ? db[kind].find((r) => r.id === id) : { id: uid(), n: ++db.seq[k.seq], at: Date.now() };
+    const rec = id ? db[kind].find((r) => r.id === id) : { id: uid(), n: nextN(kind), at: Date.now() };
     if (id) moveStock(kind, rec.items, -1);
     rec.who = $('#f-who').value.trim();
     rec.items = items;
@@ -1722,6 +1737,8 @@
       <div class="section-title">Apparence</div>
       <div class="field"><span>Teinte du panneau d’accueil</span><div class="swatches" data-group="color">${COLORS.map((c) => `<button type="button" style="background:${c}" class="${(COLORS.includes(s.color) ? s.color : COLORS[0]) === c ? 'on' : ''}" data-act="pick" data-v="${c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
       <button class="btn" data-act="settings-save">Enregistrer</button>
+      ${syncReady() ? `<div class="section-title">Synchronisation</div>
+      <button class="row" data-act="sync"><div class="ico">${I.cloud}</div><div class="mid"><div class="title">Plusieurs téléphones</div><div class="sub">${esc(syncSummary())}</div></div><div class="chev">›</div></button>` : ''}
       <div class="section-title">Sauvegarde</div>
       <p class="muted small">Vos données restent sur ce téléphone. Envoyez régulièrement une sauvegarde sur WhatsApp, par e-mail ou dans Google Drive : en cas de perte ou de changement de téléphone, il suffira de l’importer. ${db.lastBackup ? `Dernière sauvegarde : ${esc(niceDate(iso(new Date(db.lastBackup))))}.` : 'Aucune sauvegarde pour l’instant.'}</p>
       <div class="btn-row">
@@ -1752,7 +1769,8 @@
     if (onb.step === 0) {
       body = `<div class="art">${ART}</div><h1 class="wordmark">Gestio</h1>
         <p>Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.</p>
-        ${dots}<button class="btn" data-act="onb-next">C’est parti</button>`;
+        ${dots}<button class="btn" data-act="onb-next">C’est parti</button>
+        ${syncReady() ? '<button class="btn plain" data-act="sync" style="margin-top:6px">Rejoindre une entreprise existante</button>' : ''}`;
     } else if (onb.step === 1) {
       body = `<h2>Votre entreprise</h2><p>L’application s’adapte à votre métier.</p>
         <div class="left view" style="padding:0;margin-top:14px">
@@ -1800,7 +1818,7 @@
 
   async function exportData() {
     const name = `gestio-sauvegarde-${today()}.json`;
-    const blob = new Blob([JSON.stringify(Object.assign({}, db, { lastBackup: Date.now() }))], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(Object.assign({}, db, { lastBackup: Date.now(), sync: undefined }))], { type: 'application/json' });
     const file = new File([blob], name, { type: 'application/json' });
     const done = () => { db.lastBackup = Date.now(); save(); if ($('#sheet-backdrop').hidden) render(); };
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1819,7 +1837,7 @@
         const d = JSON.parse(reader.result);
         if (!d || !d.settings || !Array.isArray(d.sales) || !Array.isArray(d.purchases) || !Array.isArray(d.orders)) throw new Error('format');
         ask('Remplacer toutes les données actuelles par cette sauvegarde ?', 'Remplacer', () => {
-          db = Object.assign(blank(), d);
+          db = Object.assign(blank(), d, { sync: db.sync });
           loadLogo();
           save(); render(); toast('Sauvegarde restaurée');
         }, openSettings);
@@ -1851,6 +1869,196 @@
       });
       if (++frame < 90) requestAnimationFrame(tick); else ctx.clearRect(0, 0, W, H);
     })();
+  }
+
+  // ---------------------------------------------------------------- Synchronisation (Supabase)
+  // Chaque enregistrement devient une ligne (kind, id, data) de la table « records ».
+  // Une empreinte par ligne mémorise la dernière version synchronisée : ce qui a changé
+  // localement est envoyé, ce qui a changé ailleurs est reçu (le serveur date chaque écriture).
+  const CFG = window.GESTIO_SUPABASE || {};
+  const SYNC_KINDS = ['sales', 'purchases', 'orders', 'products'];
+  const sync = { client: null, session: null, busy: false, again: false, timer: null, status: 'off', error: '', pendingRender: false, step: 'email', email: '' };
+  const syncReady = () => !!(CFG.url && CFG.key && window.supabase && window.supabase.createClient);
+  function syncClient() {
+    if (!sync.client && syncReady()) {
+      sync.client = window.supabase.createClient(CFG.url, CFG.key, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit', storageKey: 'gestio.auth' },
+      });
+    }
+    return sync.client;
+  }
+  const fingerprint = (data) => {
+    const str = JSON.stringify(data);
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36) + '.' + str.length;
+  };
+  function localRows() {
+    const rows = new Map();
+    SYNC_KINDS.forEach((k) => db[k].forEach((r) => rows.set(`${k}:${r.id}`, { kind: k, id: r.id, data: r })));
+    Object.keys(db.contacts || {}).forEach((key) => rows.set(`contacts:${key}`, { kind: 'contacts', id: key, data: db.contacts[key] }));
+    if (db.settings) rows.set('settings:main', { kind: 'settings', id: 'main', data: db.settings });
+    return rows;
+  }
+  function setLocal(row) {
+    if (row.kind === 'settings') { if (!row.deleted && row.data) { db.settings = Object.assign({}, db.settings, row.data); loadLogo(); } return; }
+    if (row.kind === 'contacts') { db.contacts = db.contacts || {}; if (row.deleted) delete db.contacts[row.id]; else db.contacts[row.id] = row.data; return; }
+    if (!SYNC_KINDS.includes(row.kind)) return;
+    const list = db[row.kind];
+    const i = list.findIndex((r) => r.id === row.id);
+    if (row.deleted) { if (i >= 0) list.splice(i, 1); } else if (i >= 0) list[i] = row.data; else list.push(row.data);
+  }
+  async function pull() {
+    const c = sync.client, st = db.sync;
+    const local = localRows();
+    let cursor = st.cursor || '1970-01-01T00:00:00Z', changed = false;
+    for (;;) {
+      const { data, error } = await c.from('records').select('kind,id,data,deleted,updated_at')
+        .eq('business_id', st.business.id).gt('updated_at', cursor).order('updated_at', { ascending: true }).limit(500);
+      if (error) throw error;
+      data.forEach((row) => {
+        const key = `${row.kind}:${row.id}`;
+        const cur = local.get(key);
+        // Modifié ici depuis la dernière synchronisation : la version locale sera envoyée ensuite.
+        const dirty = cur ? st.hashes[key] !== fingerprint(cur.data) : key in st.hashes;
+        if (!dirty) {
+          setLocal(row);
+          if (row.deleted) delete st.hashes[key]; else st.hashes[key] = fingerprint(row.kind === 'settings' ? db.settings : row.data);
+          changed = true;
+        }
+        cursor = row.updated_at;
+      });
+      if (data.length < 500) break;
+    }
+    st.cursor = cursor;
+    return changed;
+  }
+  async function push() {
+    const c = sync.client, st = db.sync, bid = st.business.id;
+    const local = localRows();
+    const rows = [];
+    local.forEach((v, key) => { const h = fingerprint(v.data); if (st.hashes[key] !== h) rows.push({ key, h, row: { business_id: bid, kind: v.kind, id: v.id, data: v.data, deleted: false } }); });
+    Object.keys(st.hashes).forEach((key) => {
+      if (local.has(key)) return;
+      const cut = key.indexOf(':');
+      rows.push({ key, h: null, row: { business_id: bid, kind: key.slice(0, cut), id: key.slice(cut + 1), data: null, deleted: true } });
+    });
+    for (let i = 0; i < rows.length; i += 200) {
+      const chunk = rows.slice(i, i + 200);
+      const { error } = await c.from('records').upsert(chunk.map((x) => x.row), { onConflict: 'business_id,kind,id' });
+      if (error) throw error;
+      chunk.forEach((x) => { if (x.h) st.hashes[x.key] = x.h; else delete st.hashes[x.key]; });
+    }
+    return rows.length;
+  }
+  function refreshAfterSync() {
+    if (!db.settings) return;
+    if ($('#sheet-backdrop').hidden) render();
+    else if ($('#sync-panel')) { sync.pendingRender = true; openSyncSheet(); }
+    else sync.pendingRender = true;
+  }
+  async function runSync(manual) {
+    if (!sync.client || !sync.session || !db.sync || !db.sync.business) return;
+    if (sync.busy) { sync.again = true; return; }
+    if (!navigator.onLine) { sync.status = 'offline'; if (manual) toast('Pas de connexion internet : la synchronisation reprendra plus tard'); return; }
+    sync.busy = true; sync.status = 'syncing';
+    try {
+      const changed = await pull();
+      const sent = await push();
+      db.sync.last = Date.now();
+      sync.status = 'ok'; sync.error = '';
+      saveLocal();
+      if (changed) refreshAfterSync();
+      if (manual) toast(changed || sent ? 'Synchronisation terminée' : 'Tout est déjà à jour');
+    } catch (e) {
+      sync.status = 'error'; sync.error = (e && e.message) || String(e);
+      if (manual) toast(`Synchronisation impossible : ${sync.error}`);
+    } finally {
+      sync.busy = false;
+      if ($('#sync-panel')) openSyncSheet();
+      if (sync.again) { sync.again = false; scheduleSync(); }
+    }
+  }
+  function scheduleSync() {
+    if (!sync.session || !db.sync || !db.sync.business) return;
+    clearTimeout(sync.timer);
+    sync.timer = setTimeout(() => runSync(false), 1500);
+  }
+  function syncSummary() {
+    if (!sync.session) return 'Travaillez à plusieurs sur les mêmes données';
+    if (!db.sync || !db.sync.business) return `Connecté : ${sync.session.user.email || ''}`;
+    const when = db.sync.last ? new Date(db.sync.last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+    if (sync.status === 'error') return 'Erreur de synchronisation, touchez pour réessayer';
+    if (sync.status === 'offline') return 'Hors ligne : les changements partiront plus tard';
+    return `${db.sync.business.name || 'Espace partagé'}${when ? ` · synchronisé à ${when}` : ''}`;
+  }
+  async function attachBusiness(b, joined) {
+    db.sync = { business: { id: b.id, name: b.name, invite_code: b.invite_code }, user: sync.session.user.id, cursor: '', hashes: {}, last: 0 };
+    // En rejoignant une entreprise, ses paramètres remplacent ceux de ce téléphone.
+    if (joined && db.settings) db.sync.hashes['settings:main'] = fingerprint(db.settings);
+    saveLocal();
+    await runSync(false);
+    if (db.settings) render();
+  }
+  async function onSession(session) {
+    sync.session = session;
+    if (!session) { sync.status = 'off'; if ($('#sync-panel')) openSyncSheet(); return; }
+    if (db.sync && db.sync.business && db.sync.user === session.user.id) { runSync(false); }
+    else {
+      const { data, error } = await sync.client.rpc('my_business');
+      if (error) { sync.status = 'error'; sync.error = error.message; }
+      else if (data && data[0]) { await attachBusiness(data[0], true); }
+      else db.sync = null;
+    }
+    if ($('#sync-panel')) openSyncSheet();
+  }
+
+  function openSyncSheet() {
+    const c = syncClient();
+    if (!c) return;
+    let body;
+    if (!sync.session) {
+      body = sync.step === 'code' ? `
+        <p class="muted">Un e-mail a été envoyé à <b style="color:var(--text)">${esc(sync.email)}</b>. Ouvrez le lien qu’il contient sur ce téléphone, ou saisissez le code à 6 chiffres s’il figure dans l’e-mail.</p>
+        <label class="field"><span>Code reçu</span><input id="sy-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></label>
+        <button class="btn" data-act="sync-verify">${I.check} Valider le code</button>
+        <button class="btn plain" data-act="sync-restart">Changer d’adresse e-mail</button>` : `
+        <p class="muted">Connectez-vous avec votre adresse e-mail pour retrouver les mêmes ventes, factures et clients sur tous les téléphones de l’entreprise.</p>
+        <label class="field"><span>Adresse e-mail</span><input id="sy-email" type="email" autocomplete="email" placeholder="vous@exemple.com" value="${esc(sync.email)}"></label>
+        <button class="btn" data-act="sync-send">${I.mail} Recevoir le lien de connexion</button>`;
+    } else if (!db.sync || !db.sync.business) {
+      body = `
+        <div class="card"><div class="kv"><span>Connecté</span><span>${esc(sync.session.user.email || '')}</span></div></div>
+        <div class="section-title">Nouvelle entreprise</div>
+        <p class="muted small">Crée l’espace partagé de votre entreprise et y envoie les données de ce téléphone.</p>
+        <button class="btn" data-act="sync-create" ${db.settings ? '' : 'disabled'}>${I.store} Créer l’espace de ${esc(S().name || 'mon entreprise')}</button>
+        <div class="section-title">Entreprise existante</div>
+        <p class="muted small">Demandez le code d’invitation à la personne qui a créé l’espace. Les données déjà présentes sur ce téléphone y seront ajoutées.</p>
+        <label class="field"><span>Code d’invitation</span><input id="sy-invite" autocapitalize="characters" maxlength="12" placeholder="Ex. 7F3A9C21"></label>
+        <button class="btn ghost" data-act="sync-join">${I.users} Rejoindre</button>
+        <button class="btn plain" data-act="sync-logout">Se déconnecter</button>`;
+    } else {
+      const st = db.sync;
+      const state = sync.busy ? 'Synchronisation en cours…' : sync.status === 'error' ? `Erreur : ${sync.error}` : sync.status === 'offline' ? 'Hors ligne' : st.last ? `À jour (${new Date(st.last).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})` : 'En attente';
+      body = `
+        <div class="card">
+          <div class="kv"><span>Entreprise</span><b>${esc(st.business.name || 'Espace partagé')}</b></div>
+          <div class="kv"><span>Compte</span><span>${esc(sync.session.user.email || '')}</span></div>
+          <div class="kv"><span>État</span><span class="${sync.status === 'error' ? 'neg' : ''}">${esc(state)}</span></div>
+        </div>
+        <div class="section-title">Inviter un collaborateur</div>
+        <p class="muted small">Sur son téléphone : Plus › Synchronisation, connexion avec son e-mail, puis « Rejoindre » avec ce code.</p>
+        <div class="invite"><b>${esc(st.business.invite_code)}</b><button class="btn ghost sm" data-act="sync-copy">${I.share} Copier</button></div>
+        <button class="btn" data-act="sync-now" ${sync.busy ? 'disabled' : ''}>${I.repeat} Synchroniser maintenant</button>
+        <button class="btn plain" data-act="sync-logout">Se déconnecter de ce téléphone</button>
+        <p class="muted small">Les données restent aussi enregistrées sur ce téléphone et fonctionnent hors ligne.</p>`;
+    }
+    const wasOpen = !!$('#sync-panel');
+    if (wasOpen) { $('#sync-panel').innerHTML = body; return; }
+    openSheet(`${head('Synchronisation')}<div id="sync-panel" class="stack">${body}</div>`);
+  }
+  async function syncCall(fn) {
+    try { await fn(); } catch (e) { toast((e && e.message) || 'Erreur de connexion'); }
   }
 
   // ---------------------------------------------------------------- Actions
@@ -1886,7 +2094,7 @@
     deliver: (d) => {
       const o = db.orders.find((x) => x.id === d.id);
       const pay = owedOrder(o) > 0 ? picked('pay') || 'cash' : 'cash';
-      const sale = { id: uid(), n: ++db.seq.sale, at: Date.now(), who: o.who, items: o.items.map((it) => Object.assign({}, it)), date: today(), note: `Commande ${ref('orders', o)}`, pay, disc: o.disc || 0, tax: o.tax || 0 };
+      const sale = { id: uid(), n: nextN('sales'), at: Date.now(), who: o.who, items: o.items.map((it) => Object.assign({}, it)), date: today(), note: `Commande ${ref('orders', o)}`, pay, disc: o.disc || 0, tax: o.tax || 0 };
       if (pay === 'credit') sale.due = addDays(today(), S().terms != null ? S().terms : 7);
       if (o.deposit) sale.payments = [{ date: o.date, amount: o.deposit, method: 'cash' }];
       if (pay === 'credit') sale.paid = o.deposit || 0;
@@ -1958,7 +2166,7 @@
     'pos-confirm': () => {
       const pay = picked('pay') || 'cash';
       const before = sum(db.sales.filter((x) => x.date === today()));
-      const sale = { id: uid(), n: ++db.seq.sale, at: Date.now(), who: $('#co-who').value.trim(), items: cart.items.map((it) => Object.assign({}, it)), date: today(), note: '', pay, disc: 0, tax: 0 };
+      const sale = { id: uid(), n: nextN('sales'), at: Date.now(), who: $('#co-who').value.trim(), items: cart.items.map((it) => Object.assign({}, it)), date: today(), note: '', pay, disc: 0, tax: 0 };
       if (pay === 'credit') { sale.paid = 0; sale.due = $('#f-due').value || ''; }
       db.sales.push(sale);
       moveStock('sales', sale.items, 1);
@@ -2025,6 +2233,48 @@
     'confirm-yes': () => { const p = pending; closeSheet(); if (p) p.ok(); },
     'confirm-no': () => { const p = pending; closeSheet(); if (p && p.cancel) p.cancel(); },
     'onb-next': onbNext,
+    sync: () => { if (!syncClient()) return; openSyncSheet(); },
+    'sync-send': () => syncCall(async () => {
+      const email = $('#sy-email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Indiquez une adresse e-mail valide'); return; }
+      const redirect = location.protocol.startsWith('http') ? location.origin + location.pathname : undefined;
+      const { error } = await sync.client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirect } });
+      if (error) throw error;
+      sync.email = email; sync.step = 'code'; openSyncSheet(); toast('E-mail envoyé');
+    }),
+    'sync-restart': () => { sync.step = 'email'; openSyncSheet(); },
+    'sync-verify': () => syncCall(async () => {
+      const token = $('#sy-code').value.replace(/\s/g, '');
+      if (!token) { toast('Saisissez le code reçu'); return; }
+      const { error } = await sync.client.auth.verifyOtp({ email: sync.email, token, type: 'email' });
+      if (error) throw error;
+      sync.step = 'email'; toast('Connecté');
+    }),
+    'sync-create': () => syncCall(async () => {
+      const { data, error } = await sync.client.rpc('create_business', { p_name: S().name || '' });
+      if (error) throw error;
+      await attachBusiness(data[0], false);
+      openSyncSheet(); toast('Espace créé, données envoyées');
+    }),
+    'sync-join': () => syncCall(async () => {
+      const code = $('#sy-invite').value.trim();
+      if (!code) { toast('Saisissez le code d’invitation'); return; }
+      const { data, error } = await sync.client.rpc('join_business', { p_code: code });
+      if (error) throw error;
+      await attachBusiness(data[0], true);
+      if ($('#sync-panel')) openSyncSheet();
+      toast(`Vous avez rejoint ${data[0].name || 'l’entreprise'}`);
+    }),
+    'sync-now': () => runSync(true),
+    'sync-copy': async () => {
+      const code = db.sync && db.sync.business ? db.sync.business.invite_code : '';
+      try { await navigator.clipboard.writeText(code); toast('Code copié'); } catch (e) { toast(`Code : ${code}`); }
+    },
+    'sync-logout': () => syncCall(async () => {
+      await sync.client.auth.signOut();
+      db.sync = null; sync.session = null; sync.status = 'off'; saveLocal();
+      openSyncSheet(); toast('Déconnecté. Les données restent sur ce téléphone.');
+    }),
     'fab-menu': () => openSheet(`${head('Ajouter')}
       <div class="quick">
         <button data-act="go-close" data-v="pos"><span>${I.pos}</span>Caisse</button>
@@ -2059,6 +2309,14 @@
   loadLogo();
   render();
   if (!db.settings) openOnboarding();
+
+  // Synchronisation : session enregistrée, retour d'un lien de connexion, reprise en ligne.
+  if (syncClient()) {
+    sync.client.auth.onAuthStateChange((evt, session) => { setTimeout(() => onSession(session), 0); });
+    window.addEventListener('online', () => runSync(false));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) runSync(false); });
+    setInterval(() => { if (!document.hidden) runSync(false); }, 30000);
+  }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

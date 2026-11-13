@@ -28,6 +28,24 @@ Puis ouvrir `http://localhost:8000` dans un navigateur.
 
 Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement statique en HTTPS (par exemple GitHub Pages : *Settings → Pages → Deploy from a branch*), ouvrir l'adresse sur le téléphone, puis choisir « Ajouter à l'écran d'accueil ».
 
+## Synchronisation entre téléphones (Supabase)
+
+Facultative : sans elle, l'application fonctionne seule sur chaque téléphone. Avec elle, toute l'équipe partage les mêmes ventes, factures, dépenses, commandes, articles, clients et paramètres. Chaque téléphone garde une copie locale et continue de fonctionner hors ligne ; les changements partent dès le retour du réseau.
+
+Mise en place, une seule fois :
+
+1. Dans Supabase, **SQL Editor › New query** : coller le contenu de `supabase/schema.sql`, puis **Run**. Le script crée les tables et les règles de sécurité : chaque utilisateur ne voit que les données de son entreprise.
+2. **Authentication › URL Configuration** : mettre l'adresse publique de l'application dans **Site URL** et l'ajouter aux **Redirect URLs**. C'est là que mène le lien de connexion reçu par e-mail.
+3. Facultatif, **Authentication › Email Templates › Magic Link** : ajouter `Votre code : {{ .Token }}` au message pour pouvoir saisir un code à 6 chiffres au lieu d'ouvrir le lien.
+4. Dans `js/config.js`, renseigner `url` (Project Settings › Data API). La clé publishable y est déjà.
+
+Dans l'application : **Plus › Synchronisation**. La première personne se connecte avec son e-mail et crée l'espace de l'entreprise ; ses données y sont envoyées. Les autres se connectent avec leur propre e-mail et saisissent le code d'invitation affiché.
+
+À savoir :
+
+- Si deux téléphones modifient la même fiche avant de se synchroniser, c'est la dernière modification envoyée qui l'emporte. C'est aussi le cas pour la quantité en stock d'un article vendu au même moment sur deux téléphones.
+- Le service d'e-mails intégré à Supabase n'envoie que quelques e-mails par heure. Pour une équipe, configurez votre propre serveur d'envoi (**Authentication › Emails › SMTP**).
+
 ## Structure
 
 | Fichier | Rôle |
@@ -39,4 +57,7 @@ Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement stati
 | `manifest.webmanifest`, `icons/` | Installation sur l'écran d'accueil |
 | `fonts/` | Police Inter (licence SIL OFL 1.1) |
 | `js/icons.js` | Icônes [Lucide](https://lucide.dev) (licence ISC, voir `icons/LICENSE-lucide.txt`), générées depuis le paquet `lucide-static` |
+| `js/config.js` | Adresse et clé publishable du projet Supabase |
+| `supabase/schema.sql` | Tables, règles de sécurité et fonctions pour la synchronisation |
+| `vendor/supabase.js` | Client officiel [supabase-js](https://github.com/supabase/supabase-js) 2.118 (licence MIT) |
 | `vendor/qrcode.js` | Génération des codes QR ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), licence MIT) |

@@ -1,6 +1,6 @@
 /* Gestio — cache hors ligne. Changer VERSION à chaque mise à jour des fichiers. */
-const VERSION = 'gestio-v6';
-const ASSETS = ['./', 'index.html', 'css/app.css', 'js/icons.js', 'js/app.js', 'vendor/qrcode.js', 'fonts/inter.woff2', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
+const VERSION = 'gestio-v7';
+const ASSETS = ['./', 'index.html', 'css/app.css', 'js/icons.js', 'js/app.js', 'vendor/qrcode.js', 'vendor/supabase.js', 'js/config.js', 'fonts/inter.woff2', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

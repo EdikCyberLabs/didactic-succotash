@@ -392,6 +392,12 @@ details.more .field input { background: var(--bg); }
 .keypad-wrap .btn { margin-top: 10px; background: var(--band) !important; color: #fff !important; }
 .keypad-wrap .btn:disabled { opacity: .45; }
 
+/* ---------- Synchronisation ---------- */
+.stack > * + * { margin-top: 12px; }
+.invite { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--band); color: #fff; border-radius: 20px; padding: 14px 14px 14px 20px; }
+.invite b { font-size: 28px; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.invite .btn.ghost { background: var(--pill) !important; color: #fff !important; }
+
 /* ---------- Bienvenue ---------- */
 .onb { text-align: center; width: 100%; max-width: 400px; margin: 0 auto; }
 .onb .art svg { width: min(70vw, 270px); height: auto; display: block; margin: 0 auto; animation: rise .6s var(--ease) both; }
