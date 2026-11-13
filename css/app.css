@@ -238,7 +238,7 @@ b, h1, h2, h3 { font-weight: 700; }
 
 /* Rapport */
 .month-nav { display: flex; align-items: center; justify-content: space-between; }
-.month-nav b { font-size: 20px; letter-spacing: -.3px; text-transform: capitalize; }
+.month-nav b { font-size: 18px; letter-spacing: -.3px; text-align: center; min-width: 0; }
 .month-nav button { width: 42px; height: 42px; border-radius: 50%; background: var(--card); border: 2px solid var(--ink); font-size: 20px; display: grid; place-items: center; }
 .month-nav button:disabled { opacity: .35; }
 .bars { display: flex; flex-direction: column; gap: 12px; }
@@ -251,6 +251,30 @@ b, h1, h2, h3 { font-weight: 700; }
 .bar-row:nth-child(4n+2) .track i { background: var(--coral); }
 .bar-row:nth-child(4n+3) .track i { background: var(--primary); }
 .bar-row:nth-child(4n+4) .track i { background: var(--sun); }
+
+/* Suivi : bilan, clients, recherche */
+.top-actions { display: flex; gap: 8px; flex: none; }
+.card.flat { box-shadow: none; background: var(--bg); }
+.day-head { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; font-weight: 700; color: var(--muted); padding: 8px 4px 0; }
+.list > .day-head:first-child { padding-top: 0; }
+.link { font-size: 14px; font-weight: 700; color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.mini3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.mini3 > div { min-width: 0; }
+.mini3 small { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+.mini3 b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat.s-sales { background: var(--sun); }
+.stat.s-exp { background: var(--coral); }
+.stat.s-profit { background: var(--leaf); }
+.stat .cmp { font-size: 12px; font-weight: 700; margin-top: 3px; }
+.cmp-note { margin-top: 8px !important; }
+.tips { display: flex; flex-direction: column; gap: 10px; }
+.tips p { font-size: 15px; line-height: 1.45; }
+.tips p + p { border-top: 1.5px dashed color-mix(in srgb, var(--text) 22%, transparent); padding-top: 10px; }
+.row .ico.initial { background: var(--sky); font-weight: 700; font-size: 18px; }
+.share-text { width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--ink); background: var(--field); color: var(--text); font: inherit; line-height: 1.45; resize: vertical; outline: none; }
+a.btn { text-decoration: none; }
+.week .col.future { opacity: .4; }
+.month-nav button .i { font-size: 20px; }
 
 /* Bienvenue */
 .onb { text-align: center; width: 100%; max-width: 400px; margin: 0 auto; }

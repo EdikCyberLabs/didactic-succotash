@@ -68,7 +68,12 @@
     back: '<path d="M14.5 6l-6 6 6 6"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
-    image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/>'
+    image: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
+    user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5"/>',
+    repeat: '<path d="M4 12a7 7 0 0 1 12-5l2 2M20 12a7 7 0 0 1-12 5l-2-2"/><path d="M18 4v5h-5M6 20v-5h5"/>',
+    message: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
+    save: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>'
   });
 
   // Illustration d'accueil : un reçu, des pièces et quelques étincelles.
@@ -99,6 +104,7 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const pad = (n) => String(n).padStart(2, '0');
+  const DAY = 864e5;
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const today = () => iso(new Date());
   const toDate = (s) => new Date(s + 'T12:00:00');
@@ -125,7 +131,7 @@
   }
 
   // ---------------------------------------------------------------- Données
-  const blank = () => ({ settings: null, sales: [], purchases: [], orders: [], products: [], card: {}, seq: { sale: 0, purchase: 0, order: 0 } });
+  const blank = () => ({ settings: null, sales: [], purchases: [], orders: [], products: [], contacts: {}, lastBackup: 0, card: {}, seq: { sale: 0, purchase: 0, order: 0 } });
 
   function load() {
     try {
@@ -167,6 +173,58 @@
     });
   }
 
+  // Argent à encaisser. Une vente « à crédit » garde la trace des versements reçus (paid, payments).
+  const owedSale = (r) => (r.pay === 'credit' ? Math.max(0, round(total(r) - (r.paid || 0))) : 0);
+  const paidOf = (r) => round(total(r) - owedSale(r));
+  const owedOrder = (o) => (o.saleId ? 0 : Math.max(0, round(total(o) - (o.deposit || 0))));
+
+  // Clients : regroupés par nom, à partir des ventes et des commandes.
+  function clientList() {
+    const map = new Map();
+    const get = (name) => {
+      const key = norm(name);
+      if (!map.has(key)) map.set(key, { key, name: name.trim(), sales: [], orders: [], phone: '', spent: 0, credit: 0, pending: 0, last: '' });
+      return map.get(key);
+    };
+    db.sales.forEach((r) => {
+      if (!norm(r.who)) return;
+      const c = get(r.who);
+      c.sales.push(r); c.spent += total(r); c.credit += owedSale(r);
+      if (r.date > c.last) c.last = r.date;
+    });
+    db.orders.slice().sort((a, b) => a.at - b.at).forEach((o) => {
+      if (!norm(o.who)) return;
+      const c = get(o.who);
+      c.orders.push(o); c.pending += owedOrder(o);
+      if (o.phone) c.phone = o.phone;
+      if (o.date > c.last) c.last = o.date;
+    });
+    return Array.from(map.values()).map((c) => {
+      const saved = (db.contacts || {})[c.key];
+      if (saved && saved.phone) c.phone = saved.phone;
+      c.spent = round(c.spent); c.credit = round(c.credit); c.pending = round(c.pending);
+      return c;
+    });
+  }
+
+  // Périodes du bilan : semaine (lundi → dimanche) ou mois.
+  const daysBetween = (a, b) => Math.round((toDate(b) - toDate(a)) / DAY);
+  const weekStart = (d) => addDays(d, -((toDate(d).getDay() + 6) % 7));
+  function periodOf(type, anchor) {
+    if (type === 'week') { const start = weekStart(anchor); return { type, start, end: addDays(start, 6) }; }
+    const m = anchor.slice(0, 7);
+    const [y, mo] = m.split('-').map(Number);
+    return { type, start: `${m}-01`, end: `${m}-${pad(new Date(y, mo, 0).getDate())}` };
+  }
+  const stepPeriod = (p, dir) => periodOf(p.type, dir < 0 ? addDays(p.start, -1) : addDays(p.end, 1));
+  const inRange = (list, a, b) => list.filter((r) => r.date >= a && r.date <= b);
+  function periodLabel(p) {
+    if (p.type === 'month') { const t = toDate(p.start).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); }
+    const a = toDate(p.start), b = toDate(p.end);
+    const from = a.getMonth() === b.getMonth() ? a.getDate() : a.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return `Semaine du ${from} au ${b.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`;
+  }
+
   function controlCode(rec) {
     const s = `${rec.id}|${total(rec)}|${rec.date}`;
     let h = 2166136261;
@@ -186,11 +244,11 @@
   // ---------------------------------------------------------------- État UI
   const ui = {
     tab: 'home',
-    filter: { sales: 'month', purchases: 'month', orders: 'open', stock: 'all' },
-    query: { sales: '', purchases: '', orders: '', stock: '' },
-    month: today().slice(0, 7),
+    filter: { sales: 'month', purchases: 'month', orders: 'open', stock: 'all', clients: 'all' },
+    query: { sales: '', purchases: '', orders: '', stock: '', clients: '' },
+    period: periodOf('week', today()),
   };
-  const SUB = ['stock', 'report', 'card'];
+  const SUB = ['stock', 'bilan', 'card', 'clients'];
 
   let logoImg = null;
   function loadLogo() {
@@ -218,12 +276,13 @@
     renderBrand();
     const top = SUB.includes(ui.tab) ? 'more' : ui.tab;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === top));
-    $('#fab').hidden = ['more', 'report', 'card'].includes(ui.tab);
+    $('#fab').hidden = ['more', 'bilan', 'card'].includes(ui.tab);
     const v = $('#view');
     if (ui.tab === 'home') v.innerHTML = viewHome();
     else if (ui.tab === 'more') v.innerHTML = viewMore();
     else if (ui.tab === 'stock') { v.innerHTML = viewStock(); mountSearch('stock', stockBody); }
-    else if (ui.tab === 'report') v.innerHTML = viewReport();
+    else if (ui.tab === 'bilan') v.innerHTML = viewBilan();
+    else if (ui.tab === 'clients') { v.innerHTML = viewClients(); mountSearch('clients', clientsBody); }
     else if (ui.tab === 'card') { v.innerHTML = viewCard(); mountCard(); }
     else { const kind = ui.tab; v.innerHTML = viewList(kind); mountSearch(kind, () => listBody(kind)); }
   }
@@ -245,16 +304,16 @@
     const bal = round(sToday - pToday);
     const st = streak();
 
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = addDays(t, -i);
-      days.push({ d, v: sum(db.sales.filter((s) => s.date === d)) });
-    }
-    const max = Math.max(1, ...days.map((x) => x.v));
-    const week = days.map((x) => `<div class="col ${x.d === t ? 'today' : ''}" title="${esc(fmt(x.v))}">
-        <i style="height:${Math.round((x.v / max) * 100)}%"></i>${toDate(x.d).toLocaleDateString('fr-FR', { weekday: 'narrow' }).toUpperCase()}</div>`).join('');
+    const wk = periodOf('week', t);
+    const wkS = sum(inRange(db.sales, wk.start, wk.end)), wkP = sum(inRange(db.purchases, wk.start, wk.end)), wkB = round(wkS - wkP);
+    const week = dayBars(wk, inRange(db.sales, wk.start, wk.end));
 
-    const credits = db.sales.filter((s) => s.pay === 'credit');
+    const credits = db.sales.filter((s) => owedSale(s) > 0);
+    const owedTot = round(credits.reduce((a, r) => a + owedSale(r), 0));
+    const owedWho = new Set(credits.map((r) => norm(r.who) || r.id)).size;
+    const nRec = db.sales.length + db.purchases.length + db.orders.length;
+    const lastB = db.lastBackup ? Math.floor((Date.now() - db.lastBackup) / DAY) : null;
+    const nudge = nRec >= 10 && (lastB === null || lastB >= 7);
     const lowStock = db.products.filter(isLow);
     const open = db.orders.filter((o) => o.status !== 'done').sort((a, b) => (a.due || '9').localeCompare(b.due || '9')).slice(0, 3);
     const recent = [
@@ -282,15 +341,26 @@
       </div>
 
       ${credits.length ? `<button class="row" data-act="credits">
-          <div class="ico">${I.hourglass}</div><div class="mid"><div class="title">À encaisser</div><div class="sub">${credits.length} vente${credits.length > 1 ? 's' : ''} à crédit</div></div>
-          <div class="amt">${esc(fmt(sum(credits)))}</div></button>` : ''}
+          <div class="ico">${I.hourglass}</div><div class="mid"><div class="title">On vous doit</div><div class="sub">${owedWho} client${owedWho > 1 ? 's' : ''} · ${credits.length} vente${credits.length > 1 ? 's' : ''} pas encore payée${credits.length > 1 ? 's' : ''}</div></div>
+          <div class="amt">${esc(fmt(owedTot))}</div></button>` : ''}
 
       ${lowStock.length ? `<button class="row" data-act="low-stock">
           <div class="ico">${I.alert}</div><div class="mid"><div class="title">Stock à réapprovisionner</div><div class="sub">${esc(lowStock.map((p) => p.name).join(', '))}</div></div>
           <div class="amt">${lowStock.length}<small>article${lowStock.length > 1 ? 's' : ''}</small></div></button>` : ''}
 
-      <div class="section-title">7 derniers jours <small>${esc(fmt(round(days.reduce((s, x) => s + x.v, 0))))}</small></div>
-      <div class="card"><div class="week">${week}</div></div>
+      ${nudge ? `<button class="row backup-nudge" data-act="export">
+          <div class="ico">${I.save}</div><div class="mid"><div class="title">Sauvegardez vos données</div><div class="sub">${lastB === null ? 'Aucune sauvegarde pour l’instant' : `Dernière sauvegarde il y a ${lastB} jours`}</div></div>
+          <div class="chev">›</div></button>` : ''}
+
+      <div class="section-title">Cette semaine <button class="link" data-act="open-bilan">Voir le bilan</button></div>
+      <div class="card">
+        <div class="mini3">
+          <div><small>Ventes</small><b>${esc(fmtN(wkS))}</b></div>
+          <div><small>Dépenses</small><b>${esc(fmtN(wkP))}</b></div>
+          <div><small>Bénéfice</small><b class="${wkB >= 0 ? 'pos' : 'neg'}">${wkB > 0 ? '+' : ''}${esc(fmtN(wkB))}</b></div>
+        </div>
+        <div class="week">${week}</div>
+      </div>
 
       ${open.length ? `<div class="section-title">Commandes à livrer <small>${db.orders.filter((o) => o.status !== 'done').length} en cours</small></div>
         <div class="list">${open.map((o) => rowHtml('orders', o)).join('')}</div>` : ''}
@@ -315,7 +385,7 @@
     const k = KIND[kind];
     const who = r.who || (kind === 'purchases' ? (r.cat || 'Achat') : 'Client de passage');
     let extra = '';
-    if (kind === 'sales' && r.pay === 'credit') extra = ' <span class="badge orange">Crédit</span>';
+    if (kind === 'sales' && owedSale(r) > 0) extra = ` <span class="badge orange">Doit ${esc(fmtN(owedSale(r)))}</span>`;
     if (kind === 'orders') extra = ' ' + dueBadge(r);
     const sign = kind === 'purchases' ? '−' : '';
     return `<button class="row" data-act="detail" data-kind="${kind}" data-id="${r.id}">
@@ -334,7 +404,7 @@
       if (f === 'done') list = list.filter((o) => o.status === 'done');
       list.sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.due || '9').localeCompare(b.due || '9') || b.at - a.at);
     } else {
-      list = f === 'credit' ? list.filter((s) => s.pay === 'credit') : list.filter((r) => inPeriod(r.date, f));
+      list = f === 'credit' ? list.filter((s) => owedSale(s) > 0) : list.filter((r) => inPeriod(r.date, f));
       list.sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at);
     }
     if (q) list = list.filter((r) => `${r.who || ''} ${itemsLabel(r)} ${r.cat || ''} ${ref(kind, r)}`.toLowerCase().includes(q));
@@ -349,7 +419,15 @@
       const any = db[kind].length > 0;
       return head + `<div class="empty"><div class="big">${any ? '🔍' : k.ico}</div><b>${any ? 'Rien à afficher ici' : `Aucune ${k.one} pour l’instant`}</b>${any ? 'Essayez un autre filtre.' : `Appuyez sur + pour ajouter votre première ${k.one}.`}</div>`;
     }
-    return head + `<div class="list">${list.map((r) => rowHtml(kind, r)).join('')}</div>`;
+    if (kind === 'orders') return head + `<div class="list">${list.map((r) => rowHtml(kind, r)).join('')}</div>`;
+    const perDay = {};
+    list.forEach((r) => { perDay[r.date] = (perDay[r.date] || 0) + total(r); });
+    let html = '', cur = null;
+    list.forEach((r) => {
+      if (r.date !== cur) { cur = r.date; html += `<div class="day-head"><span>${esc(niceDate(r.date))}</span><span>${esc(fmtN(round(perDay[r.date])))}</span></div>`; }
+      html += rowHtml(kind, r);
+    });
+    return head + `<div class="list">${html}</div>`;
   }
 
   function viewList(kind) {
@@ -370,12 +448,15 @@
   const back = `<button class="back" data-act="go" data-v="more">${I.back} Plus</button>`;
   function viewMore() {
     const low = db.products.filter(isLow).length;
-    const m = today().slice(0, 7);
+    const wk = periodOf('week', today());
+    const cl = clientList();
+    const owed = round(cl.reduce((a, c) => a + c.credit, 0));
     const row = (act, v, ico, title, sub) => `<button class="row" data-act="${act}" data-v="${v}">
       <div class="ico">${ico}</div><div class="mid"><div class="title">${title}</div><div class="sub">${esc(sub)}</div></div><div class="chev">›</div></button>`;
     return `<div class="list">
+      ${row('open-bilan', '', I.chart, 'Bilan', `Cette semaine : ${fmt(sum(inRange(db.sales, wk.start, wk.end)))} de ventes`)}
+      ${row('go', 'clients', I.user, 'Clients', cl.length ? `${cl.length} client${cl.length > 1 ? 's' : ''}${owed ? ` · on vous doit ${fmt(owed)}` : ''}` : 'Qui achète, qui vous doit')}
       ${row('go', 'stock', I.box, 'Articles & stock', db.products.length ? `${db.products.length} article${db.products.length > 1 ? 's' : ''}${low ? ` · ${low} à réapprovisionner` : ''}` : 'Vos produits, services et quantités')}
-      ${row('go', 'report', I.chart, 'Rapport du mois', `${fmt(sum(db.sales.filter((x) => x.date.slice(0, 7) === m)))} de ventes ce mois`)}
       ${row('go', 'card', I.idcard, 'Carte de visite', 'Avec code QR de contact')}
       ${row('settings', '', I.gear, 'Paramètres', 'Entreprise, logo, devise, sauvegarde')}
     </div>`;
@@ -401,7 +482,7 @@
     }
     return head + `<div class="list">${list.map((p) => `<button class="row" data-act="product" data-id="${p.id}">
       <div class="ico">${tracked(p) ? I.box : I.tag}</div>
-      <div class="mid"><div class="title">${esc(p.name)}${stockBadge(p)}</div><div class="sub">${esc(fmt(p.price))}</div></div>
+      <div class="mid"><div class="title">${esc(p.name)}${stockBadge(p)}</div><div class="sub">${esc(fmt(p.price))}${p.cost ? ` · rapporte ${esc(fmtN(round(p.price - p.cost)))}` : ''}</div></div>
       <div class="amt ${tracked(p) && p.qty <= 0 ? 'neg' : ''}">${tracked(p) ? `${fmtQ(p.qty)}<small>en stock</small>` : '<small>stock non suivi</small>'}</div>
     </button>`).join('')}</div>`;
   }
@@ -417,12 +498,16 @@
       ${head(p ? 'Modifier l’article' : 'Nouvel article')}
       <form id="product-form" novalidate data-id="${id || ''}">
         <label class="field"><span>Nom de l’article ou du service</span><input id="p-name" value="${esc(p ? p.name : '')}" autocomplete="off"></label>
-        <label class="field" style="margin-top:12px"><span>Prix de vente</span><input id="p-price" type="number" inputmode="decimal" min="0" step="any" value="${p ? p.price : ''}"></label>
+        <div class="grid2" style="margin-top:12px">
+          <label class="field"><span>Prix de vente</span><input id="p-price" type="number" inputmode="decimal" min="0" step="any" value="${p ? p.price : ''}"></label>
+          <label class="field"><span>Coût de revient</span><input id="p-cost" type="number" inputmode="decimal" min="0" step="any" placeholder="Facultatif" value="${p && p.cost ? p.cost : ''}"></label>
+        </div>
         <div class="grid2" style="margin-top:12px">
           <label class="field"><span>Quantité en stock</span><input id="p-qty" type="number" inputmode="decimal" step="any" placeholder="Vide = non suivi" value="${p && tracked(p) ? p.qty : ''}"></label>
           <label class="field"><span>Alerte si stock ≤</span><input id="p-min" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${p && p.min ? p.min : ''}"></label>
         </div>
-        <p class="muted small" style="margin-top:10px">Le stock baisse à chaque vente et remonte à chaque achat de cet article. Laissez la quantité vide pour un service.</p>
+        <p class="muted small" style="margin-top:10px">Coût de revient : ce que vous coûte une unité (ingrédients, emballage…). Il sert à calculer ce que chaque article vous rapporte dans le bilan.</p>
+        <p class="muted small" style="margin-top:6px">Le stock baisse à chaque vente et remonte à chaque achat de cet article. Laissez la quantité vide pour un plat préparé ou un service.</p>
         <button class="btn" style="margin-top:14px">Enregistrer</button>
       </form>
       ${p ? `<button class="btn danger" data-act="product-delete" data-id="${id}">${I.trash} Supprimer l’article</button>` : ''}`);
@@ -435,6 +520,7 @@
       const rec = p || { id: uid() };
       rec.name = name;
       rec.price = num($('#p-price').value);
+      rec.cost = num($('#p-cost').value);
       rec.qty = $('#p-qty').value === '' ? null : num($('#p-qty').value);
       rec.min = num($('#p-min').value);
       if (!p) db.products.push(rec);
@@ -443,8 +529,7 @@
     if (!p) setTimeout(() => { const el = $('#p-name'); if (el) el.focus(); }, 300);
   }
 
-  // ---------------------------------------------------------------- Rapport mensuel
-  const inMonth = (list, m) => list.filter((r) => r.date.slice(0, 7) === m);
+  // ---------------------------------------------------------------- Bilan
   function groupBy(pairs) {
     const map = new Map();
     pairs.forEach(([k, v, q]) => { const g = map.get(k) || { v: 0, q: 0 }; g.v += v; g.q += q || 0; map.set(k, g); });
@@ -454,51 +539,271 @@
     const max = Math.max(1, ...rows.map((r) => r.v));
     return `<div class="card bars">${rows.map((r) => `<div class="bar-row"><div class="top"><span>${esc(r.k)}${sub ? ` <small>${esc(sub(r))}</small>` : ''}</span><b>${esc(fmtN(r.v))}</b></div><div class="track"><i style="width:${Math.max(2, Math.round((r.v / max) * 100))}%"></i></div></div>`).join('')}</div>`;
   };
-  function viewReport() {
-    const m = ui.month;
-    const sales = inMonth(db.sales, m), purchases = inMonth(db.purchases, m);
-    const tS = sum(sales), tP = sum(purchases), bal = round(tS - tP);
-    const label = toDate(m + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const nav = `${back}<div class="month-nav"><button data-act="month" data-v="-1" aria-label="Mois précédent">‹</button><b>${esc(label)}</b><button data-act="month" data-v="1" aria-label="Mois suivant" ${m >= today().slice(0, 7) ? 'disabled' : ''}>›</button></div>`;
-    if (!sales.length && !purchases.length) {
-      return nav + `<div class="empty"><div class="big">${I.chart}</div><b>Rien ce mois-ci</b>Les ventes et achats de ce mois apparaîtront ici.</div>`;
-    }
-    const [y, mo] = m.split('-').map(Number);
-    const nDays = new Date(y, mo, 0).getDate();
-    const days = Array.from({ length: nDays }, (_, i) => { const d = `${m}-${pad(i + 1)}`; return { d, n: i + 1, v: sum(sales.filter((x) => x.date === d)) }; });
+  function dayBars(p, sales) {
+    const n = daysBetween(p.start, p.end) + 1;
+    const t = today();
+    const days = Array.from({ length: n }, (_, i) => { const d = addDays(p.start, i); return { d, i, v: sum(sales.filter((x) => x.date === d)) }; });
     const max = Math.max(1, ...days.map((x) => x.v));
-    const best = days.reduce((a, b) => (b.v > a.v ? b : a));
-    const items = groupBy([].concat(...sales.map((x) => x.items.map((it) => [it.name, it.qty * it.price, it.qty])))).slice(0, 5);
-    const pays = groupBy(sales.map((x) => [`${PAY[x.pay][0]} ${PAY[x.pay][1]}`, total(x)]));
-    const cats = groupBy(purchases.map((x) => [x.cat || 'Autre', total(x)]));
+    return days.map((x) => {
+      const day = toDate(x.d).getDate();
+      const lbl = p.type === 'week' ? 'LMMJVSD'[x.i] : (day === 1 || day % 5 === 0 ? day : '&nbsp;');
+      return `<div class="col ${x.d === t ? 'today' : ''} ${x.d > t ? 'future' : ''}" title="${esc(niceDate(x.d))} : ${esc(fmt(x.v))}"><i style="height:${Math.round((x.v / max) * 100)}%"></i>${lbl}</div>`;
+    }).join('');
+  }
+
+  function statsFor(a, b) {
+    const sales = inRange(db.sales, a, b), purchases = inRange(db.purchases, a, b);
+    const tS = sum(sales), tP = sum(purchases);
+    let margin = 0, marginBase = 0;
+    const items = new Map();
+    sales.forEach((r) => r.items.forEach((it) => {
+      const g = items.get(norm(it.name)) || { k: it.name, v: 0, q: 0, m: 0, mk: false, pct: 0 };
+      const v = it.qty * it.price;
+      g.v += v; g.q += it.qty;
+      const pr = findProduct(it.name);
+      if (pr && pr.cost) { const m = it.qty * (it.price - pr.cost); g.m += m; g.mk = true; margin += m; marginBase += v; }
+      items.set(norm(it.name), g);
+    }));
+    const days = groupBy(sales.map((r) => [r.date, total(r)]));
+    return {
+      sales, purchases, tS, tP, profit: round(tS - tP),
+      cashed: round(sales.reduce((t, r) => t + paidOf(r), 0)),
+      owed: round(sales.reduce((t, r) => t + owedSale(r), 0)),
+      margin: round(margin), marginBase: round(marginBase),
+      items: Array.from(items.values()).map((g) => Object.assign(g, { v: round(g.v), m: round(g.m), pct: g.v ? Math.round((g.m / g.v) * 100) : 0 })).sort((x, y) => y.v - x.v),
+      clients: groupBy(sales.filter((r) => norm(r.who)).map((r) => [r.who.trim(), total(r)])),
+      bestDay: days[0] || null,
+    };
+  }
+
+  // Période précédente, coupée à la même date quand la période en cours n'est pas finie.
+  function comparable(p) {
+    const prev = stepPeriod(p, -1);
+    const t = today();
+    let end = prev.end;
+    if (t >= p.start && t <= p.end) { const e = addDays(prev.start, daysBetween(p.start, t)); if (e < end) end = e; }
+    return statsFor(prev.start, end);
+  }
+  const pctChange = (cur, before) => (before ? Math.round(((cur - before) / Math.abs(before)) * 100) : null);
+  const delta = (cur, before) => {
+    const d = pctChange(cur, before);
+    return d === null ? '' : `<div class="cmp">${d >= 0 ? '▲' : '▼'} ${Math.abs(d)} %</div>`;
+  };
+
+  function insights(p, cur, base) {
+    const out = [];
+    const t = today();
+    const isCurrent = t >= p.start && t <= p.end;
+    const word = p.type === 'week' ? 'la semaine dernière' : 'le mois dernier';
+    if (!cur.sales.length) out.push('Aucune vente enregistrée sur cette période.');
+    const d = pctChange(cur.tS, base.tS);
+    if (d !== null && cur.tS) out.push(d >= 0 ? `📈 Ventes en hausse de ${d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.` : `📉 Ventes en baisse de ${-d} % par rapport à ${word}${isCurrent ? ' à la même date' : ''}.`);
+    if (cur.tP > cur.tS && cur.tS > 0) out.push('⚠️ Vos dépenses dépassent vos ventes sur cette période. Vérifiez vos prix et vos achats.');
+    const top = cur.items[0];
+    if (top) out.push(`🏆 ${top.k} est votre meilleure vente : ${fmtQ(top.q)} vendu${top.q > 1 ? 's' : ''} pour ${fmt(top.v)}.`);
+    if (cur.bestDay && cur.sales.length > 1) out.push(`📅 Meilleur jour : ${toDate(cur.bestDay.k).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}, avec ${fmt(cur.bestDay.v)}.`);
+    const weak = cur.items.filter((g) => g.mk && g.v > 0 && g.pct < 25).sort((a, b) => a.pct - b.pct)[0];
+    if (weak) out.push(`💡 ${weak.k} rapporte peu : ${weak.pct} % de marge. Pensez à revoir son prix ou son coût.`);
+    else if (cur.items.length && !db.products.some((x) => x.cost)) out.push('💡 Indiquez le coût de revient de vos plats dans « Articles & stock » pour voir ce que chacun vous rapporte vraiment.');
+    if (cur.owed > 0) out.push(`⏳ ${fmt(cur.owed)} de ventes de cette période ne sont pas encore payés. Pensez à relancer.`);
+    if (cur.clients[0] && cur.clients[0].v > 0) out.push(`💛 Meilleur client : ${cur.clients[0].k}, ${fmt(cur.clients[0].v)}.`);
+    const elapsed = isCurrent ? daysBetween(p.start, t) + 1 : 99;
+    if (elapsed >= 4) {
+      const sold = new Set(cur.items.map((g) => norm(g.k)));
+      const idle = db.products.filter((x) => !sold.has(norm(x.name)) && db.sales.some((r) => r.items.some((it) => norm(it.name) === norm(x.name)))).map((x) => x.name);
+      if (idle.length) out.push(`🔎 Pas vendu sur cette période : ${idle.slice(0, 3).join(', ')}${idle.length > 3 ? '…' : ''}.`);
+    }
+    if (isCurrent) {
+      const soon = db.orders.filter((o) => !o.saleId && o.due && o.due >= t && o.due <= addDays(t, 7));
+      if (soon.length) out.push(`📋 ${soon.length} commande${soon.length > 1 ? 's' : ''} à livrer dans les 7 prochains jours, pour ${fmt(sum(soon))}.`);
+    }
+    return out.slice(0, 7);
+  }
+
+  function viewBilan() {
+    const p = ui.period;
+    const t = today();
+    const cur = statsFor(p.start, p.end);
+    const base = comparable(p);
+    const isCurrent = t >= p.start && t <= p.end;
+    const nav = `${back}
+      <div class="chips">${[['week', 'Semaine'], ['month', 'Mois']].map(([v, l]) => `<button class="chip ${p.type === v ? 'on' : ''}" data-act="period-type" data-v="${v}">${l}</button>`).join('')}</div>
+      <div class="month-nav"><button data-act="period" data-v="-1" aria-label="Période précédente">${I.back}</button><b>${esc(periodLabel(p))}</b><button data-act="period" data-v="1" aria-label="Période suivante" ${p.end >= t ? 'disabled' : ''}><span style="display:inline-block;transform:scaleX(-1)">${I.back}</span></button></div>`;
+    if (!cur.sales.length && !cur.purchases.length) {
+      return nav + `<div class="empty"><div class="big">${I.chart}</div><b>Rien sur cette période</b>Les ventes et les dépenses enregistrées apparaîtront ici.</div>`;
+    }
+    const word = p.type === 'week' ? 'la semaine dernière' : 'le mois dernier';
+    const pays = groupBy(cur.sales.map((x) => [x.pay === 'credit' ? '⏳ Pas encore payé' : `${PAY[x.pay][0]} ${PAY[x.pay][1]}`, total(x)]));
+    const cats = groupBy(cur.purchases.map((x) => [x.cat || 'Autre', total(x)]));
     return `${nav}
       <div class="stats">
-        <div class="stat"><div class="ico">${I.coin}</div><div class="val">${esc(fmtN(tS))}</div><div class="lbl">Ventes</div></div>
-        <div class="stat"><div class="ico">${I.cart}</div><div class="val">${esc(fmtN(tP))}</div><div class="lbl">Achats</div></div>
-        <div class="stat"><div class="ico">${bal >= 0 ? I.up : I.down}</div><div class="val ${bal >= 0 ? 'pos' : 'neg'}">${bal > 0 ? '+' : ''}${esc(fmtN(bal))}</div><div class="lbl">Bénéfice estimé</div></div>
+        <div class="stat s-sales"><div class="lbl">Ventes</div><div class="val">${esc(fmtN(cur.tS))}</div>${delta(cur.tS, base.tS)}</div>
+        <div class="stat s-exp"><div class="lbl">Dépenses</div><div class="val">${esc(fmtN(cur.tP))}</div>${delta(cur.tP, base.tP)}</div>
+        <div class="stat s-profit"><div class="lbl">Bénéfice</div><div class="val">${cur.profit > 0 ? '+' : ''}${esc(fmtN(cur.profit))}</div>${delta(cur.profit, base.profit)}</div>
       </div>
+      ${base.tS || base.tP ? `<p class="muted small cmp-note">▲▼ : comparé à ${word}${isCurrent ? ' à la même date' : ''}. Bénéfice = ventes − dépenses.</p>` : '<p class="muted small cmp-note">Bénéfice = ventes − dépenses.</p>'}
       <div class="card">
-        <div class="kv"><span>Nombre de ventes</span><span>${sales.length}</span></div>
-        <div class="kv"><span>Vente moyenne</span><span>${esc(fmt(sales.length ? round(tS / sales.length) : 0))}</span></div>
-        ${best.v ? `<div class="kv"><span>Meilleur jour 🏆</span><span>${esc(niceDate(best.d))} · ${esc(fmt(best.v))}</span></div>` : ''}
+        <div class="kv"><span>Nombre de ventes</span><span>${cur.sales.length}</span></div>
+        <div class="kv"><span>Vente moyenne</span><span>${esc(fmt(cur.sales.length ? round(cur.tS / cur.sales.length) : 0))}</span></div>
+        <div class="kv"><span>Argent déjà encaissé</span><span>${esc(fmt(cur.cashed))}</span></div>
+        ${cur.owed ? `<div class="kv"><span>Pas encore payé</span><b class="neg">${esc(fmt(cur.owed))}</b></div>` : ''}
+        ${cur.marginBase ? `<div class="kv"><span>Ce que vos articles ont rapporté</span><b>${esc(fmt(cur.margin))}</b></div>` : ''}
       </div>
+      <div class="section-title">Points clés</div>
+      <div class="card tips">${insights(p, cur, base).map((x) => `<p>${esc(x)}</p>`).join('')}</div>
       <div class="section-title">Ventes par jour <small>${esc(S().currency)}</small></div>
-      <div class="card"><div class="week month">${days.map((x) => `<div class="col ${x.d === today() ? 'today' : ''}" title="${x.n} : ${esc(fmt(x.v))}"><i style="height:${Math.round((x.v / max) * 100)}%"></i>${x.n === 1 || x.n % 5 === 0 ? x.n : '&nbsp;'}</div>`).join('')}</div></div>
-      ${items.length ? `<div class="section-title">Meilleures ventes</div>${barRows(items, (r) => `× ${fmtQ(r.q)}`)}` : ''}
+      <div class="card"><div class="week ${p.type === 'month' ? 'month' : ''}">${dayBars(p, cur.sales)}</div></div>
+      ${cur.items.length ? `<div class="section-title">Meilleures ventes</div>${barRows(cur.items.slice(0, 6), (r) => `× ${fmtQ(r.q)}${r.mk ? ` · rapporte ${fmtN(r.m)}` : ''}`)}` : ''}
+      ${cur.clients.length ? `<div class="section-title">Meilleurs clients</div>${barRows(cur.clients.slice(0, 5))}` : ''}
       ${pays.length ? `<div class="section-title">Paiements</div>${barRows(pays)}` : ''}
-      ${cats.length ? `<div class="section-title">Achats par catégorie</div>${barRows(cats)}` : ''}
-      <button class="btn ghost" data-act="csv">${I.download} Exporter le mois (Excel / CSV)</button>`;
+      ${cats.length ? `<div class="section-title">Dépenses par catégorie</div>${barRows(cats)}` : ''}
+      <div class="btn-row">
+        <button class="btn" data-act="share-bilan">${I.share} Partager le bilan</button>
+        <button class="btn ghost" data-act="csv">${I.download} Excel (CSV)</button>
+      </div>`;
   }
+
+  function bilanText() {
+    const p = ui.period;
+    const cur = statsFor(p.start, p.end);
+    const L = [`Bilan · ${periodLabel(p)}`, S().name, '',
+      `Ventes : ${fmt(cur.tS)} (${cur.sales.length} vente${cur.sales.length > 1 ? 's' : ''})`,
+      `Dépenses : ${fmt(cur.tP)}`,
+      `Bénéfice : ${fmt(cur.profit)}`,
+      `Déjà encaissé : ${fmt(cur.cashed)}`];
+    if (cur.owed) L.push(`Pas encore payé : ${fmt(cur.owed)}`);
+    if (cur.items.length) L.push('', 'Meilleures ventes :', ...cur.items.slice(0, 5).map((g) => `- ${g.k} × ${fmtQ(g.q)} : ${fmt(g.v)}`));
+    const tips = insights(p, cur, comparable(p));
+    if (tips.length) L.push('', 'Points clés :', ...tips.map((x) => `- ${x}`));
+    return L.join('\n');
+  }
+
   function exportCsv() {
-    const m = ui.month;
+    const p = ui.period;
     const cell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
     const n = (v) => String(v).replace('.', ',');
-    const rows = [['Date', 'Type', 'Référence', 'Client / Fournisseur', 'Article', 'Quantité', 'Prix unitaire', 'Total', 'Paiement / Catégorie']];
-    [['sales', 'Vente'], ['purchases', 'Achat']].forEach(([kind, label]) => inMonth(db[kind], m)
+    const rows = [['Date', 'Type', 'Référence', 'Client / Fournisseur', 'Article', 'Quantité', 'Prix unitaire', 'Total ligne', 'Paiement / Catégorie', 'Total', 'Payé', 'Reste']];
+    [['sales', 'Vente'], ['purchases', 'Achat']].forEach(([kind, label]) => inRange(db[kind], p.start, p.end)
       .sort((a, b) => a.date.localeCompare(b.date) || a.at - b.at)
-      .forEach((r) => r.items.forEach((it) => rows.push([fullDate(r.date), label, ref(kind, r), r.who, it.name, n(it.qty), n(it.price), n(round(it.qty * it.price)), kind === 'sales' ? PAY[r.pay][1] : r.cat]))));
-    const csv = '\ufeff' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
-    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `gestio-${m}.csv`);
+      .forEach((r) => r.items.forEach((it, i) => rows.push([fullDate(r.date), label, ref(kind, r), r.who, it.name, n(it.qty), n(it.price), n(round(it.qty * it.price)),
+        kind === 'sales' ? PAY[r.pay][1] : r.cat,
+        i ? '' : n(total(r)), i ? '' : n(kind === 'sales' ? paidOf(r) : total(r)), i ? '' : n(kind === 'sales' ? owedSale(r) : 0)]))));
+    const csv = '﻿' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `gestio-${p.start}-au-${p.end}.csv`);
+  }
+
+  // ---------------------------------------------------------------- Clients
+  const clientRow = (c) => `<button class="row" data-act="client" data-key="${esc(c.key)}">
+      <div class="ico initial">${esc(c.name.charAt(0).toUpperCase())}</div>
+      <div class="mid"><div class="title">${esc(c.name)}${c.credit > 0 ? ` <span class="badge orange">Doit ${esc(fmtN(c.credit))}</span>` : ''}</div>
+        <div class="sub">${c.sales.length} achat${c.sales.length > 1 ? 's' : ''}${c.pending ? ' · commande en cours' : ''} · ${esc(niceDate(c.last))}</div></div>
+      <div class="amt">${esc(fmtN(c.spent))}<small>dépensés</small></div>
+    </button>`;
+  function clientsBody() {
+    const q = norm(ui.query.clients);
+    let list = clientList();
+    const owedTotal = round(db.sales.reduce((a, r) => a + owedSale(r), 0));
+    const owedOnly = ui.filter.clients === 'owed';
+    if (owedOnly) list = list.filter((c) => c.credit > 0);
+    if (q) list = list.filter((c) => c.key.includes(q) || (c.phone || '').includes(q));
+    list.sort((a, b) => (b.credit > 0) - (a.credit > 0) || b.last.localeCompare(a.last));
+    const anon = owedOnly && !q ? db.sales.filter((r) => !norm(r.who) && owedSale(r) > 0) : [];
+    const headH = `<div class="card summary"><div><div class="muted small">On vous doit</div><b>${esc(fmt(owedTotal))}</b></div>${I.user}</div>`;
+    if (!list.length && !anon.length) {
+      const any = clientList().length > 0;
+      return headH + `<div class="empty"><div class="big">${any ? '👍' : I.user}</div><b>${any ? (owedOnly ? 'Personne ne vous doit d’argent' : 'Aucun client trouvé') : 'Aucun client pour l’instant'}</b>${any ? '' : 'Indiquez le nom du client quand vous enregistrez une vente ou une commande : il apparaîtra ici avec tout son historique.'}</div>`;
+    }
+    return headH + `<div class="list">${list.map(clientRow).join('')}
+      ${anon.length ? `<div class="day-head"><span>Ventes sans nom de client</span><span>${esc(fmtN(round(anon.reduce((a, r) => a + owedSale(r), 0))))}</span></div>${anon.map((r) => rowHtml('sales', r)).join('')}` : ''}</div>`;
+  }
+  function viewClients() {
+    return `${back}
+      <div class="chips">${[['all', 'Tous'], ['owed', 'Ils vous doivent']].map(([v, l]) => `<button class="chip ${ui.filter.clients === v ? 'on' : ''}" data-act="filter" data-v="${v}">${l}</button>`).join('')}</div>
+      <input class="search" id="q" type="search" placeholder="Rechercher un client…" value="${esc(ui.query.clients)}">
+      <div id="list-body" class="view" style="padding:0">${clientsBody()}</div>`;
+  }
+  function openClient(key) {
+    const c = clientList().find((x) => x.key === key);
+    if (!c) return;
+    const hist = [...c.sales.map((r) => ['sales', r]), ...c.orders.map((r) => ['orders', r])]
+      .sort((a, b) => b[1].date.localeCompare(a[1].date) || b[1].at - a[1].at);
+    const k = `data-key="${esc(key)}"`;
+    openSheet(`${head(esc(c.name))}
+      <div class="stats">
+        <div class="stat s-sales"><div class="val">${esc(fmtN(c.spent))}</div><div class="lbl">Dépensés</div></div>
+        <div class="stat s-profit"><div class="val">${c.sales.length}</div><div class="lbl">Achat${c.sales.length > 1 ? 's' : ''}</div></div>
+        <div class="stat s-exp"><div class="val">${esc(fmtN(c.credit))}</div><div class="lbl">Reste à payer</div></div>
+      </div>
+      <label class="field"><span>Téléphone</span><input id="cl-phone" type="tel" placeholder="Avec l’indicatif, ex. +221…" value="${esc(c.phone)}"></label>
+      ${c.credit > 0 ? `<button class="btn" data-act="remind" ${k}>${I.message} Envoyer un rappel de paiement</button>` : ''}
+      <button class="btn ghost" data-act="sale-for" ${k}>${I.plus} Nouvelle vente pour ${esc(c.name)}</button>
+      <div class="section-title">Historique <small>${hist.length} opération${hist.length > 1 ? 's' : ''}</small></div>
+      <div class="list">${hist.map(([kd, r]) => rowHtml(kd, r, true)).join('')}</div>`);
+    $('#cl-phone').addEventListener('change', (e) => {
+      db.contacts = db.contacts || {};
+      db.contacts[key] = { phone: e.target.value.trim() };
+      save(); toast('Téléphone enregistré ✅');
+    });
+  }
+  function openRemind(key) {
+    const c = clientList().find((x) => x.key === key);
+    if (!c) return;
+    const lines = c.sales.filter((r) => owedSale(r) > 0).sort((a, b) => a.date.localeCompare(b.date))
+      .map((r) => `- ${fullDate(r.date)} : ${itemsLabel(r)}, reste ${fmt(owedSale(r))}`);
+    const text = `Bonjour ${c.name},\nPetit rappel de ${S().name} : il reste ${fmt(c.credit)} à régler.\n${lines.join('\n')}\nMerci beaucoup !`;
+    const digits = (c.phone || '').replace(/[^\d+]/g, '');
+    const intl = /^(\+|00)\d{8,}$/.test(digits) ? digits.replace(/^(\+|00)/, '') : '';
+    const wa = (t) => `https://wa.me/${intl}?text=${encodeURIComponent(t)}`;
+    openSheet(`${head('Rappel de paiement')}
+      <p class="muted small">Vous pouvez modifier le message avant de l’envoyer.</p>
+      <textarea id="share-text" class="share-text" rows="7">${esc(text)}</textarea>
+      ${intl ? `<a class="btn" id="wa-link" href="${esc(wa(text))}" target="_blank" rel="noopener">${I.message} Envoyer sur WhatsApp</a>` : ''}
+      <button class="btn ${intl ? 'ghost' : ''}" data-act="share-remind">${I.share} Partager ou copier</button>
+      ${intl ? '' : '<p class="muted small">Enregistrez le numéro du client avec l’indicatif (ex. +221…) pour l’envoyer directement sur WhatsApp.</p>'}
+      <button class="btn plain" data-act="client" data-key="${esc(key)}">${I.back} Retour</button>`);
+    if (intl) $('#share-text').addEventListener('input', (e) => { $('#wa-link').href = wa(e.target.value); });
+  }
+
+  // Partage de texte : feuille de partage du téléphone, sinon presse-papiers, sinon texte à sélectionner.
+  async function shareText(text, title) {
+    if (navigator.share) {
+      try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try { await navigator.clipboard.writeText(text); toast('Texte copié : collez-le dans WhatsApp 📋'); return; } catch (e) { /* refusé */ }
+    let ta = $('#share-text');
+    if (!ta) {
+      openSheet(`${head(esc(title))}<textarea id="share-text" class="share-text" rows="12" readonly>${esc(text)}</textarea><p class="muted small">Sélectionnez le texte puis copiez-le.</p>`);
+      ta = $('#share-text');
+    }
+    ta.focus(); ta.select();
+  }
+
+  // ---------------------------------------------------------------- Recherche globale
+  function openSearch() {
+    openSheet(`${head('Rechercher')}
+      <input class="search" id="gq" type="search" placeholder="Client, plat, n° de vente, montant…" autocomplete="off">
+      <div id="gres" class="list"></div>`);
+    const run = () => { $('#gres').innerHTML = searchResults($('#gq').value); };
+    $('#gq').addEventListener('input', run);
+    run();
+    setTimeout(() => { const el = $('#gq'); if (el) el.focus(); }, 250);
+  }
+  function searchResults(raw) {
+    const q = norm(raw);
+    if (!q) return '<p class="muted small">Tapez le nom d’un client, un plat, un numéro (V-0012, R-0012) ou un montant.</p>';
+    const digits = q.replace(/[\s.,]/g, '');
+    const isNum = /^\d+$/.test(digits);
+    const cl = clientList().filter((c) => c.key.includes(q)).slice(0, 5);
+    const recs = [];
+    ['sales', 'orders', 'purchases'].forEach((kind) => db[kind].forEach((r) => {
+      const hay = norm(`${r.who || ''} ${itemsLabel(r)} ${r.cat || ''} ${r.note || ''} ${ref(kind, r)} ${kind !== 'purchases' ? docRef(kind, r) : ''}`);
+      if (hay.includes(q) || (isNum && String(total(r)).includes(digits))) recs.push([kind, r]);
+    }));
+    recs.sort((a, b) => b[1].date.localeCompare(a[1].date) || b[1].at - a[1].at);
+    if (!cl.length && !recs.length) return `<div class="empty"><div class="big">🔍</div><b>Aucun résultat</b>Vérifiez l’orthographe ou essayez un autre mot.</div>`;
+    return `${cl.map(clientRow).join('')}
+      ${recs.length ? `<div class="day-head"><span>${recs.length} opération${recs.length > 1 ? 's' : ''}</span><span>${esc(fmtN(round(recs.reduce((a, [k, r]) => a + (k === 'purchases' ? 0 : total(r)), 0))))}</span></div>` : ''}
+      ${recs.slice(0, 50).map(([k, r]) => rowHtml(k, r, true)).join('')}`;
   }
 
   // ---------------------------------------------------------------- Feuilles (modales)
@@ -553,9 +858,10 @@
   const picked = (name) => { const el = $(`#sheet [data-group="${name}"] .on`); return el ? el.dataset.v : ''; };
 
   let formCtx = null;
-  function openForm(kind, id) {
+  function openForm(kind, id, tpl) {
     const k = KIND[kind];
     const rec = id ? db[kind].find((r) => r.id === id) : null;
+    const src = rec || tpl || null;
     const items = knownItems(kind);
     formCtx = { kind, id, items };
     let extra = '';
@@ -573,15 +879,15 @@
     openSheet(`
       ${head(`${rec ? 'Modifier' : 'Nouvelle'} ${k.one}`.replace('Nouvelle achat', 'Nouvel achat'))}
       <form id="entry-form" novalidate>
-        <label class="field"><span>${k.who}</span><input id="f-who" list="dl-people" placeholder="Facultatif" value="${esc(rec ? rec.who : '')}" autocomplete="off"></label>
+        <label class="field"><span>${k.who}</span><input id="f-who" list="dl-people" placeholder="${kind === 'purchases' ? 'Facultatif' : 'Nom du client (conseillé pour le suivi)'}" value="${esc(src ? src.who : '')}" autocomplete="off"></label>
         ${kind !== 'purchases' && db.products.length ? `<div class="chips" id="quick-items" style="margin-top:12px">${db.products.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr')).map((p) =>
           `<button type="button" class="chip" data-act="quick-item" data-id="${p.id}">${I.plus} ${esc(p.name)}</button>`).join('')}</div>` : ''}
         <div style="margin-top:12px">
           <div class="line-head"><span>Article</span><span>Qté</span><span>Prix unit.</span><span></span></div>
-          <div class="lines" id="lines" style="margin-top:5px">${(rec ? rec.items : [null]).map(lineHtml).join('')}</div>
+          <div class="lines" id="lines" style="margin-top:5px">${(src && src.items ? src.items : [null]).map(lineHtml).join('')}</div>
           <button type="button" class="btn ghost sm" data-act="line-add" style="margin-top:8px">+ Ajouter une ligne</button>
         </div>
-        <div class="total-box" style="margin-top:12px"><span>Total</span><b id="f-total">${esc(fmt(rec ? total(rec) : 0))}</b></div>
+        <div class="total-box" style="margin-top:12px"><span>Total</span><b id="f-total">${esc(fmt(src && src.items ? total(src) : 0))}</b></div>
         <div style="margin-top:12px">${extra}</div>
         <div class="grid2" style="margin-top:12px">
           <label class="field"><span>Date</span><input id="f-date" type="date" value="${rec ? rec.date : today()}"></label>
@@ -626,6 +932,7 @@
     rec.date = $('#f-date').value || today();
     rec.note = $('#f-note').value.trim();
     if (kind === 'sales') rec.pay = picked('pay') || 'cash';
+    if (kind === 'sales' && rec.pay === 'credit' && (rec.paid || 0) >= total(rec)) rec.paid = 0;
     if (kind === 'purchases') rec.cat = picked('cat');
     if (kind === 'orders') {
       rec.due = $('#f-due').value;
@@ -659,10 +966,14 @@
     let info = '';
     let actions = '';
     if (kind === 'sales') {
-      info = `<div class="kv"><span>Paiement</span><span>${PAY[r.pay][0]} ${PAY[r.pay][1]}</span></div>
-              <div class="kv"><span>Code de contrôle</span><span>${controlCode(r)}</span></div>`;
-      actions = `<button class="btn" data-act="receipt" ${d}>${I.receipt} Reçu avec code QR</button>
-        ${r.pay === 'credit' ? `<button class="btn ghost" data-act="paid" ${d}>${I.check} Marquer comme payé</button>` : ''}`;
+      const owed = owedSale(r);
+      info = `<div class="kv"><span>Paiement</span><span>${r.pay === 'credit' ? '⏳ Pas encore payé' : `${PAY[r.pay][0]} ${PAY[r.pay][1]}`}</span></div>
+        ${(r.payments || []).map((v) => `<div class="kv"><span>Versement du ${esc(fullDate(v.date))}</span><span>${esc(fmt(v.amount))} · ${esc(PAY[v.method] ? PAY[v.method][1] : '')}</span></div>`).join('')}
+        ${owed > 0 ? `<div class="kv"><span>Reste à payer</span><b class="neg">${esc(fmt(owed))}</b></div>` : ''}
+        <div class="kv"><span>Code de contrôle</span><span>${controlCode(r)}</span></div>`;
+      actions = `${owed > 0 ? `<button class="btn" data-act="cash-in" ${d}>${I.coin} Encaisser un paiement</button>` : ''}
+        <button class="btn ${owed > 0 ? 'ghost' : ''}" data-act="receipt" ${d}>${I.receipt} Reçu avec code QR</button>
+        <button class="btn ghost" data-act="repeat" ${d}>${I.repeat} Refaire cette vente</button>`;
     } else if (kind === 'purchases') {
       info = `<div class="kv"><span>Catégorie</span><span>${esc(r.cat || '—')}</span></div>`;
     } else {
@@ -670,15 +981,15 @@
       info = `${r.phone ? `<div class="kv"><span>Téléphone</span><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a></div>` : ''}
         <div class="kv"><span>Livraison prévue</span><span>${r.due ? esc(niceDate(r.due)) : '—'}</span></div>
         <div class="kv"><span>Acompte</span><span>${esc(fmt(r.deposit || 0))}</span></div>
-        <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>`;
+        <div class="kv"><span>${r.saleId ? 'Reste payé à la livraison' : 'Reste à payer'}</span><b>${esc(fmt(rest))}</b></div>`;
       actions = `<div class="steps">${Object.entries(STATUS).map(([v, s]) => `<button class="${r.status === v ? 'on' : ''}" data-act="status" data-v="${v}" ${d}>${s[0]}<br>${s[1]}</button>`).join('')}</div>
-        ${r.saleId ? '<p class="muted small" style="text-align:center">💰 Déjà transformée en vente</p>' : `<button class="btn" data-act="to-sale" ${d}>${I.coin} Transformer en vente</button>`}
+        ${r.saleId ? `<button class="btn ghost" data-act="detail" data-kind="sales" data-id="${r.saleId}">${I.coin} Voir la vente</button>` : `<button class="btn" data-act="to-sale" ${d}>${I.check} Livrer et encaisser</button>`}
         <button class="btn ghost" data-act="receipt" ${d}>${I.receipt} Bon de commande avec QR</button>`;
     }
     openSheet(`
       ${head(`${k.ico} ${ref(kind, r)}`)}
-      <div class="card" style="box-shadow:none;background:var(--bg)">
-        <div class="kv"><span>${k.who}</span><span>${esc(r.who || '—')}</span></div>
+      <div class="card flat">
+        <div class="kv"><span>${k.who}</span>${kind !== 'purchases' && norm(r.who) ? `<button class="link" data-act="client" data-key="${esc(norm(r.who))}">${esc(r.who)}</button>` : `<span>${esc(r.who || '—')}</span>`}</div>
         <div class="kv"><span>Date</span><span>${esc(niceDate(r.date))}</span></div>
         ${info}
         ${r.note ? `<div class="kv"><span>Note</span><span>${esc(r.note)}</span></div>` : ''}
@@ -690,6 +1001,37 @@
         <button class="btn plain" data-act="edit" ${d}>${I.edit} Modifier</button>
         <button class="btn danger" data-act="delete" ${d}>${I.trash} Supprimer</button>
       </div>`);
+  }
+
+  function openCashIn(id) {
+    const r = db.sales.find((x) => x.id === id);
+    const rest = owedSale(r);
+    openSheet(`${head('Encaisser un paiement')}
+      <div class="card flat">
+        <div class="kv"><span>${esc(r.who || 'Client de passage')}</span><span>${ref('sales', r)} · ${esc(niceDate(r.date))}</span></div>
+        <div class="kv"><span>Total</span><span>${esc(fmt(total(r)))}</span></div>
+        <div class="kv"><span>Déjà payé</span><span>${esc(fmt(r.paid || 0))}</span></div>
+        <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>
+      </div>
+      <label class="field"><span>Montant reçu</span><input id="c-amount" type="number" inputmode="decimal" min="0" step="any" value="${rest}"></label>
+      <div class="field"><span>Moyen de paiement</span>${chipGroup('pay', Object.entries(PAY).filter(([v]) => v !== 'credit').map(([v, x]) => [v, `${x[0]} ${x[1]}`]), 'cash')}</div>
+      <button class="btn" data-act="cash-in-save" data-id="${id}">${I.check} Enregistrer le paiement</button>
+      <button class="btn plain" data-act="detail" data-kind="sales" data-id="${id}">${I.back} Retour</button>`);
+  }
+  function openDeliver(id) {
+    const o = db.orders.find((x) => x.id === id);
+    const rest = owedOrder(o);
+    openSheet(`${head('Livrer la commande')}
+      <div class="card flat">
+        <div class="kv"><span>${esc(o.who || 'Client')}</span><span>${ref('orders', o)}</span></div>
+        <div class="kv"><span>Total</span><span>${esc(fmt(total(o)))}</span></div>
+        <div class="kv"><span>Acompte reçu</span><span>${esc(fmt(o.deposit || 0))}</span></div>
+        <div class="kv"><span>Reste à payer</span><b>${esc(fmt(rest))}</b></div>
+      </div>
+      ${rest > 0 ? `<div class="field"><span>Le client paie le reste…</span>${chipGroup('pay', Object.entries(PAY).map(([v, x]) => [v, v === 'credit' ? '⏳ Plus tard' : `${x[0]} ${x[1]}`]), 'cash')}</div>` : ''}
+      <p class="muted small">La commande devient une vente datée d’aujourd’hui et compte dans votre bilan.</p>
+      <button class="btn" data-act="deliver" data-id="${id}">${I.check} Confirmer la livraison</button>
+      <button class="btn plain" data-act="detail" data-kind="orders" data-id="${id}">${I.back} Retour</button>`);
   }
 
   // ---------------------------------------------------------------- Canvas : outils
@@ -790,7 +1132,7 @@
     ];
     if (r.who) lines.push(`Client : ${r.who}`);
     lines.push(`Total : ${fmt(total(r))}`);
-    if (kind === 'sales') lines.push(`Paiement : ${r.pay === 'credit' ? 'NON PAYÉ (crédit)' : PAY[r.pay][1]}`);
+    if (kind === 'sales') lines.push(r.pay === 'credit' ? `Payé : ${fmt(r.paid || 0)} · Reste : ${fmt(owedSale(r))}` : `Paiement : ${PAY[r.pay][1]}`);
     else lines.push(`Acompte : ${fmt(r.deposit || 0)}`, `Reste : ${fmt(round(total(r) - (r.deposit || 0)))}`);
     lines.push(`Code : ${controlCode(r)}`);
     if (S().phone) lines.push(`Tél : ${S().phone}`);
@@ -835,7 +1177,10 @@
 
     pair('TOTAL', fmt(total(r)), 34, 800); y += 44;
     if (kind === 'sales') {
-      pair('Paiement', r.pay === 'credit' ? 'NON PAYÉ (crédit)' : PAY[r.pay][1], 22, 400, r.pay === 'credit' ? '#e5484d' : GREY); y += 30;
+      if (r.pay === 'credit') {
+        pair('Déjà payé', fmt(r.paid || 0), 22, 400, GREY); y += 32;
+        pair('Reste à payer', fmt(owedSale(r)), 24, 700, '#c8412f'); y += 30;
+      } else { pair('Paiement', PAY[r.pay][1], 22, 400, GREY); y += 30; }
     } else {
       if (r.due) { pair('Livraison prévue', fullDate(r.due), 22, 400, GREY); y += 32; }
       pair('Acompte reçu', fmt(r.deposit || 0), 22, 400, GREY); y += 32;
@@ -1059,7 +1404,7 @@
       <div class="field"><span>Couleur</span><div class="swatches" data-group="color">${COLORS.map((c) => `<button type="button" style="background:${c}" class="${(s.color || COLORS[0]) === c ? 'on' : ''}" data-act="pick" data-v="${c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
       <button class="btn" data-act="settings-save">Enregistrer</button>
       <div class="section-title">Sauvegarde</div>
-      <p class="muted small">Vos données restent sur ce téléphone. Exportez-les régulièrement pour ne rien perdre.</p>
+      <p class="muted small">Vos données restent sur ce téléphone. Envoyez régulièrement une sauvegarde sur WhatsApp, par e-mail ou dans Google Drive : en cas de perte ou de changement de téléphone, il suffira de l’importer. ${db.lastBackup ? `Dernière sauvegarde : ${esc(niceDate(iso(new Date(db.lastBackup))))}.` : 'Aucune sauvegarde pour l’instant.'}</p>
       <div class="btn-row">
         <button class="btn ghost" data-act="export">${I.share} Exporter</button>
         <button class="btn ghost" data-act="import">${I.download} Importer</button>
@@ -1126,9 +1471,17 @@
     openOnboarding();
   }
 
-  function exportData() {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, `gestio-sauvegarde-${today()}.json`);
+  async function exportData() {
+    const name = `gestio-sauvegarde-${today()}.json`;
+    const blob = new Blob([JSON.stringify(Object.assign({}, db, { lastBackup: Date.now() }))], { type: 'application/json' });
+    const file = new File([blob], name, { type: 'application/json' });
+    const done = () => { db.lastBackup = Date.now(); save(); if ($('#sheet-backdrop').hidden) render(); };
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Sauvegarde Gestio' }); done(); toast('Sauvegarde envoyée ✅'); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    downloadBlob(blob, name);
+    done();
   }
   function importFile(e) {
     const file = e.target.files[0];
@@ -1180,7 +1533,42 @@
     detail: (d) => openDetail(d.kind, d.id),
     edit: (d) => openForm(d.kind, d.id),
     filter: (d) => { ui.filter[ui.tab] = d.v; render(); },
-    credits: () => { ui.tab = 'sales'; ui.filter.sales = 'credit'; render(); },
+    credits: () => { ui.tab = 'clients'; ui.filter.clients = 'owed'; ui.query.clients = ''; render(); window.scrollTo(0, 0); },
+    'open-bilan': () => { ui.tab = 'bilan'; ui.period = periodOf('week', today()); render(); window.scrollTo(0, 0); },
+    'period-type': (d) => { ui.period = periodOf(d.v, today()); render(); },
+    period: (d) => { ui.period = stepPeriod(ui.period, Number(d.v)); render(); },
+    'share-bilan': () => shareText(bilanText(), 'Bilan'),
+    client: (d) => openClient(d.key),
+    remind: (d) => openRemind(d.key),
+    'share-remind': () => shareText($('#share-text').value, 'Rappel de paiement'),
+    'sale-for': (d) => { const c = clientList().find((x) => x.key === d.key); openForm('sales', null, { who: c ? c.name : '' }); },
+    repeat: (d) => { const r = db.sales.find((x) => x.id === d.id); openForm('sales', null, { who: r.who, items: r.items.map((it) => Object.assign({}, it)) }); },
+    'cash-in': (d) => openCashIn(d.id),
+    'cash-in-save': (d) => {
+      const r = db.sales.find((x) => x.id === d.id);
+      const amt = Math.min(round(num($('#c-amount').value)), owedSale(r));
+      if (!(amt > 0)) { toast('Indiquez le montant reçu 🙂'); return; }
+      const method = picked('pay') || 'cash';
+      r.payments = (r.payments || []).concat({ date: today(), amount: amt, method });
+      r.paid = round((r.paid || 0) + amt);
+      const full = owedSale(r) <= 0;
+      if (full) r.pay = method;
+      save(); render(); openDetail('sales', r.id);
+      if (full) { confetti(50); toast('Vente entièrement payée 💵'); } else toast(`${fmt(amt)} encaissés · reste ${fmt(owedSale(r))}`);
+    },
+    deliver: (d) => {
+      const o = db.orders.find((x) => x.id === d.id);
+      const pay = owedOrder(o) > 0 ? picked('pay') || 'cash' : 'cash';
+      const sale = { id: uid(), n: ++db.seq.sale, at: Date.now(), who: o.who, items: o.items.map((it) => Object.assign({}, it)), date: today(), note: `Commande ${ref('orders', o)}`, pay };
+      if (o.deposit) sale.payments = [{ date: o.date, amount: o.deposit, method: 'cash' }];
+      if (pay === 'credit') sale.paid = o.deposit || 0;
+      else if (o.deposit && owedOrder(o) > 0) sale.payments.push({ date: today(), amount: owedOrder(o), method: pay });
+      db.sales.push(sale);
+      moveStock('sales', sale.items, 1);
+      o.saleId = sale.id; o.status = 'done';
+      save(); render(); confetti(60); toast('Commande livrée et ajoutée aux ventes 📦');
+      openDetail('sales', sale.id);
+    },
     'low-stock': () => { ui.tab = 'stock'; ui.filter.stock = 'low'; render(); window.scrollTo(0, 0); },
     go: (d) => { ui.tab = d.v; render(); window.scrollTo(0, 0); },
     settings: () => openSettings(),
@@ -1201,12 +1589,6 @@
       }
       $('#f-total').textContent = fmt(total({ items: readLines() }));
     },
-    month: (d) => {
-      const [y, mo] = ui.month.split('-').map(Number);
-      const dt = new Date(y, mo - 1 + Number(d.v), 1);
-      ui.month = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}`;
-      render();
-    },
     csv: exportCsv,
     'logo-pick': () => $('#logo-file').click(),
     'logo-clear': () => { draftLogo = ''; showDraftLogo(); },
@@ -1225,24 +1607,12 @@
         save(); render(); toast('Supprimé 🗑️');
       }, () => openDetail(d.kind, d.id));
     },
-    paid: (d) => {
-      const r = db.sales.find((x) => x.id === d.id);
-      r.pay = 'cash'; save(); render(); openDetail('sales', d.id); confetti(40); toast('Paiement encaissé 💵');
-    },
     status: (d) => {
       const o = db.orders.find((x) => x.id === d.id);
+      if (d.v === 'done' && !o.saleId) { openDeliver(o.id); return; }
       o.status = d.v; save(); render(); openDetail('orders', d.id);
-      if (d.v === 'done') { confetti(40); toast('Commande livrée 📦'); }
     },
-    'to-sale': (d) => {
-      const o = db.orders.find((x) => x.id === d.id);
-      const sale = { id: uid(), n: ++db.seq.sale, at: Date.now(), who: o.who, items: o.items.map((it) => Object.assign({}, it)), date: today(), note: `Commande ${ref('orders', o)}`, pay: 'cash' };
-      db.sales.push(sale);
-      moveStock('sales', sale.items, 1);
-      o.saleId = sale.id; o.status = 'done';
-      save(); render(); confetti(60); toast('Commande transformée en vente 💰');
-      openDetail('sales', sale.id);
-    },
+    'to-sale': (d) => openDeliver(d.id),
     receipt: (d) => openReceipt(d.kind, d.id),
     'receipt-share': () => shareCanvas(receiptCanvas, receiptCanvas.dataset.name, 'Reçu'),
     'receipt-dl': () => downloadCanvas(receiptCanvas, receiptCanvas.dataset.name),
@@ -1287,7 +1657,12 @@
     if (tab) { ui.tab = tab.dataset.tab; render(); window.scrollTo(0, 0); return; }
     if (e.target.id === 'sheet-backdrop' && !sheetLocked) closeSheet();
   });
-  $('#fab').addEventListener('click', () => (ui.tab === 'home' ? actions['fab-menu']() : ui.tab === 'stock' ? openProduct() : openForm(ui.tab)));
+  $('#fab').addEventListener('click', () => {
+    if (ui.tab === 'home') actions['fab-menu']();
+    else if (ui.tab === 'stock') openProduct();
+    else openForm(ui.tab === 'clients' ? 'sales' : ui.tab);
+  });
+  $('#btn-search').addEventListener('click', () => { if (db.settings) openSearch(); });
   $('#btn-settings').addEventListener('click', () => { if (db.settings) openSettings(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheetLocked && !$('#sheet-backdrop').hidden) closeSheet(); });
 
