@@ -1,0 +1,32 @@
+# Réglages d'authentification du projet Supabase de l'application.
+# Active les connexions anonymes : chaque téléphone reçoit une identité invisible, sans e-mail
+# ni mot de passe, et ses données restent protégées par les règles de supabase/schema.sql.
+name: Supabase auth settings
+
+on:
+  push:
+    paths:
+      - .github/workflows/supabase-auth.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REF: sktrzibeinhbblnovrct
+      SUPABASE_TOKEN: ${{ secrets.ACCESS_TOKEN_API_KEY || secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Enable anonymous sign-ins
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_TOKEN" ] || { echo "::error::Secret ACCESS_TOKEN_API_KEY missing"; exit 1; }
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' -X PATCH \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_TOKEN" -H "Content-Type: application/json" \
+            --data '{"external_anonymous_users_enabled": true}')
+          echo "Management API: HTTP $code"
+          [ "$code" -lt 300 ] || { head -c 1000 /tmp/out.json; echo; exit 1; }
+          jq '{external_anonymous_users_enabled, external_email_enabled, mailer_autoconfirm, site_url}' /tmp/out.json
