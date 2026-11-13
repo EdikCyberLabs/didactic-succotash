@@ -1,19 +1,20 @@
 # Gestio
 
-Petite application mobile de gestion pour les entreprises : simple, ludique et adaptable à tout type d'activité (boutique, restaurant, services, beauté, mode, agriculture…).
+Application mobile de caisse et de gestion pour tous les types d'entreprise : commerce, restauration, services, beauté, artisans, santé, formation, transport, agriculture…
+
+Le design reprend un langage « portefeuille » : panneau d'accueil lavande avec un gros montant, bande noire avec pastille de tendance et boutons pilules, feuille gris clair à poignée, cartes sans bordure, courbe de revenus verte, clavier numérique lavande pour la caisse. Police Inter.
 
 ## Fonctionnalités
 
-- **Ventes** — saisie en quelques secondes avec les raccourcis d'articles, mode de paiement (espèces, Mobile Money, carte, virement, plus tard). Listes groupées par jour avec le total de chaque journée. « Refaire cette vente » pour les habitués.
-- **Argent à encaisser** — une vente « pas encore payée » accepte des versements partiels ; chaque versement est daté. L'accueil affiche ce qu'on vous doit au total.
-- **Clients** — fiche par client (total dépensé, historique, reste à payer, téléphone) et rappel de paiement prêt à envoyer sur WhatsApp.
-- **Commandes** — date de livraison, acompte, statut. À la livraison, la commande devient une vente : le client paie le reste tout de suite ou plus tard, et l'acompte est compté.
-- **Achats** — dépenses par fournisseur et par catégorie.
-- **Bilan** — par semaine ou par mois : ventes, dépenses, bénéfice, comparaison avec la période précédente à la même date, argent encaissé et à encaisser, ce que les articles ont rapporté, meilleures ventes, meilleurs clients, et des points clés (hausse ou baisse, article peu rentable, articles pas vendus, commandes à venir…). Partage en texte et export CSV pour Excel.
-- **Recherche** — retrouver n'importe quelle opération par client, plat, numéro (V-0012, R-0012) ou montant.
-- **Articles & stock** — prix de vente, coût de revient (pour calculer ce que chaque article rapporte), stock suivi automatiquement avec alerte.
-- **Reçus avec code QR**, **carte de visite** avec QR de contact, **logo** personnalisé.
-- **Sauvegarde** — les données restent sur le téléphone ; l'application rappelle d'envoyer une sauvegarde (WhatsApp, e-mail, Drive) au moins une fois par semaine.
+- **Caisse** — grille d'articles, montant libre au clavier, panier modifiable, client, mode de paiement, monnaie à rendre. Le stock se met à jour à chaque vente.
+- **Factures** — chaque vente génère une facture au format page (en-tête entreprise et n° fiscal, client, lignes, remise, taxe, total, payé, reste, statut, code QR) ou un reçu ticket. Suivi « À encaisser / En retard / Payées », versements partiels datés, échéance selon le délai de paiement choisi.
+- **Clients (CRM)** — fiches (téléphone, e-mail, adresse, note), historique, total dépensé, reste à payer, segments « Ils vous doivent », « Fidèles », « Inactifs », rappel de paiement prêt à envoyer sur WhatsApp.
+- **Finances** — par semaine, mois ou année : ventes, dépenses, résultat (ventes hors taxes − dépenses) comparés à la période précédente, compte de résultat, taxes collectées à reverser, marge sur articles (coût de revient), trésorerie (encaissé, payé, flux net), meilleures ventes, meilleurs clients, points clés. Partage en texte et export CSV pour Excel.
+- **Dépenses** — catégories adaptées au métier plus les charges courantes (loyer, salaires, transport, marketing, impôts).
+- **Commandes & devis** — acompte, date de livraison, statut ; à la livraison, la commande devient une vente.
+- **Articles & stock** — prix de vente, coût de revient, stock suivi avec alerte.
+- **Recherche globale**, **carte de visite** avec QR de contact, **logo**, teinte d'accueil personnalisable, thème sombre.
+- **Hors ligne** — les données restent sur le téléphone ; sauvegarde à envoyer sur WhatsApp, e-mail ou Drive, avec rappel hebdomadaire.
 
 ## Lancer l'application
 
@@ -32,9 +33,9 @@ Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement stati
 | Fichier | Rôle |
 | --- | --- |
 | `index.html` | Structure de la page |
-| `css/app.css` | Styles : aplats de couleur, contours épais, ombres dures (thème clair et sombre) |
+| `css/app.css` | Styles (thème clair et sombre) |
 | `js/app.js` | Toute la logique de l'application |
 | `sw.js` | Cache hors ligne (changer `VERSION` à chaque mise à jour) |
 | `manifest.webmanifest`, `icons/` | Installation sur l'écran d'accueil |
-| `fonts/` | Police Space Grotesk (licence SIL OFL 1.1) |
+| `fonts/` | Police Inter (licence SIL OFL 1.1) |
 | `vendor/qrcode.js` | Génération des codes QR ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), licence MIT) |

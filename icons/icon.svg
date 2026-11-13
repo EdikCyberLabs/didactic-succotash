@@ -1,14 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="#25214d" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-  <rect width="512" height="512" fill="#f2b33d" stroke="none"/>
-  <path d="M98 108v40M78 128h40M408 372v32M392 388h32" stroke-width="10"/>
-  <g transform="rotate(-8 256 256)">
-    <path d="M174 124h192v292l-32-22-32 22-32-22-32 22-32-22-32 22z" fill="#25214d"/>
-    <path d="M158 108h192v292l-32-22-32 22-32-22-32 22-32-22-32 22z" fill="#fffdf7"/>
-    <path d="M192 160h92" stroke="#6c72c4" stroke-width="20"/>
-    <path d="M192 204h124"/>
-    <rect x="192" y="244" width="96" height="96" rx="12" fill="#fff"/>
-    <path d="M212 264h20v20h-20zM248 264h20v20h-20zM212 300h20v20h-20z" fill="#25214d" stroke-width="6"/>
-    <path d="M250 302h12M266 314v8" stroke-width="10"/>
-  </g>
-  <circle cx="392" cy="150" r="42" fill="#25214d"/><circle cx="382" cy="140" r="42" fill="#8fb04f"/><path d="M364 140l13 13 23-25"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#d6d5ea"/>
+  <rect x="96" y="300" width="320" height="212" fill="#0f0f12"/>
+  <rect x="136" y="342" width="110" height="64" rx="22" fill="#2a2a30"/>
+  <rect x="266" y="342" width="110" height="64" rx="22" fill="#d6d5ea"/>
+  <text x="256" y="236" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" font-size="176" letter-spacing="-12" fill="#111114">G</text>
+  <rect x="196" y="282" width="120" height="36" rx="18" fill="#5c9a36" stroke="#0f0f12" stroke-width="6"/>
+  <path d="M224 306l14-12 10 8 18-16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
