@@ -81,6 +81,7 @@
 
   function load() {
     try {
+      if (window.GESTIO_DEMO && !localStorage.getItem(KEY)) return window.GESTIO_DEMO();
       const d = JSON.parse(localStorage.getItem(KEY));
       if (d && typeof d === 'object') return Object.assign(blank(), d);
     } catch (e) { /* données illisibles : on repart de zéro */ }
@@ -291,8 +292,15 @@
     $('#sheet').scrollTop = 0;
     $('#sheet-backdrop').hidden = false;
   }
-  function closeSheet() { $('#sheet-backdrop').hidden = true; $('#sheet').innerHTML = ''; sheetLocked = false; }
+  function closeSheet() { $('#sheet-backdrop').hidden = true; $('#sheet').innerHTML = ''; sheetLocked = false; pending = null; }
   const head = (title) => `<div class="sheet-head"><h2>${title}</h2><button class="x" data-act="close" aria-label="Fermer">✕</button></div>`;
+
+  let pending = null;
+  function ask(msg, okLabel, ok, cancel) {
+    pending = { ok, cancel };
+    openSheet(`${head('Confirmer')}<p>${esc(msg)}</p>
+      <div class="btn-row"><button class="btn plain" data-act="confirm-no">Annuler</button><button class="btn danger" data-act="confirm-yes">${esc(okLabel)}</button></div>`);
+  }
 
   let toastTimer;
   function toast(msg) {
@@ -854,9 +862,10 @@
       try {
         const d = JSON.parse(reader.result);
         if (!d || !d.settings || !Array.isArray(d.sales) || !Array.isArray(d.purchases) || !Array.isArray(d.orders)) throw new Error('format');
-        if (!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?')) return;
-        db = Object.assign(blank(), d);
-        save(); closeSheet(); render(); toast('Sauvegarde restaurée ✅');
+        ask('Remplacer toutes les données actuelles par cette sauvegarde ?', 'Remplacer', () => {
+          db = Object.assign(blank(), d);
+          save(); render(); toast('Sauvegarde restaurée ✅');
+        }, openSettings);
       } catch (err) { toast('Ce fichier n’est pas une sauvegarde Gestio ⚠️'); }
     };
     reader.readAsText(file);
@@ -903,10 +912,11 @@
       $('#f-total').textContent = fmt(total({ items: readLines() }));
     },
     delete: (d) => {
-      if (!confirm(`Supprimer cette ${KIND[d.kind].one} ?`.replace('cette achat', 'cet achat'))) return;
-      db[d.kind] = db[d.kind].filter((r) => r.id !== d.id);
-      if (d.kind === 'sales') db.orders.forEach((o) => { if (o.saleId === d.id) delete o.saleId; });
-      save(); closeSheet(); render(); toast('Supprimé 🗑️');
+      ask(`Supprimer cette ${KIND[d.kind].one} ?`.replace('cette achat', 'cet achat'), 'Supprimer', () => {
+        db[d.kind] = db[d.kind].filter((r) => r.id !== d.id);
+        if (d.kind === 'sales') db.orders.forEach((o) => { if (o.saleId === d.id) delete o.saleId; });
+        save(); render(); toast('Supprimé 🗑️');
+      }, () => openDetail(d.kind, d.id));
     },
     paid: (d) => {
       const r = db.sales.find((x) => x.id === d.id);
@@ -944,11 +954,14 @@
     export: exportData,
     import: () => $('#import-file').click(),
     reset: () => {
-      if (!confirm('Effacer définitivement toutes les données de l’application ?')) return;
-      localStorage.removeItem(KEY);
-      db = blank(); onb.step = 0; ui.tab = 'home';
-      closeSheet(); render(); openOnboarding();
+      ask('Effacer définitivement toutes les données de l’application ?', 'Tout effacer', () => {
+        try { localStorage.removeItem(KEY); } catch (e) { /* stockage indisponible */ }
+        db = blank(); onb.step = 0; ui.tab = 'home';
+        render(); openOnboarding();
+      }, openSettings);
     },
+    'confirm-yes': () => { const p = pending; closeSheet(); if (p) p.ok(); },
+    'confirm-no': () => { const p = pending; closeSheet(); if (p && p.cancel) p.cancel(); },
     'onb-next': onbNext,
     'fab-menu': () => openSheet(`${head('Ajouter')}
       <div class="quick">
