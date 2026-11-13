@@ -28,18 +28,22 @@ Puis ouvrir `http://localhost:8000` dans un navigateur.
 
 Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement statique en HTTPS (par exemple GitHub Pages : *Settings → Pages → Deploy from a branch*), ouvrir l'adresse sur le téléphone, puis choisir « Ajouter à l'écran d'accueil ».
 
-## Synchronisation entre téléphones (Supabase)
+## Sauvegarde en ligne et comptes (Supabase)
 
-Facultative : sans elle, l'application fonctionne seule sur chaque téléphone. Avec elle, toute l'équipe partage les mêmes ventes, factures, dépenses, commandes, articles, clients et paramètres. Chaque téléphone garde une copie locale et continue de fonctionner hors ligne ; les changements partent dès le retour du réseau.
+Projet : `sktrzibeinhbblnovrct` (adresse et clé publishable dans `js/config.js`).
 
-Mise en place, une seule fois :
+**Sans inscription.** À la fin de l'accueil, chaque téléphone reçoit une identité anonyme Supabase, sans e-mail ni mot de passe. L'entreprise est créée en ligne et toutes ses données y sont envoyées automatiquement : ventes, factures, paiements, dépenses, commandes, articles, clients et paramètres. Chaque téléphone garde aussi une copie locale et continue de fonctionner hors ligne ; les changements partent dès le retour du réseau.
 
-1. Dans Supabase, **SQL Editor › New query** : coller le contenu de `supabase/schema.sql`, puis **Run**. Le script crée les tables et les règles de sécurité : chaque utilisateur ne voit que les données de son entreprise.
-2. **Authentication › URL Configuration** : mettre l'adresse publique de l'application dans **Site URL** et l'ajouter aux **Redirect URLs**. C'est là que mène le lien de connexion reçu par e-mail.
-3. Facultatif, **Authentication › Email Templates › Magic Link** : ajouter `Votre code : {{ .Token }}` au message pour pouvoir saisir un code à 6 chiffres au lieu d'ouvrir le lien.
-4. Dans `js/config.js`, renseigner `url` (Project Settings › Data API). La clé publishable y est déjà.
+**Plusieurs téléphones.** Dans Plus › Compte, un code d'invitation est affiché. Sur l'autre téléphone, à l'accueil : « Rejoindre une entreprise », puis ce code.
 
-Dans l'application : **Plus › Synchronisation**. La première personne se connecte avec son e-mail et crée l'espace de l'entreprise ; ses données y sont envoyées. Les autres se connectent avec leur propre e-mail et saisissent le code d'invitation affiché.
+**Comptes (facultatif).** Plus › Compte › « Créer un compte » rattache l'entreprise à un e-mail et un mot de passe, pour la retrouver sur un nouveau téléphone (« J'ai déjà un compte » à l'accueil). L'écran de connexion propose aussi la connexion par lien reçu par e-mail et la réinitialisation du mot de passe. Les e-mails de confirmation et de réinitialisation renvoient vers l'adresse de l'application : renseignez-la dans Supabase (**Authentication › URL Configuration**) une fois l'application en ligne.
+
+**Sécurité.** Les règles de `supabase/schema.sql` limitent chaque identité, anonyme ou non, aux données des entreprises dont elle est membre. Une identité anonyme n'existe que sur son téléphone : si l'application est effacée sans compte, l'accès en ligne à l'entreprise passe par un collègue qui détient le code d'invitation.
+
+**Mise en place, déjà faite par les workflows GitHub Actions** (ils utilisent le secret `ACCESS_TOKEN_API_KEY`, un jeton d'accès Supabase) :
+
+- `supabase-schema.yml` installe ou met à jour `supabase/schema.sql` à chaque modification de ce fichier ;
+- `supabase-auth.yml` active les connexions anonymes.
 
 À savoir :
 

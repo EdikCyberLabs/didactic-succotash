@@ -568,7 +568,7 @@
       ${row('go', 'orders', I.clip, 'Commandes & devis', `${db.orders.filter((o) => o.status !== 'done').length} en cours`)}
       ${row('go', 'stock', I.box, 'Articles & stock', db.products.length ? `${db.products.length} article${db.products.length > 1 ? 's' : ''}${low ? ` · ${low} à réapprovisionner` : ''}` : 'Produits, services, prix et stock')}
       ${row('go', 'card', I.idcard, 'Carte de visite', 'Avec code QR de contact')}
-      ${syncReady() ? row('sync', '', I.cloud, 'Synchronisation', syncSummary()) : ''}
+      ${syncReady() ? row('sync', '', I.cloud, 'Compte et sauvegarde', syncSummary()) : ''}
       ${row('settings', '', I.gear, 'Paramètres', 'Entreprise, taxes, devise, sauvegarde')}
     </div>`;
   }
@@ -1737,8 +1737,8 @@
       <div class="section-title">Apparence</div>
       <div class="field"><span>Teinte du panneau d’accueil</span><div class="swatches" data-group="color">${COLORS.map((c) => `<button type="button" style="background:${c}" class="${(COLORS.includes(s.color) ? s.color : COLORS[0]) === c ? 'on' : ''}" data-act="pick" data-v="${c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
       <button class="btn" data-act="settings-save">Enregistrer</button>
-      ${syncReady() ? `<div class="section-title">Synchronisation</div>
-      <button class="row" data-act="sync"><div class="ico">${I.cloud}</div><div class="mid"><div class="title">Plusieurs téléphones</div><div class="sub">${esc(syncSummary())}</div></div><div class="chev">›</div></button>` : ''}
+      ${syncReady() ? `<div class="section-title">Compte</div>
+      <button class="row" data-act="sync"><div class="ico">${I.cloud}</div><div class="mid"><div class="title">Compte et sauvegarde en ligne</div><div class="sub">${esc(syncSummary())}</div></div><div class="chev">›</div></button>` : ''}
       <div class="section-title">Sauvegarde</div>
       <p class="muted small">Vos données restent sur ce téléphone. Envoyez régulièrement une sauvegarde sur WhatsApp, par e-mail ou dans Google Drive : en cas de perte ou de changement de téléphone, il suffira de l’importer. ${db.lastBackup ? `Dernière sauvegarde : ${esc(niceDate(iso(new Date(db.lastBackup))))}.` : 'Aucune sauvegarde pour l’instant.'}</p>
       <div class="btn-row">
@@ -1761,58 +1761,101 @@
     };
   }
 
-  const onb = { step: 0, data: { name: '', owner: '', type: 'shop', currency: 'FCFA', goal: 0 } };
+  // Parcours d'accueil : bienvenue › entreprise › préférences › prêt ; ou rejoindre ; ou se connecter.
+  const onb = { step: 'welcome', joining: false, data: { name: '', owner: '', type: 'shop', currency: 'FCFA', goal: 0, tax: 0, phone: '' } };
+  function onbFrame(step, total, body, backTo) {
+    return `<div class="onb onb-form">
+      <div class="onb-top">
+        ${backTo ? `<button class="round" data-act="onb-go" data-v="${backTo}" aria-label="Retour">${I.back}</button>` : '<span></span>'}
+        ${total ? `<span class="small muted">Étape ${step} sur ${total}</span>` : '<span></span>'}
+      </div>
+      ${total ? `<div class="onb-progress"><i style="width:${Math.round((step / total) * 100)}%"></i></div>` : ''}
+      ${body}
+    </div>`;
+  }
   function openOnboarding() {
-    const dots = `<div class="dots">${[0, 1, 2].map((i) => `<i class="${i === onb.step ? 'on' : ''}"></i>`).join('')}</div>`;
     const d = onb.data;
-    let body;
-    if (onb.step === 0) {
-      body = `<div class="art">${ART}</div><h1 class="wordmark">Gestio</h1>
+    const cloud = syncReady();
+    let html, cls = 'full';
+    if (onb.step === 'welcome') {
+      cls = 'full sun';
+      html = `<div class="onb">
+        <div class="art">${ART}</div>
+        <h1 class="wordmark">Gestio</h1>
         <p>Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.</p>
-        ${dots}<button class="btn" data-act="onb-next">C’est parti</button>
-        ${syncReady() ? '<button class="btn plain" data-act="sync" style="margin-top:6px">Rejoindre une entreprise existante</button>' : ''}`;
-    } else if (onb.step === 1) {
-      body = `<h2>Votre entreprise</h2><p>L’application s’adapte à votre métier.</p>
-        <div class="left view" style="padding:0;margin-top:14px">
-          <div class="grid2">
-            <label class="field"><span>Nom de l’entreprise</span><input id="s-name" placeholder="Ex. Studio Nova" value="${esc(d.name)}"></label>
-            <label class="field"><span>Votre prénom</span><input id="s-owner" placeholder="Facultatif" value="${esc(d.owner)}"></label>
-          </div>
+        <ul class="perks">
+          <li>${I.pos}<span>Encaissez en quelques touches</span></li>
+          <li>${I.invoice}<span>Factures et reçus avec code QR</span></li>
+          <li>${I.chart}<span>Résultats et trésorerie en un coup d’œil</span></li>
+          ${cloud ? `<li>${I.cloudUp}<span>Données sauvegardées en ligne, sans inscription</span></li>` : ''}
+        </ul>
+        <button class="btn" data-act="onb-go" data-v="business">Créer mon entreprise</button>
+        ${cloud ? `<button class="btn ghost" data-act="onb-go" data-v="join">${I.users} Rejoindre une entreprise</button>
+        <button class="btn plain" data-act="auth" data-v="signin">J’ai déjà un compte · <u>Se connecter</u></button>` : ''}
+      </div>`;
+    } else if (onb.step === 'business') {
+      html = onbFrame(1, 3, `<h2>Votre entreprise</h2><p>L’application s’adapte à votre métier.</p>
+        <div class="left stack">
+          <label class="field"><span>Nom de l’entreprise</span><input id="s-name" placeholder="Ex. Studio Nova" value="${esc(d.name)}" autocomplete="organization"></label>
+          <label class="field"><span>Votre prénom</span><input id="s-owner" placeholder="Facultatif" value="${esc(d.owner)}" autocomplete="given-name"></label>
           <div class="field"><span>Type d’activité</span>${typePicker(d.type)}</div>
         </div>
-        ${dots}<button class="btn" data-act="onb-next">Continuer</button>`;
-    } else {
-      body = `<h2>Dernière étape</h2><p>Devise, taxe et objectif : modifiables à tout moment.</p>
-        <div class="left view" style="padding:0;margin-top:14px">
+        <button class="btn" data-act="onb-next">Continuer ${I.arrowR}</button>`, 'welcome');
+    } else if (onb.step === 'prefs') {
+      html = onbFrame(2, 3, `<h2>Vos préférences</h2><p>Modifiables à tout moment dans les paramètres.</p>
+        <div class="left stack">
           <div class="grid2">
             <label class="field"><span>Devise</span>${currencySelect(d.currency)}</label>
             <label class="field"><span>Taxe / TVA (%)</span><input id="s-tax" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${d.tax || ''}"></label>
           </div>
-          <label class="field"><span>Objectif de ventes par jour (facultatif)</span><input id="s-goal" type="number" inputmode="decimal" min="0" step="any" placeholder="Ex. 50000" value="${d.goal || ''}"></label>
+          <label class="field"><span>Objectif de ventes par jour</span><input id="s-goal" type="number" inputmode="decimal" min="0" step="any" placeholder="Facultatif, ex. 50000" value="${d.goal || ''}"></label>
+          <label class="field"><span>Téléphone de l’entreprise</span><input id="s-phone" type="tel" placeholder="Facultatif, affiché sur les reçus" value="${esc(d.phone)}" autocomplete="tel"></label>
         </div>
-        ${dots}<button class="btn" data-act="onb-next">Commencer</button>`;
+        <button class="btn" data-act="onb-next">Terminer ${I.check}</button>`, 'business');
+    } else if (onb.step === 'done') {
+      html = onbFrame(3, 3, `<div class="done-badge">${I.ok}</div>
+        <h2>Tout est prêt${S().owner ? `, ${esc(S().owner)}` : ''} !</h2>
+        <p>${esc(S().name)} est configurée.</p>
+        <div class="card left">
+          <div class="kv"><span>Activité</span><span>${esc(bizType().label)}</span></div>
+          <div class="kv"><span>Devise</span><span>${esc(S().currency)}</span></div>
+          ${cloud ? `<div class="kv"><span>Sauvegarde en ligne</span><span id="onb-cloud">${esc(cloudLabel())}</span></div>` : ''}
+        </div>
+        ${cloud ? '<p class="small muted">Vos données sont enregistrées en ligne automatiquement. Créez un compte quand vous voulez, depuis Plus › Compte, pour les retrouver sur un autre téléphone.</p>' : ''}
+        <button class="btn" data-act="onb-finish">Ouvrir mon tableau de bord</button>`, null);
+    } else if (onb.step === 'join') {
+      html = onbFrame(0, 0, `<div class="done-badge alt">${I.users}</div>
+        <h2>Rejoindre une entreprise</h2>
+        <p>Demandez le code d’invitation à la personne qui utilise déjà l’application : il figure dans Plus › Compte.</p>
+        <div class="left stack">
+          <label class="field"><span>Code d’invitation</span><input id="onb-code" class="code-input" autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="7F3A9C21"></label>
+          <div class="auth-err" id="onb-err" hidden></div>
+        </div>
+        <button class="btn" data-act="onb-join" ${onb.joining ? 'disabled' : ''}>${onb.joining ? 'Connexion à l’entreprise…' : `${I.login} Rejoindre`}</button>`, 'welcome');
     }
-    openSheet(`<div class="onb">${body}</div>`, { locked: true, cls: onb.step === 0 ? 'full sun' : 'full' });
+    openSheet(html, { locked: true, cls });
+    const first = $('#sheet input');
+    if (first && onb.step !== 'welcome') setTimeout(() => { if (document.activeElement === document.body) first.focus(); }, 300);
   }
-
   function onbNext() {
     const d = onb.data;
-    if (onb.step === 1) {
+    if (onb.step === 'business') {
       d.name = $('#s-name').value.trim();
       d.owner = $('#s-owner').value.trim();
       d.type = picked('type') || 'other';
-      if (!d.name) { toast('Donnez un nom à votre entreprise'); return; }
-    }
-    if (onb.step === 2) {
+      if (!d.name) { toast('Donnez un nom à votre entreprise'); $('#s-name').focus(); return; }
+      onb.step = 'prefs';
+    } else if (onb.step === 'prefs') {
       d.currency = $('#s-currency').value;
       d.goal = num($('#s-goal').value);
       d.tax = num($('#s-tax').value);
-      db.settings = { name: d.name, owner: d.owner, type: d.type, currency: d.currency, goal: d.goal, taxRate: d.tax, terms: 7, color: COLORS[0], phone: '', email: '', address: '', taxId: '', footer: '' };
-      save(); closeSheet(); render(); confetti(120);
-      toast(`Bienvenue, ${d.name} !`);
-      return;
+      d.phone = $('#s-phone').value.trim();
+      db.settings = { name: d.name, owner: d.owner, type: d.type, currency: d.currency, goal: d.goal, taxRate: d.tax, terms: 7, color: COLORS[0], phone: d.phone, email: '', address: '', taxId: '', footer: '' };
+      db.cloudOff = false;
+      save();
+      onb.step = 'done';
+      ensureCloud();
     }
-    onb.step++;
     openOnboarding();
   }
 
@@ -1877,7 +1920,7 @@
   // localement est envoyé, ce qui a changé ailleurs est reçu (le serveur date chaque écriture).
   const CFG = window.GESTIO_SUPABASE || {};
   const SYNC_KINDS = ['sales', 'purchases', 'orders', 'products'];
-  const sync = { client: null, session: null, busy: false, again: false, timer: null, status: 'off', error: '', pendingRender: false, step: 'email', email: '' };
+  const sync = { client: null, session: null, busy: false, again: false, timer: null, status: 'off', error: '', pendingRender: false, chain: Promise.resolve() };
   const syncReady = () => !!(CFG.url && CFG.key && window.supabase && window.supabase.createClient);
   function syncClient() {
     if (!sync.client && syncReady()) {
@@ -1975,90 +2018,263 @@
       if (manual) toast(`Synchronisation impossible : ${sync.error}`);
     } finally {
       sync.busy = false;
-      if ($('#sync-panel')) openSyncSheet();
+      refreshCloudUi();
       if (sync.again) { sync.again = false; scheduleSync(); }
     }
   }
   function scheduleSync() {
-    if (!sync.session || !db.sync || !db.sync.business) return;
+    if (!sync.session || !db.sync || !db.sync.business) { if (sync.client && !sync.session && db.settings && !db.cloudOff) setTimeout(ensureCloud, 1500); return; }
     clearTimeout(sync.timer);
     sync.timer = setTimeout(() => runSync(false), 1500);
   }
+  const isAnon = () => !!(sync.session && (sync.session.user.is_anonymous || !sync.session.user.email));
+  function cloudLabel() {
+    if (!syncReady()) return 'Désactivée';
+    if (db.cloudOff && !sync.session) return 'Désactivée sur ce téléphone';
+    if (!navigator.onLine || sync.status === 'offline') return 'Hors ligne, envoi dès le retour du réseau';
+    if (sync.status === 'error') return 'Erreur, nouvel essai automatique';
+    if (sync.busy || !db.sync || !db.sync.business) return 'Envoi en cours…';
+    return db.sync.last ? `À jour (${new Date(db.sync.last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})` : 'Active';
+  }
   function syncSummary() {
-    if (!sync.session) return 'Travaillez à plusieurs sur les mêmes données';
-    if (!db.sync || !db.sync.business) return `Connecté : ${sync.session.user.email || ''}`;
-    const when = db.sync.last ? new Date(db.sync.last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-    if (sync.status === 'error') return 'Erreur de synchronisation, touchez pour réessayer';
-    if (sync.status === 'offline') return 'Hors ligne : les changements partiront plus tard';
-    return `${db.sync.business.name || 'Espace partagé'}${when ? ` · synchronisé à ${when}` : ''}`;
+    if (!sync.session) return db.cloudOff ? 'Données sur ce téléphone uniquement' : 'Sauvegarde en ligne en préparation';
+    return `${isAnon() ? 'Sans compte' : sync.session.user.email} · ${cloudLabel()}`;
+  }
+  function refreshCloudUi() {
+    if ($('#sync-panel')) openSyncSheet();
+    const o = $('#onb-cloud'); if (o) o.textContent = cloudLabel();
   }
   async function attachBusiness(b, joined) {
     db.sync = { business: { id: b.id, name: b.name, invite_code: b.invite_code }, user: sync.session.user.id, cursor: '', hashes: {}, last: 0 };
     // En rejoignant une entreprise, ses paramètres remplacent ceux de ce téléphone.
     if (joined && db.settings) db.sync.hashes['settings:main'] = fingerprint(db.settings);
+    db.authJoin = '';
     saveLocal();
     await runSync(false);
-    if (db.settings) render();
+    if (db.settings && !$('.onb')) render();
   }
-  async function onSession(session) {
+  // Sauvegarde en ligne sans inscription : une identité anonyme par téléphone.
+  async function ensureCloud() {
+    if (!syncClient() || db.cloudOff || !db.settings) return;
+    if (sync.session) { sync.chain = sync.chain.then(() => handleSession(sync.session)); return; }
+    if (!navigator.onLine) { sync.status = 'offline'; return; }
+    const { error } = await sync.client.auth.signInAnonymously();
+    if (error) { sync.status = 'error'; sync.error = error.message; refreshCloudUi(); }
+  }
+  async function handleSession(session) {
     sync.session = session;
-    if (!session) { sync.status = 'off'; if ($('#sync-panel')) openSyncSheet(); return; }
-    if (db.sync && db.sync.business && db.sync.user === session.user.id) { runSync(false); }
-    else {
+    if (!session) { sync.status = 'off'; refreshCloudUi(); return; }
+    try {
+      if (db.sync && db.sync.business && db.sync.user === session.user.id) { await runSync(false); return; }
       const { data, error } = await sync.client.rpc('my_business');
-      if (error) { sync.status = 'error'; sync.error = error.message; }
-      else if (data && data[0]) { await attachBusiness(data[0], true); }
-      else db.sync = null;
-    }
-    if ($('#sync-panel')) openSyncSheet();
+      if (error) throw error;
+      if (data && data[0]) { await attachBusiness(data[0], true); return; }
+      // Compte sans entreprise : on le rattache à celle de ce téléphone (ou à celle choisie avant l'inscription).
+      const code = db.authJoin || (db.sync && db.sync.business && db.sync.business.invite_code);
+      if (code) {
+        const j = await sync.client.rpc('join_business', { p_code: code });
+        if (j.error) throw j.error;
+        await attachBusiness(j.data[0], false);
+        return;
+      }
+      if (db.settings && !db.cloudOff) {
+        const c = await sync.client.rpc('create_business', { p_name: S().name || '' });
+        if (c.error) throw c.error;
+        await attachBusiness(c.data[0], false);
+        return;
+      }
+      db.sync = null;
+    } catch (e) {
+      sync.status = 'error'; sync.error = (e && e.message) || String(e);
+    } finally { refreshCloudUi(); }
   }
+  const onSession = (session) => { sync.chain = sync.chain.then(() => handleSession(session)); return sync.chain; };
 
   function openSyncSheet() {
-    const c = syncClient();
-    if (!c) return;
-    let body;
-    if (!sync.session) {
-      body = sync.step === 'code' ? `
-        <p class="muted">Un e-mail a été envoyé à <b style="color:var(--text)">${esc(sync.email)}</b>. Ouvrez le lien qu’il contient sur ce téléphone, ou saisissez le code à 6 chiffres s’il figure dans l’e-mail.</p>
-        <label class="field"><span>Code reçu</span><input id="sy-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></label>
-        <button class="btn" data-act="sync-verify">${I.check} Valider le code</button>
-        <button class="btn plain" data-act="sync-restart">Changer d’adresse e-mail</button>` : `
-        <p class="muted">Connectez-vous avec votre adresse e-mail pour retrouver les mêmes ventes, factures et clients sur tous les téléphones de l’entreprise.</p>
-        <label class="field"><span>Adresse e-mail</span><input id="sy-email" type="email" autocomplete="email" placeholder="vous@exemple.com" value="${esc(sync.email)}"></label>
-        <button class="btn" data-act="sync-send">${I.mail} Recevoir le lien de connexion</button>`;
-    } else if (!db.sync || !db.sync.business) {
-      body = `
-        <div class="card"><div class="kv"><span>Connecté</span><span>${esc(sync.session.user.email || '')}</span></div></div>
-        <div class="section-title">Nouvelle entreprise</div>
-        <p class="muted small">Crée l’espace partagé de votre entreprise et y envoie les données de ce téléphone.</p>
-        <button class="btn" data-act="sync-create" ${db.settings ? '' : 'disabled'}>${I.store} Créer l’espace de ${esc(S().name || 'mon entreprise')}</button>
-        <div class="section-title">Entreprise existante</div>
-        <p class="muted small">Demandez le code d’invitation à la personne qui a créé l’espace. Les données déjà présentes sur ce téléphone y seront ajoutées.</p>
-        <label class="field"><span>Code d’invitation</span><input id="sy-invite" autocapitalize="characters" maxlength="12" placeholder="Ex. 7F3A9C21"></label>
-        <button class="btn ghost" data-act="sync-join">${I.users} Rejoindre</button>
-        <button class="btn plain" data-act="sync-logout">Se déconnecter</button>`;
+    if (!syncClient()) return;
+    const st = db.sync && db.sync.business ? db.sync : null;
+    const anon = isAnon();
+    let body = `
+      <div class="card">
+        <div class="kv"><span>Compte</span><span>${sync.session ? (anon ? 'Sans compte (ce téléphone)' : esc(sync.session.user.email)) : 'Non connecté'}</span></div>
+        ${st ? `<div class="kv"><span>Entreprise</span><b>${esc(st.business.name || S().name || '')}</b></div>` : ''}
+        <div class="kv"><span>Sauvegarde en ligne</span><span class="${sync.status === 'error' ? 'neg' : ''}">${esc(cloudLabel())}</span></div>
+      </div>`;
+    if (sync.session && anon) {
+      body += `<div class="note">${I.shield}<span>Vos données sont enregistrées en ligne et liées à ce téléphone. Créez un compte pour les retrouver sur un autre appareil ou après une réinstallation.</span></div>
+        <button class="btn" data-act="auth" data-v="signup">${I.userPlus} Créer un compte</button>
+        <button class="btn ghost" data-act="auth" data-v="signin">${I.login} J’ai déjà un compte</button>`;
+    } else if (sync.session) {
+      body += `<button class="btn ghost" data-act="sync-logout">${I.logout} Se déconnecter</button>`;
     } else {
-      const st = db.sync;
-      const state = sync.busy ? 'Synchronisation en cours…' : sync.status === 'error' ? `Erreur : ${sync.error}` : sync.status === 'offline' ? 'Hors ligne' : st.last ? `À jour (${new Date(st.last).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})` : 'En attente';
-      body = `
-        <div class="card">
-          <div class="kv"><span>Entreprise</span><b>${esc(st.business.name || 'Espace partagé')}</b></div>
-          <div class="kv"><span>Compte</span><span>${esc(sync.session.user.email || '')}</span></div>
-          <div class="kv"><span>État</span><span class="${sync.status === 'error' ? 'neg' : ''}">${esc(state)}</span></div>
-        </div>
-        <div class="section-title">Inviter un collaborateur</div>
-        <p class="muted small">Sur son téléphone : Plus › Synchronisation, connexion avec son e-mail, puis « Rejoindre » avec ce code.</p>
-        <div class="invite"><b>${esc(st.business.invite_code)}</b><button class="btn ghost sm" data-act="sync-copy">${I.share} Copier</button></div>
-        <button class="btn" data-act="sync-now" ${sync.busy ? 'disabled' : ''}>${I.repeat} Synchroniser maintenant</button>
-        <button class="btn plain" data-act="sync-logout">Se déconnecter de ce téléphone</button>
-        <p class="muted small">Les données restent aussi enregistrées sur ce téléphone et fonctionnent hors ligne.</p>`;
+      body += `<div class="note">${I.cloudOff}<span>Les données ne sont enregistrées que sur ce téléphone.</span></div>
+        <button class="btn" data-act="cloud-on">${I.cloudUp} Activer la sauvegarde en ligne</button>
+        <button class="btn ghost" data-act="auth" data-v="signin">${I.login} Se connecter</button>`;
     }
-    const wasOpen = !!$('#sync-panel');
-    if (wasOpen) { $('#sync-panel').innerHTML = body; return; }
-    openSheet(`${head('Synchronisation')}<div id="sync-panel" class="stack">${body}</div>`);
+    if (st) {
+      body += `<div class="section-title">Inviter un collaborateur</div>
+        <p class="muted small">Sur son téléphone, à l’accueil : « Rejoindre une entreprise », puis ce code.</p>
+        <div class="invite"><b>${esc(st.business.invite_code)}</b><button class="btn ghost sm" data-act="sync-copy">${I.share} Copier</button></div>
+        <button class="btn ghost" data-act="sync-now" ${sync.busy ? 'disabled' : ''}>${I.repeat} Synchroniser maintenant</button>`;
+    }
+    if (sync.session) {
+      body += `<details class="more"><summary>Rejoindre une autre entreprise</summary>
+        <p class="muted small" style="margin-bottom:10px">Les données de ce téléphone y seront ajoutées.</p>
+        <label class="field"><span>Code d’invitation</span><input id="sy-invite" class="code-input" autocapitalize="characters" maxlength="12" placeholder="7F3A9C21"></label>
+        <button class="btn ghost" data-act="sync-join" style="margin:12px 0">${I.users} Rejoindre</button></details>`;
+    }
+    if ($('#sync-panel')) { $('#sync-panel').innerHTML = body; return; }
+    openSheet(`${head('Compte')}<div id="sync-panel" class="stack">${body}</div>`);
+  }
+
+  // ---------------------------------------------------------------- Écran de connexion
+  const auth = { mode: 'signin', email: '', busy: false, from: '' };
+  const AUTH_ERRORS = [
+    [/invalid login credentials/i, 'E-mail ou mot de passe incorrect.'],
+    [/already registered|already been registered|already exists/i, 'Un compte existe déjà avec cet e-mail. Connectez-vous.'],
+    [/email not confirmed/i, 'Confirmez d’abord votre adresse avec le lien reçu par e-mail.'],
+    [/rate limit|too many|security purposes/i, 'Trop de tentatives. Réessayez dans quelques minutes.'],
+    [/password should be|weak password|at least/i, 'Mot de passe trop faible : 8 caractères minimum, avec lettres et chiffres.'],
+    [/invalid email|unable to validate email|email address .* invalid/i, 'Adresse e-mail invalide.'],
+    [/failed to fetch|network|load failed/i, 'Pas de connexion internet. Réessayez une fois en ligne.'],
+    [/signups? not allowed|signup is disabled/i, 'Les inscriptions sont fermées pour le moment.'],
+  ];
+  const authMessage = (e) => { const m = (e && e.message) || String(e); const hit = AUTH_ERRORS.find(([re]) => re.test(m)); return hit ? hit[1] : m; };
+  const pwField = (id, label, auto, ph) => `<label class="field"><span>${label}</span><div class="pw-wrap">
+      <input id="${id}" type="password" autocomplete="${auto}" placeholder="${ph || ''}">
+      <button type="button" class="pw-eye" data-act="pw-toggle" data-v="${id}" aria-label="Afficher le mot de passe">${I.eye}</button></div></label>`;
+  function pwScore(v) { let n = 0; if (v.length >= 8) n++; if (v.length >= 12) n++; if (/[a-z]/i.test(v) && /\d/.test(v)) n++; if (/[^a-z0-9]/i.test(v)) n++; return n; }
+  function openAuth(mode, from) {
+    if (!syncClient()) return;
+    auth.mode = mode || 'signin';
+    if (from !== undefined) auth.from = from;
+    const back = auth.from === 'onb' ? `data-act="onb-go" data-v="welcome"` : `data-act="sync"`;
+    const em = `<label class="field"><span>Adresse e-mail</span><input id="au-email" type="email" autocomplete="email" inputmode="email" placeholder="vous@exemple.com" value="${esc(auth.email)}"></label>`;
+    const err = '<div class="auth-err" id="au-err" role="alert" hidden></div>';
+    const go = (label, ico) => `<button class="btn" data-act="auth-submit" data-label="${esc(`${ico} ${label}`)}" ${auth.busy ? 'disabled' : ''}>${auth.busy ? 'Un instant…' : `${ico} ${label}`}</button>`;
+    let body;
+    if (auth.mode === 'signin') {
+      body = `<div class="auth-ico">${I.login}</div><h2>Connexion</h2><p class="muted">Retrouvez les données de votre entreprise sur ce téléphone.</p>
+        <form class="stack" data-auth>${em}${pwField('au-pass', 'Mot de passe', 'current-password')}
+          <button type="button" class="link small auth-forgot" data-act="auth" data-v="reset">Mot de passe oublié ?</button>
+          ${err}${go('Se connecter', I.login)}</form>
+        <div class="or"><span>ou</span></div>
+        <button class="btn ghost" data-act="auth" data-v="magic">${I.mail} Recevoir un lien de connexion</button>
+        <p class="auth-switch">Pas encore de compte ? <button class="link" data-act="auth" data-v="signup">Créer un compte</button></p>`;
+    } else if (auth.mode === 'signup') {
+      body = `<div class="auth-ico">${I.userPlus}</div><h2>Créer un compte</h2><p class="muted">${db.settings ? `Les données de ${esc(S().name)} seront rattachées à ce compte.` : 'Gratuit, en moins d’une minute.'}</p>
+        <form class="stack" data-auth>${em}${pwField('au-pass', 'Mot de passe', 'new-password', '8 caractères minimum')}
+          <div class="pw-meter" id="au-meter"><i></i><i></i><i></i><i></i></div>
+          ${pwField('au-pass2', 'Confirmer le mot de passe', 'new-password')}
+          ${err}${go('Créer mon compte', I.userPlus)}</form>
+        <p class="auth-switch">Déjà un compte ? <button class="link" data-act="auth" data-v="signin">Se connecter</button></p>`;
+    } else if (auth.mode === 'reset' || auth.mode === 'magic') {
+      const reset = auth.mode === 'reset';
+      body = `<div class="auth-ico">${reset ? I.key : I.mail}</div><h2>${reset ? 'Mot de passe oublié' : 'Lien de connexion'}</h2>
+        <p class="muted">${reset ? 'Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.' : 'Recevez par e-mail un lien qui vous connecte sans mot de passe.'}</p>
+        <form class="stack" data-auth>${em}${err}${go(reset ? 'Envoyer le lien' : 'Recevoir le lien', I.mail)}</form>
+        <p class="auth-switch"><button class="link" data-act="auth" data-v="signin">${I.back} Retour à la connexion</button></p>`;
+    } else if (auth.mode === 'sent') {
+      body = `<div class="auth-ico ok">${I.mail}</div><h2>Vérifiez vos e-mails</h2>
+        <p class="muted">Un message a été envoyé à <b style="color:var(--text)">${esc(auth.email)}</b>. Ouvrez le lien qu’il contient sur ce téléphone pour continuer. Pensez à regarder dans les indésirables.</p>
+        <button class="btn ghost" data-act="auth" data-v="signin">${I.login} J’ai confirmé, me connecter</button>
+        <p class="auth-switch"><button class="link" data-act="auth" data-v="${auth.sentFrom || 'signin'}">Renvoyer ou changer d’adresse</button></p>`;
+    } else if (auth.mode === 'newpass') {
+      body = `<div class="auth-ico">${I.lock}</div><h2>Nouveau mot de passe</h2><p class="muted">Choisissez le mot de passe de votre compte.</p>
+        <form class="stack" data-auth>${pwField('au-pass', 'Nouveau mot de passe', 'new-password', '8 caractères minimum')}
+          <div class="pw-meter" id="au-meter"><i></i><i></i><i></i><i></i></div>
+          ${pwField('au-pass2', 'Confirmer le mot de passe', 'new-password')}${err}${go('Enregistrer', I.check)}</form>`;
+    }
+    openSheet(`<div class="auth">
+        <div class="onb-top"><button class="round" ${back} aria-label="Retour">${I.back}</button><span class="small muted">${I.shield} Connexion sécurisée</span></div>
+        ${body}
+      </div>`, { locked: auth.from === 'onb' || auth.mode === 'newpass', cls: 'full' });
+    const f = $('#sheet form[data-auth]');
+    if (f) f.addEventListener('submit', (e) => { e.preventDefault(); authSubmit(); });
+    if (f) f.addEventListener('input', () => { const er = $('#au-err'); if (er) er.hidden = true; });
+    const pw = $('#au-pass'), meter = $('#au-meter');
+    if (pw && meter) pw.addEventListener('input', () => { const n = pwScore(pw.value); $$('i', meter).forEach((x, i) => { x.className = i < n ? `on s${n}` : ''; }); });
+    const first = $('#sheet input');
+    if (first) setTimeout(() => first.focus(), 300);
+  }
+  function authError(msg) { const el = $('#au-err'); if (el) { el.textContent = msg; el.hidden = false; } else toast(msg); }
+  async function authSubmit() {
+    if (auth.busy) return;
+    const c = sync.client;
+    const emailEl = $('#au-email'), p1 = $('#au-pass'), p2 = $('#au-pass2');
+    const email = emailEl ? emailEl.value.trim().toLowerCase() : auth.email;
+    if (emailEl) {
+      auth.email = email;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { authError('Adresse e-mail invalide.'); emailEl.focus(); return; }
+    }
+    if (p1 && !p1.value) { authError('Saisissez votre mot de passe.'); p1.focus(); return; }
+    if (p2) {
+      if (pwScore(p1.value) < 2 || p1.value.length < 8) { authError('Mot de passe trop faible : 8 caractères minimum, avec lettres et chiffres.'); p1.focus(); return; }
+      if (p1.value !== p2.value) { authError('Les deux mots de passe ne sont pas identiques.'); p2.focus(); return; }
+    }
+    const redirect = location.protocol.startsWith('http') ? location.origin + location.pathname : undefined;
+    auth.busy = true;
+    const btn = $('#sheet [data-act="auth-submit"]'); if (btn) { btn.disabled = true; btn.textContent = 'Un instant…'; }
+    try {
+      if (!navigator.onLine) throw new Error('network');
+      if (auth.mode === 'signin') {
+        if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
+        const { error } = await c.auth.signInWithPassword({ email, password: p1.value });
+        if (error) throw error;
+        db.cloudOff = false; saveLocal();
+        authDone('Connecté');
+      } else if (auth.mode === 'signup') {
+        // Les données de ce téléphone suivent le compte : on retient le code de son entreprise.
+        if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
+        saveLocal();
+        const { data, error } = await c.auth.signUp({ email, password: p1.value, options: { emailRedirectTo: redirect } });
+        if (error) throw error;
+        if (data && data.user && Array.isArray(data.user.identities) && !data.user.identities.length) throw new Error('already registered');
+        if (data && data.session) { db.cloudOff = false; saveLocal(); authDone('Compte créé'); }
+        else { auth.sentFrom = 'signup'; auth.busy = false; openAuth('sent'); }
+      } else if (auth.mode === 'reset') {
+        const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: redirect });
+        if (error) throw error;
+        auth.sentFrom = 'reset'; auth.busy = false; openAuth('sent');
+      } else if (auth.mode === 'magic') {
+        if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
+        saveLocal();
+        const { error } = await c.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirect } });
+        if (error) throw error;
+        auth.sentFrom = 'magic'; auth.busy = false; openAuth('sent');
+      } else if (auth.mode === 'newpass') {
+        const { error } = await c.auth.updateUser({ password: p1.value });
+        if (error) throw error;
+        authDone('Mot de passe enregistré');
+      }
+    } catch (e) {
+      auth.busy = false;
+      if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.label || 'Réessayer'; }
+      authError(authMessage(e));
+      return;
+    }
+    auth.busy = false;
+  }
+  function authDone(msg) {
+    toast(msg);
+    if (db.settings) { closeSheet(); render(); if (auth.from !== 'onb') openSyncSheet(); }
+    else {
+      // Connexion depuis l'accueil : on attend les données de l'entreprise.
+      openSheet(`<div class="onb"><div class="done-badge">${I.cloud}</div><h2>Récupération de vos données…</h2><p class="muted">Un instant, cela ne prend que quelques secondes.</p></div>`, { locked: true, cls: 'full' });
+      waitForSettings('Aucune entreprise n’est liée à ce compte. Créez-en une ou rejoignez-en une avec un code.');
+    }
+  }
+  function waitForSettings(failMsg) {
+    let n = 0;
+    const tick = () => {
+      if (db.settings) { onb.step = 'welcome'; closeSheet(); render(); toast(`Bienvenue chez ${S().name}`); return; }
+      if (++n > 40) { onb.step = 'welcome'; openOnboarding(); toast(failMsg); return; }
+      setTimeout(tick, 250);
+    };
+    tick();
   }
   async function syncCall(fn) {
-    try { await fn(); } catch (e) { toast((e && e.message) || 'Erreur de connexion'); }
+    try { await fn(); } catch (e) { toast(authMessage(e)); }
   }
 
   // ---------------------------------------------------------------- Actions
@@ -2226,7 +2442,9 @@
     reset: () => {
       ask('Effacer définitivement toutes les données de l’application ?', 'Tout effacer', () => {
         try { localStorage.removeItem(KEY); } catch (e) { /* stockage indisponible */ }
-        db = blank(); onb.step = 0; ui.tab = 'home';
+        if (sync.client && sync.session) sync.client.auth.signOut().catch(() => {});
+        sync.session = null;
+        db = blank(); onb.step = 'welcome'; ui.tab = 'home';
         loadLogo(); render(); openOnboarding();
       }, openSettings);
     },
@@ -2234,35 +2452,46 @@
     'confirm-no': () => { const p = pending; closeSheet(); if (p && p.cancel) p.cancel(); },
     'onb-next': onbNext,
     sync: () => { if (!syncClient()) return; openSyncSheet(); },
-    'sync-send': () => syncCall(async () => {
-      const email = $('#sy-email').value.trim();
-      if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Indiquez une adresse e-mail valide'); return; }
-      const redirect = location.protocol.startsWith('http') ? location.origin + location.pathname : undefined;
-      const { error } = await sync.client.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirect } });
-      if (error) throw error;
-      sync.email = email; sync.step = 'code'; openSyncSheet(); toast('E-mail envoyé');
-    }),
-    'sync-restart': () => { sync.step = 'email'; openSyncSheet(); },
-    'sync-verify': () => syncCall(async () => {
-      const token = $('#sy-code').value.replace(/\s/g, '');
-      if (!token) { toast('Saisissez le code reçu'); return; }
-      const { error } = await sync.client.auth.verifyOtp({ email: sync.email, token, type: 'email' });
-      if (error) throw error;
-      sync.step = 'email'; toast('Connecté');
-    }),
-    'sync-create': () => syncCall(async () => {
-      const { data, error } = await sync.client.rpc('create_business', { p_name: S().name || '' });
-      if (error) throw error;
-      await attachBusiness(data[0], false);
-      openSyncSheet(); toast('Espace créé, données envoyées');
-    }),
+    auth: (d) => openAuth(d.v, db.settings ? 'app' : 'onb'),
+    'auth-submit': () => authSubmit(),
+    'pw-toggle': (d, el) => { const i = $('#' + d.v); const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.innerHTML = show ? I.eyeOff : I.eye; el.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe'); },
+    'onb-go': (d) => { onb.step = d.v; auth.from = ''; openOnboarding(); },
+    'onb-finish': () => { onb.step = 'welcome'; closeSheet(); ui.tab = 'home'; ui.introDone = false; render(); confetti(120); toast(`Bienvenue, ${S().name} !`); },
+    'onb-join': async () => {
+      const code = $('#onb-code').value.trim();
+      const err = $('#onb-err');
+      if (!code) { err.textContent = 'Saisissez le code d’invitation.'; err.hidden = false; return; }
+      if (!navigator.onLine) { err.textContent = 'Pas de connexion internet. Réessayez une fois en ligne.'; err.hidden = false; return; }
+      onb.joining = true; openOnboarding();
+      try {
+        if (!sync.session) {
+          const { error } = await sync.client.auth.signInAnonymously();
+          if (error) throw error;
+          await sync.chain;
+        }
+        const { data, error } = await sync.client.rpc('join_business', { p_code: code });
+        if (error) throw error;
+        db.cloudOff = false;
+        sync.chain = sync.chain.then(() => attachBusiness(data[0], true));
+        await sync.chain;
+        onb.joining = false;
+        if (db.settings) { onb.step = 'welcome'; closeSheet(); ui.introDone = false; render(); toast(`Bienvenue chez ${S().name}`); }
+        else waitForSettings('Cette entreprise n’a pas encore de données. Réessayez dans un instant.');
+      } catch (e) {
+        onb.joining = false; openOnboarding();
+        const el = $('#onb-err'); el.textContent = /inconnu|unknown/i.test(e.message || '') ? 'Code d’invitation inconnu. Vérifiez-le auprès de votre collègue.' : authMessage(e); el.hidden = false;
+        $('#onb-code').value = code;
+      }
+    },
+    'cloud-on': () => { db.cloudOff = false; saveLocal(); ensureCloud(); refreshCloudUi(); },
     'sync-join': () => syncCall(async () => {
       const code = $('#sy-invite').value.trim();
       if (!code) { toast('Saisissez le code d’invitation'); return; }
       const { data, error } = await sync.client.rpc('join_business', { p_code: code });
       if (error) throw error;
-      await attachBusiness(data[0], true);
-      if ($('#sync-panel')) openSyncSheet();
+      sync.chain = sync.chain.then(() => attachBusiness(data[0], true));
+      await sync.chain;
+      refreshCloudUi();
       toast(`Vous avez rejoint ${data[0].name || 'l’entreprise'}`);
     }),
     'sync-now': () => runSync(true),
@@ -2270,11 +2499,11 @@
       const code = db.sync && db.sync.business ? db.sync.business.invite_code : '';
       try { await navigator.clipboard.writeText(code); toast('Code copié'); } catch (e) { toast(`Code : ${code}`); }
     },
-    'sync-logout': () => syncCall(async () => {
+    'sync-logout': () => ask('Se déconnecter ? Les données restent sur ce téléphone, mais ne seront plus sauvegardées en ligne jusqu’à la prochaine connexion.', 'Se déconnecter', () => syncCall(async () => {
       await sync.client.auth.signOut();
-      db.sync = null; sync.session = null; sync.status = 'off'; saveLocal();
-      openSyncSheet(); toast('Déconnecté. Les données restent sur ce téléphone.');
-    }),
+      db.sync = null; db.cloudOff = true; sync.session = null; sync.status = 'off'; saveLocal();
+      openSyncSheet(); toast('Déconnecté');
+    }), openSyncSheet),
     'fab-menu': () => openSheet(`${head('Ajouter')}
       <div class="quick">
         <button data-act="go-close" data-v="pos"><span>${I.pos}</span>Caisse</button>
@@ -2312,8 +2541,17 @@
 
   // Synchronisation : session enregistrée, retour d'un lien de connexion, reprise en ligne.
   if (syncClient()) {
-    sync.client.auth.onAuthStateChange((evt, session) => { setTimeout(() => onSession(session), 0); });
-    window.addEventListener('online', () => runSync(false));
+    let first = true;
+    sync.client.auth.onAuthStateChange((evt, session) => {
+      setTimeout(() => {
+        if (evt === 'PASSWORD_RECOVERY') { auth.from = 'app'; openAuth('newpass'); }
+        onSession(session);
+        // Première ouverture sans session : identité anonyme pour sauvegarder en ligne sans inscription.
+        if (first && !session) ensureCloud();
+        first = false;
+      }, 0);
+    });
+    window.addEventListener('online', () => { if (sync.session) runSync(false); else ensureCloud(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) runSync(false); });
     setInterval(() => { if (!document.hidden) runSync(false); }, 30000);
   }
