@@ -1,0 +1,101 @@
+# Construit l'application Android (APK) avec Capacitor à partir des fichiers web du dépôt,
+# puis la publie dans la version GitHub « android-latest » pour la télécharger depuis un téléphone.
+name: Android APK
+
+on:
+  push:
+    paths:
+      - index.html
+      - manifest.webmanifest
+      - sw.js
+      - css/**
+      - js/**
+      - vendor/**
+      - fonts/**
+      - icons/**
+      - package.json
+      - package-lock.json
+      - capacitor.config.json
+      - scripts/**
+      - android-signing/**
+      - .github/workflows/android.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Capacitor
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare web files
+        run: npm run build:web
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: App icon and version
+        run: |
+          set -euo pipefail
+          command -v convert >/dev/null || sudo apt-get install -y -q imagemagick >/dev/null
+          RES=android/app/src/main/res
+          rm -rf "$RES"/mipmap-anydpi-v26
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            dir="$RES/mipmap-${d%%:*}"; size="${d##*:}"
+            mkdir -p "$dir"
+            convert icons/icon-512.png -resize "${size}x${size}" "$dir/ic_launcher.png"
+            convert icons/icon-512.png -resize "${size}x${size}" \( +clone -alpha extract -fill black -colorize 100 -fill white -draw "circle $((size/2)),$((size/2)) $((size/2)),0" \) -alpha off -compose CopyOpacity -composite "$dir/ic_launcher_round.png"
+            rm -f "$dir/ic_launcher_foreground.png"
+          done
+          sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]+\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          grep -E "versionCode|versionName|applicationId" android/app/build.gradle
+
+      - name: Copy web files into the Android project
+        run: npx cap sync android
+
+      - name: Build APK
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.android
+          cp android-signing/debug.keystore ~/.android/debug.keystore
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/gestio.apk"
+          ls -la "$GITHUB_WORKSPACE/gestio.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gestio-apk
+          path: gestio.apk
+          retention-days: 30
+
+      - name: Publish to the "android-latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release delete android-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create android-latest gestio.apk \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Gestio Android 1.0.${{ github.run_number }}" \
+            --notes "APK construit depuis la branche ${GITHUB_REF_NAME} (${GITHUB_SHA::7}). Sur le téléphone : télécharger gestio.apk, l'ouvrir et autoriser l'installation."

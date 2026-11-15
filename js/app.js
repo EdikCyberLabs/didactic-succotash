@@ -967,6 +967,9 @@
 
   // Partage de texte : feuille de partage du téléphone, sinon presse-papiers, sinon texte à sélectionner.
   async function shareText(text, title) {
+    if (isNative()) {
+      try { await window.Capacitor.Plugins.Share.share({ title, text, dialogTitle: title }); return; } catch (e) { if (nativeCancelled(e)) return; }
+    }
     if (navigator.share) {
       try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; }
     }
@@ -1332,9 +1335,25 @@
     return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`;
   }
 
+  // Application Android (Capacitor) : partage natif d'Android pour les fichiers et les textes.
+  const isNative = () => !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  const nativeCancelled = (e) => /cancel/i.test((e && e.message) || '');
+  async function nativeShareBlob(blob, filename, title) {
+    const { Filesystem, Share } = window.Capacitor.Plugins;
+    const data = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result).split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+    const f = await Filesystem.writeFile({ path: filename, data, directory: 'CACHE' });
+    await Share.share({ title, dialogTitle: title, files: [f.uri] });
+  }
+
   async function shareCanvas(canvas, filename, title) {
     const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
     if (!blob) return toast('Image indisponible');
+    if (isNative()) { downloadBlob(blob, filename, title); return; }
     const file = new File([blob], filename, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title }); return; }
@@ -1342,7 +1361,12 @@
     }
     downloadBlob(blob, filename);
   }
-  function downloadBlob(blob, filename) {
+  function downloadBlob(blob, filename, title) {
+    if (isNative()) {
+      // Pas de dossier « Téléchargements » dans l'application : on propose de partager ou d'enregistrer le fichier.
+      nativeShareBlob(blob, filename, title || filename).catch((e) => { if (!nativeCancelled(e)) toast('Partage impossible : ' + ((e && e.message) || e)); });
+      return;
+    }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -2289,7 +2313,7 @@
       if (pwScore(p1.value) < 2 || p1.value.length < 8) { authError('Mot de passe trop faible : 8 caractères minimum, avec lettres et chiffres.'); p1.focus(); return; }
       if (p1.value !== p2.value) { authError('Les deux mots de passe ne sont pas identiques.'); p2.focus(); return; }
     }
-    const redirect = location.protocol.startsWith('http') ? location.origin + location.pathname : undefined;
+    const redirect = location.protocol.startsWith('http') && !isNative() ? location.origin + location.pathname : undefined;
     auth.busy = true;
     const btn = $('#sheet [data-act="auth-submit"]'); if (btn) { btn.disabled = true; btn.textContent = 'Un instant…'; }
     try {

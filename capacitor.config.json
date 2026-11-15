@@ -1,0 +1,15 @@
+{
+  "appId": "com.edikcyberlabs.gestio",
+  "appName": "Gestio",
+  "webDir": "www",
+  "backgroundColor": "#d6d5ea",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}
