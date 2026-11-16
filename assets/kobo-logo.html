@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kobo - Bloc de factures</title>
+<style>
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; background: #1F6BFF; cursor: pointer; }
+  svg { width: min(92vw, 460px); height: auto; overflow: visible; }
+
+  /* ===== APPARITION DU BLOC ===== */
+  #block { transform-box: view-box; transform-origin: 200px 220px; transform: scale(0); opacity: 0; animation: pop 0.7s cubic-bezier(.34,1.56,.64,1) 0.1s forwards; }
+  @keyframes pop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+
+  /* ===== LES FEUILLES SE DETACHENT UNE A UNE, TRES VITE ===== */
+  .sheet { transform-box: fill-box; transform-origin: 100% 0%; }
+  #s1 { animation: fly1 0.7s cubic-bezier(.4,0,.2,1) 0.9s forwards; }
+  #s2 { animation: fly2 0.7s cubic-bezier(.4,0,.2,1) 1.08s forwards; }
+  #s3 { animation: fly3 0.7s cubic-bezier(.4,0,.2,1) 1.26s forwards; }
+  #s4 { animation: fly4 0.7s cubic-bezier(.4,0,.2,1) 1.44s forwards; }
+
+  @keyframes fly1 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-6deg); opacity: 1; } 100% { transform: translate(300px,-250px) rotate(28deg); opacity: 0; } }
+  @keyframes fly2 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-5deg); opacity: 1; } 100% { transform: translate(-320px,-210px) rotate(-30deg); opacity: 0; } }
+  @keyframes fly3 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-6deg); opacity: 1; } 100% { transform: translate(330px,40px) rotate(36deg); opacity: 0; } }
+  @keyframes fly4 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-5deg); opacity: 1; } 100% { transform: translate(-320px,70px) rotate(-38deg); opacity: 0; } }
+
+  /* La feuille « PAYE » : elle s'envoie en dernier, tampon bien lisible */
+  #s5 { animation: flyPaid 1.0s cubic-bezier(.4,0,.2,1) 1.62s forwards; }
+  @keyframes flyPaid {
+    0%   { transform: translate(0,0) rotate(0) scale(1); opacity: 1; }
+    25%  { transform: translate(10px,-20px) rotate(-5deg) scale(1.02); opacity: 1; }
+    70%  { transform: translate(60px,-210px) rotate(8deg) scale(0.9); opacity: 1; }
+    100% { transform: translate(90px,-330px) rotate(16deg) scale(0.8); opacity: 0; }
+  }
+
+  /* ===== LA FEUILLE DU DESSUS ARRIVE ===== */
+  #top { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(0.88) translateY(30px); opacity: 0; animation: topIn 0.6s cubic-bezier(.34,1.56,.64,1) 2.45s forwards; }
+  @keyframes topIn { to { transform: scale(1) translateY(0); opacity: 1; } }
+
+  /* Le coin qui se decolle en plis */
+  #curl { transform-box: fill-box; transform-origin: 100% 0%; transform: scale(0.2) rotate(10deg); opacity: 0; animation: peel 0.9s cubic-bezier(.34,1.56,.64,1) 2.9s forwards; }
+  @keyframes peel {
+    0%   { transform: scale(0.2) rotate(10deg); opacity: 0; }
+    25%  { opacity: 1; }
+    65%  { transform: scale(1.05) rotate(-3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  #curlInner { transform-box: fill-box; transform-origin: 100% 0%; animation: flutter 2.6s ease-in-out 4.0s infinite; }
+  @keyframes flutter { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-2deg) scale(1.012); } }
+
+  /* Visage */
+  .eye { transform-box: fill-box; transform-origin: center; opacity: 0; animation: eyeIn 0.3s ease-out 3.0s forwards, blink 0.32s ease-in-out 3.7s 2; }
+  @keyframes eyeIn { to { opacity: 1; } }
+  @keyframes blink { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.08); } }
+  .pupil { opacity: 0; animation: eyeIn 0.3s ease-out 3.0s forwards, look 2.4s ease-in-out 4.4s infinite; }
+  @keyframes look { 0%,100% { transform: translate(0,0); } 40%,60% { transform: translate(5px,-2px); } }
+  #smile, #dimple { stroke-dasharray: 140; stroke-dashoffset: 140; animation: draw 0.45s ease-out 3.1s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  #dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: eyeIn 0.3s ease-out 3.0s forwards, pulse 1.6s ease-in-out 3.8s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.7; } }
+
+  /* Respiration finale */
+  #settle { transform-box: view-box; transform-origin: 200px 220px; animation: breathe 2.8s ease-in-out 4.4s infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+</style>
+</head>
+<body>
+
+<svg id="logo" viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg" aria-label="Logo Kobo">
+  <defs>
+    <!-- Forme du corps (image 1) -->
+    <path id="bodyShape" d="M92 130 Q92 70 152 70 L248 70 Q300 76 330 118 Q352 150 352 196 L352 290 Q352 372 270 372 L170 372 Q92 372 92 296 Z"/>
+    <clipPath id="bodyClip"><use href="#bodyShape"/></clipPath>
+
+    <!-- Couleurs (image 2) -->
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCE8FF"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1F6BFF"/>
+      <stop offset="0.55" stop-color="#0B3FD1"/>
+      <stop offset="1" stop-color="#0B1F5C"/>
+    </linearGradient>
+    <linearGradient id="curlBack" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F4F8FF"/>
+      <stop offset="1" stop-color="#BCD2FF"/>
+    </linearGradient>
+    <linearGradient id="curlBlue" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0B3FD1"/>
+      <stop offset="0.5" stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#6FA3FF"/>
+    </linearGradient>
+    <linearGradient id="curlNavy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1F5C"/>
+      <stop offset="1" stop-color="#0B3FD1"/>
+    </linearGradient>
+
+    <filter id="drop" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#021B6B" flood-opacity="0.45"/>
+    </filter>
+    <filter id="sheetShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#021B6B" flood-opacity="0.35"/>
+    </filter>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+
+    <!-- Une feuille de facture avec ses insignes -->
+    <g id="invoice">
+      <use href="#bodyShape" fill="url(#paper)" filter="url(#sheetShadow)"/>
+      <use href="#bodyShape" fill="none" stroke="url(#rim)" stroke-width="10"/>
+      <g clip-path="url(#bodyClip)">
+        <rect x="92" y="70" width="260" height="46" fill="#C9DAFF"/>
+        <circle cx="130" cy="94" r="16" fill="#1F6BFF"/>
+        <text x="130" y="101" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#FFFFFF">$</text>
+        <rect x="158" y="84" width="74" height="8" rx="4" fill="#0B3FD1"/>
+        <rect x="158" y="98" width="48" height="6" rx="3" fill="#6FA3FF"/>
+        <rect x="116" y="140" width="120" height="8" rx="4" fill="#9DB8F0"/>
+        <rect x="116" y="160" width="170" height="8" rx="4" fill="#C7D6F5"/>
+        <rect x="116" y="180" width="150" height="8" rx="4" fill="#C7D6F5"/>
+        <rect x="116" y="200" width="100" height="8" rx="4" fill="#C7D6F5"/>
+        <line x1="116" y1="232" x2="320" y2="232" stroke="#9DB8F0" stroke-width="2" stroke-dasharray="6 5"/>
+        <rect x="116" y="246" width="40" height="9" rx="4.5" fill="#0B3FD1"/>
+        <rect x="236" y="246" width="84" height="9" rx="4.5" fill="#0B3FD1"/>
+        <g fill="#9DB8F0">
+          <rect x="116" y="300" width="3" height="26"/><rect x="124" y="300" width="6" height="26"/>
+          <rect x="135" y="300" width="3" height="26"/><rect x="143" y="300" width="5" height="26"/>
+          <rect x="153" y="300" width="3" height="26"/><rect x="161" y="300" width="6" height="26"/>
+          <rect x="172" y="300" width="3" height="26"/><rect x="180" y="300" width="5" height="26"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- La feuille « PAYE » -->
+    <g id="invoicePaid">
+      <use href="#invoice"/>
+      <g transform="translate(222 214) rotate(-12)">
+        <rect x="-70" y="-26" width="140" height="52" rx="8" fill="#FFFFFF" fill-opacity="0.85" stroke="#E5334B" stroke-width="5"/>
+        <text x="0" y="12" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#E5334B" letter-spacing="3">PAYÉ</text>
+      </g>
+    </g>
+  </defs>
+
+  <g id="settle">
+  <g id="block">
+
+    <!-- Epaisseur du bloc -->
+    <g filter="url(#drop)">
+      <use href="#bodyShape" transform="translate(0 18)" fill="#0B1F5C"/>
+      <use href="#bodyShape" transform="translate(0 12)" fill="url(#rim)"/>
+      <use href="#bodyShape" transform="translate(0 6)" fill="#BCD2FF"/>
+    </g>
+
+    <!-- Les 5 feuilles qui se detachent -->
+    <g id="s5" class="sheet"><use href="#invoicePaid"/></g>
+    <g id="s4" class="sheet"><use href="#invoice"/></g>
+    <g id="s3" class="sheet"><use href="#invoice"/></g>
+    <g id="s2" class="sheet"><use href="#invoice"/></g>
+    <g id="s1" class="sheet"><use href="#invoice"/></g>
+
+    <!-- Feuille du dessus : forme image 1, couleurs et visage image 2 -->
+    <g id="top">
+      <use href="#bodyShape" fill="url(#paper)" filter="url(#sheetShadow)"/>
+      <use href="#bodyShape" fill="none" stroke="url(#rim)" stroke-width="14"/>
+
+      <g clip-path="url(#bodyClip)">
+        <path d="M240 70 Q290 90 320 140 Q344 184 336 250 L352 250 L352 70 Z" fill="#0B1F5C" opacity="0.28" filter="url(#soft)"/>
+      </g>
+
+      <!-- Coin qui se decolle en plis -->
+      <g id="curl">
+        <g id="curlInner">
+          <path d="M236 70 Q292 56 346 84 Q386 106 372 142 Q360 172 330 150 Q300 128 276 100 Q252 80 236 70 Z" fill="url(#curlBack)"/>
+          <path d="M246 72 Q282 64 318 82 Q300 96 288 112 Q264 92 246 72 Z" fill="url(#curlNavy)" opacity="0.9"/>
+          <path d="M262 76 Q310 100 336 150 Q352 190 350 250 Q364 200 356 160 Q340 100 296 74 Z" fill="url(#curlBlue)"/>
+          <path d="M290 84 Q326 116 340 160 Q350 196 348 236 Q338 196 322 160 Q308 126 282 92 Z" fill="#0B3FD1" opacity="0.9"/>
+          <path d="M300 80 Q332 98 348 130" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+        </g>
+      </g>
+
+      <!-- Visage : point bleu, deux grands yeux ronds, sourire -->
+      <circle id="dot" cx="222" cy="128" r="11" fill="#1F6BFF"/>
+      <circle cx="218" cy="124" r="3.5" fill="#FFFFFF" opacity="0.8"/>
+
+      <ellipse class="eye" cx="170" cy="236" rx="40" ry="42" fill="#FFFFFF" stroke="#0B1F5C" stroke-width="5"/>
+      <ellipse class="eye" cx="236" cy="236" rx="40" ry="42" fill="#FFFFFF" stroke="#0B1F5C" stroke-width="5"/>
+      <circle class="pupil" cx="180" cy="242" r="16" fill="#0B1F5C"/>
+      <circle class="pupil" cx="246" cy="242" r="16" fill="#0B1F5C"/>
+      <circle class="pupil" cx="186" cy="234" r="5" fill="#FFFFFF"/>
+      <circle class="pupil" cx="252" cy="234" r="5" fill="#FFFFFF"/>
+
+      <path id="smile" d="M146 306 Q206 350 262 300" fill="none" stroke="#0B1F5C" stroke-width="14" stroke-linecap="round"/>
+      <path id="dimple" d="M262 300 Q274 296 280 284" fill="none" stroke="#0B1F5C" stroke-width="11" stroke-linecap="round"/>
+    </g>
+
+  </g>
+  </g>
+</svg>
+
+<script>
+  // Toucher l'ecran pour rejouer l'animation
+  document.body.addEventListener('click', function () {
+    var svg = document.getElementById('logo');
+    var clone = svg.cloneNode(true);
+    svg.parentNode.replaceChild(clone, svg);
+  });
+</script>
+</body>
+</html>

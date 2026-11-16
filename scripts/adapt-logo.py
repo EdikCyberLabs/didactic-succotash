@@ -1,9 +1,9 @@
 """Adapte kobo-logo.html (logo animé fourni) à la charte Kobo : lavande, noir, or.
 Produit : le SVG animé intégré à l'écran de démarrage (index.html + css), et un SVG fixe (image finale)."""
+import os
 import re
 import sys
-SRC = sys.argv[1] if len(sys.argv) > 1 else 'kobo-logo.html'
-import os
+SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'kobo-logo.html')
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..') + '/'
 html = open(SRC).read()
 svg = html[html.index('<svg id="logo"'):html.index('</svg>') + 6]
