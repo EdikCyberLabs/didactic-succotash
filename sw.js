@@ -1,5 +1,5 @@
 /* Kobo — cache hors ligne. Changer VERSION à chaque mise à jour des fichiers. */
-const VERSION = 'kobo-v9';
+const VERSION = 'kobo-v10';
 const ASSETS = ['./', 'index.html', 'css/app.css', 'js/icons.js', 'js/app.js', 'vendor/qrcode.js', 'vendor/supabase.js', 'js/config.js', 'fonts/inter.woff2', 'manifest.webmanifest', 'icons/icon.svg', 'icons/logo.svg', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {

@@ -473,7 +473,6 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 /* ---------- Écran de démarrage ---------- */
 .splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: radial-gradient(120% 75% at 50% 32%, #ECEBF7 0%, #D6D5EA 62%, #C6C4E0 100%); color: #111114; text-align: center; transition: opacity .35s ease, visibility .35s ease; }
 .splash.out { opacity: 0; visibility: hidden; }
-.splash-logo { width: 104px; height: 104px; border-radius: 30px; box-shadow: 0 18px 44px rgba(17, 17, 20, .28); animation: splash-pop .9s cubic-bezier(.2, 1.4, .4, 1) both; }
 .splash-name { font-size: 46px; font-weight: 750; letter-spacing: -.05em; margin-top: 12px; animation: splash-rise .6s .35s ease both; }
 .splash-tag { font-size: 15px; font-weight: 500; opacity: .6; animation: splash-rise .6s .5s ease both; }
 .splash-bar { position: absolute; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); width: 120px; height: 4px; margin-left: -60px; border-radius: 99px; background: rgba(17, 17, 20, .12); overflow: hidden; }
@@ -482,6 +481,74 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 @keyframes splash-rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes splash-load { from { transform: scaleX(0); } }
 .splash.static, .splash.static * { animation: none !important; }
+
+/* Logo animé de Kobo (bloc de factures dont les feuilles s'envolent, puis la feuille souriante).
+   Adapté de kobo-logo.html : couleurs lavande, noir et or, animation accélérée pour tenir en ~2,6 s. */
+.splash-mascot { width: min(62vw, 250px); height: auto; overflow: visible; }
+.splash .splash-name { animation-delay: 1.75s; }
+.splash .splash-tag { animation-delay: 1.9s; }
+/* ===== APPARITION DU BLOC ===== */
+  #k-block { transform-box: view-box; transform-origin: 200px 220px; transform: scale(0); opacity: 0; animation: k-pop .39s cubic-bezier(.34,1.56,.64,1) .06s forwards; }
+  @keyframes k-pop { 0% { transform: scale(0) rotate(-8deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+
+  /* ===== LES FEUILLES SE DETACHENT UNE A UNE, TRES VITE ===== */
+  .splash-mascot .sheet { transform-box: fill-box; transform-origin: 100% 0%; }
+  #k-s1 { animation: k-fly1 .39s cubic-bezier(.4,0,.2,1) .50s forwards; }
+  #k-s2 { animation: k-fly2 .39s cubic-bezier(.4,0,.2,1) .59s forwards; }
+  #k-s3 { animation: k-fly3 .39s cubic-bezier(.4,0,.2,1) .69s forwards; }
+  #k-s4 { animation: k-fly4 .39s cubic-bezier(.4,0,.2,1) .79s forwards; }
+
+  @keyframes k-fly1 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-6deg); opacity: 1; } 100% { transform: translate(300px,-250px) rotate(28deg); opacity: 0; } }
+  @keyframes k-fly2 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-5deg); opacity: 1; } 100% { transform: translate(-320px,-210px) rotate(-30deg); opacity: 0; } }
+  @keyframes k-fly3 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-6deg); opacity: 1; } 100% { transform: translate(330px,40px) rotate(36deg); opacity: 0; } }
+  @keyframes k-fly4 { 0% { transform: translate(0,0) rotate(0); opacity: 1; } 28% { transform: translate(10px,-18px) rotate(-5deg); opacity: 1; } 100% { transform: translate(-320px,70px) rotate(-38deg); opacity: 0; } }
+
+  /* La feuille « PAYE » : elle s'envoie en dernier, tampon bien lisible */
+  #k-s5 { animation: k-flyPaid .55s cubic-bezier(.4,0,.2,1) .89s forwards; }
+  @keyframes k-flyPaid {
+    0%   { transform: translate(0,0) rotate(0) scale(1); opacity: 1; }
+    25%  { transform: translate(10px,-20px) rotate(-5deg) scale(1.02); opacity: 1; }
+    70%  { transform: translate(60px,-210px) rotate(8deg) scale(0.9); opacity: 1; }
+    100% { transform: translate(90px,-330px) rotate(16deg) scale(0.8); opacity: 0; }
+  }
+
+  /* ===== LA FEUILLE DU DESSUS ARRIVE ===== */
+  #k-top { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(0.88) translateY(30px); opacity: 0; animation: k-topIn .33s cubic-bezier(.34,1.56,.64,1) 1.35s forwards; }
+  @keyframes k-topIn { to { transform: scale(1) translateY(0); opacity: 1; } }
+
+  /* Le coin qui se decolle en plis */
+  #k-curl { transform-box: fill-box; transform-origin: 100% 0%; transform: scale(0.2) rotate(10deg); opacity: 0; animation: k-peel .50s cubic-bezier(.34,1.56,.64,1) 1.59s forwards; }
+  @keyframes k-peel {
+    0%   { transform: scale(0.2) rotate(10deg); opacity: 0; }
+    25%  { opacity: 1; }
+    65%  { transform: scale(1.05) rotate(-3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  #k-curlInner { transform-box: fill-box; transform-origin: 100% 0%; animation: k-flutter 1.43s ease-in-out 2.20s infinite; }
+  @keyframes k-flutter { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-2deg) scale(1.012); } }
+
+  /* Visage */
+  .splash-mascot .eye { transform-box: fill-box; transform-origin: center; opacity: 0; animation: k-eyeIn .17s ease-out 1.65s forwards, k-blink .18s ease-in-out 2.04s 1; }
+  @keyframes k-eyeIn { to { opacity: 1; } }
+  @keyframes k-blink { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.08); } }
+  .splash-mascot .pupil { opacity: 0; animation: k-eyeIn .17s ease-out 1.65s forwards, k-look 1.32s ease-in-out 2.42s infinite; }
+  @keyframes k-look { 0%,100% { transform: translate(0,0); } 40%,60% { transform: translate(5px,-2px); } }
+  #k-smile, #k-dimple { stroke-dasharray: 140; stroke-dashoffset: 140; animation: k-draw .25s ease-out 1.71s forwards; }
+  @keyframes k-draw { to { stroke-dashoffset: 0; } }
+  #k-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: k-eyeIn .17s ease-out 1.65s forwards, k-pulse .88s ease-in-out 2.09s infinite; }
+  @keyframes k-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.7; } }
+
+  /* Respiration finale */
+  #k-settle { transform-box: view-box; transform-origin: 200px 220px; animation: k-breathe 1.54s ease-in-out 2.42s infinite; }
+  @keyframes k-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+
+/* Version fixe (téléphone lent, moins d'animations) : directement l'image finale. */
+.splash.static .splash-mascot * { animation: none !important; }
+.splash.static #k-block, .splash.static #k-top, .splash.static #k-curl, .splash.static #k-dot,
+.splash.static .splash-mascot .eye, .splash.static .splash-mascot .pupil { opacity: 1 !important; transform: none !important; }
+.splash.static .splash-mascot .sheet { display: none; }
+.splash.static #k-smile, .splash.static #k-dimple { stroke-dashoffset: 0 !important; }
+
 .splash.static .splash-bar { display: none; }
 
 /* Impayés */
