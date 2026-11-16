@@ -1,6 +1,6 @@
 /* Icônes Lucide (https://lucide.dev), licence ISC — voir icons/LICENSE-lucide.txt.
    Fichier généré : clé de l’application → contenu SVG (24 × 24, trait). */
-window.GESTIO_ICONS = {
+window.KOBO_ICONS = {
 "check": "<path d=\"M20 6 9 17l-5-5\"/>",
 "back": "<path d=\"m15 18-6-6 6-6\"/>",
 "plus": "<path d=\"M5 12h14\"/><path d=\"M12 5v14\"/>",
@@ -82,7 +82,7 @@ window.GESTIO_ICONS = {
 "globe": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"/><path d=\"M2 12h20\"/>"
 };
 /* Les mêmes icônes en tracés, pour les dessiner sur les reçus, factures et cartes. */
-window.GESTIO_ICON_PATHS = {
+window.KOBO_ICON_PATHS = {
 "store": [
 "m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7",
 "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8",

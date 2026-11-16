@@ -1,4 +1,4 @@
-# Gestio
+# Kobo
 
 Application mobile de caisse et de gestion pour tous les types d'entreprise : commerce, restauration, services, beauté, artisans, santé, formation, transport, agriculture…
 

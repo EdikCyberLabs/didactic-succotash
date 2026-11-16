@@ -1,6 +1,6 @@
 {
-  "name": "Gestio — caisse et gestion",
-  "short_name": "Gestio",
+  "name": "Kobo — comptes, factures et caisse",
+  "short_name": "Kobo",
   "description": "Caisse, factures, clients et finances pour toutes les entreprises.",
   "lang": "fr",
   "start_url": "./",

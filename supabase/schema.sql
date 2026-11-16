@@ -1,4 +1,4 @@
--- Gestio : schéma Supabase pour synchroniser plusieurs téléphones d'une même entreprise.
+-- Kobo : schéma Supabase pour synchroniser plusieurs téléphones d'une même entreprise.
 -- À exécuter une fois dans Supabase : SQL Editor > New query > coller ce fichier > Run.
 -- Il peut être relancé sans risque (les objets existants sont conservés ou remplacés).
 

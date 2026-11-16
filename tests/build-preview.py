@@ -17,7 +17,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .preview.ticket + p::after { content: " Dans cet aperçu, maintenez l’image appuyée pour l’enregistrer."; }
 '''
 demo='''
-window.GESTIO_DEMO = function () {
+window.KOBO_DEMO = function () {
   var pad = function (n) { return String(n).padStart(2, '0'); };
   var day = function (off) { var d = new Date(); d.setDate(d.getDate() + off); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   var seed = 11, rnd = function (n) { seed = (seed * 9301 + 49297) % 233280; return Math.floor(seed / 233280 * n); };
@@ -73,7 +73,7 @@ window.GESTIO_DEMO = function () {
   };
 };
 '''
-out=f'''<title>Gestio</title>
+out=f'''<title>Kobo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 {css}{extra}</style>

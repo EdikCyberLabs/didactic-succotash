@@ -1,6 +1,6 @@
-# API de Gestio
+# API de Kobo
 
-Gestio n'a pas de serveur propre : ses données sont stockées dans le projet **Supabase** de l'application, qui expose une API REST standard (PostgREST) et une API d'authentification (GoTrue). Cette API sert à brancher d'autres outils sur les mêmes données : site web, tableau de bord, export comptable, application de livraison…
+Kobo n'a pas de serveur propre : ses données sont stockées dans le projet **Supabase** de l'application, qui expose une API REST standard (PostgREST) et une API d'authentification (GoTrue). Cette API sert à brancher d'autres outils sur les mêmes données : site web, tableau de bord, export comptable, application de livraison…
 
 | | |
 | --- | --- |

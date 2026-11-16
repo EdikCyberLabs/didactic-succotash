@@ -11,7 +11,7 @@ const out = process.argv[3];
   await p.waitForTimeout(1500);
   const shot = (n, full) => p.screenshot({ path: `${out}/${n}.png`, fullPage: !!full });
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
-  const db = () => p.evaluate(() => JSON.parse(localStorage['gestio.v1'] || 'null'));
+  const db = () => p.evaluate(() => JSON.parse(localStorage['kobo.v1'] || 'null'));
   await shot('51-home'); await shot('51b-home-full', true);
   // Caisse
   await p.click('#tabbar [data-tab="pos"]'); await shot('52-pos-empty');

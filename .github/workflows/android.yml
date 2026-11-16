@@ -80,13 +80,13 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/gestio.apk"
-          ls -la "$GITHUB_WORKSPACE/gestio.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/kobo.apk"
+          ls -la "$GITHUB_WORKSPACE/kobo.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: gestio-apk
-          path: gestio.apk
+          name: kobo-apk
+          path: kobo.apk
           retention-days: 30
 
       - name: Publish to the "android-latest" release
@@ -95,7 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           gh release delete android-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create android-latest gestio.apk \
+          gh release create android-latest kobo.apk \
             --target "$GITHUB_SHA" --prerelease \
-            --title "Gestio Android 1.0.${{ github.run_number }}" \
-            --notes "APK construit depuis la branche ${GITHUB_REF_NAME} (${GITHUB_SHA::7}). Sur le téléphone : télécharger gestio.apk, l'ouvrir et autoriser l'installation."
+            --title "Kobo Android 1.0.${{ github.run_number }}" \
+            --notes "APK construit depuis la branche ${GITHUB_REF_NAME} (${GITHUB_SHA::7}). Sur le téléphone : télécharger kobo.apk, l'ouvrir et autoriser l'installation."

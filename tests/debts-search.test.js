@@ -10,7 +10,7 @@ const out = process.argv[3];
   await p.goto('file://' + process.argv[2] + '.wrapped.html'); await p.waitForTimeout(600);
   const shot = (n, full) => p.screenshot({ path: `${out}/${n}.png`, fullPage: !!full });
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
-  const db = () => p.evaluate(() => JSON.parse(localStorage['gestio.v1'] || 'null'));
+  const db = () => p.evaluate(() => JSON.parse(localStorage['kobo.v1'] || 'null'));
   await shot('30-home', true);
   // "On vous doit" -> clients
   await p.click('#tabbar [data-tab="clients"]'); await act('filter', '[data-v="owed"]'); await shot('31-clients-owed');

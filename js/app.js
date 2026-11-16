@@ -1,10 +1,20 @@
-/* Gestio — caisse, factures, clients et finances pour toutes les entreprises.
+/* Kobo — caisse, factures, clients et finances pour les petits commerces.
    Tout est stocké localement sur l'appareil (localStorage). */
 (function () {
   'use strict';
 
   // ---------------------------------------------------------------- Constantes
-  const KEY = 'gestio.v1';
+  const KEY = 'kobo.v1';
+  // L'application s'appelait Gestio : on reprend une seule fois les données et la session enregistrées sous l'ancien nom.
+  (function migrateFromGestio() {
+    try {
+      [['gestio.v1', KEY], ['gestio.auth', 'kobo.auth']].forEach(([from, to]) => {
+        const old = localStorage.getItem(from);
+        if (old && !localStorage.getItem(to)) localStorage.setItem(to, old);
+        if (old && localStorage.getItem(to)) localStorage.removeItem(from);
+      });
+    } catch (e) { /* stockage indisponible : rien à reprendre */ }
+  })();
 
   const TYPES = [
     { id: 'shop', icon: 'store', label: 'Commerce', cats: ['Marchandises'] },
@@ -49,9 +59,9 @@
 
   // Icônes Lucide (js/icons.js) : en SVG pour l'interface, en tracés pour les images générées.
   const I = {};
-  Object.keys(window.GESTIO_ICONS || {}).forEach((k) => { I[k] = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${window.GESTIO_ICONS[k]}</svg>`; });
+  Object.keys(window.KOBO_ICONS || {}).forEach((k) => { I[k] = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${window.KOBO_ICONS[k]}</svg>`; });
   function drawIcon(ctx, key, x, y, size, color, width) {
-    const paths = (window.GESTIO_ICON_PATHS || {})[key];
+    const paths = (window.KOBO_ICON_PATHS || {})[key];
     if (!paths || typeof Path2D === 'undefined') return;
     ctx.save();
     ctx.translate(x, y); ctx.scale(size / 24, size / 24);
@@ -119,7 +129,7 @@
 
   function load() {
     try {
-      if (window.GESTIO_DEMO && !localStorage.getItem(KEY)) return window.GESTIO_DEMO();
+      if (window.KOBO_DEMO && !localStorage.getItem(KEY)) return window.KOBO_DEMO();
       const d = JSON.parse(localStorage.getItem(KEY));
       if (d && typeof d === 'object') return Object.assign(blank(), d);
     } catch (e) { /* données illisibles : on repart de zéro */ }
@@ -860,7 +870,7 @@
         kind === 'sales' ? PAY[r.pay][1] : r.cat,
         i ? '' : n(total(r)), i ? '' : n(kind === 'sales' ? paidOf(r) : total(r)), i ? '' : n(kind === 'sales' ? owedSale(r) : 0)]))));
     const csv = '﻿' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
-    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `gestio-${p.start}-au-${p.end}.csv`);
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `kobo-${p.start}-au-${p.end}.csv`);
   }
 
   // ---------------------------------------------------------------- Clients
@@ -1857,9 +1867,9 @@
   // Carrousel de bienvenue : défilement automatique, points de progression, glisser au doigt.
   function welcomeSlider(cloud) {
     let qr = '';
-    try { qr = qrMatrix('Gestio').createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch (e) { qr = ''; }
+    try { qr = qrMatrix('Kobo').createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch (e) { qr = ''; }
     const slides = [
-      { v: `<div class="art">${ART}</div>`, t: '<h1 class="wordmark">Gestio</h1>', p: 'Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.' },
+      { v: `<div class="art">${ART}</div>`, t: '<h1 class="wordmark">Kobo</h1>', p: 'Caisse, factures, clients et finances : toute votre entreprise dans la poche, quel que soit votre métier.' },
       { v: `<div class="mock mock-pos"><div class="mp-top"><span>FCFA</span><b>7 000</b></div>
           <div class="mp-line"><span>Coupe + brushing</span><b>× 2</b></div>
           <div class="mp-keys">${['1', '2', '3', '4', '5', '6'].map((k) => `<i>${k}</i>`).join('')}</div></div>`,
@@ -1877,7 +1887,7 @@
       slides.push({ v: `<div class="mock mock-cloud"><span class="mcl-phone">${I.smartphone}</span><span class="mcl-dash"></span><span class="mcl-cloud">${I.cloud}<i>${I.check}</i></span><span class="mcl-dash"></span><span class="mcl-phone">${I.smartphone}</span></div>`,
         t: '<h2>Vos données en sécurité</h2>', p: 'Sauvegarde en ligne automatique, sans inscription. Toute l’équipe partage les mêmes chiffres.' });
     }
-    return `<div class="slider" id="slider" tabindex="0" aria-roledescription="carrousel" aria-label="Présentation de Gestio">
+    return `<div class="slider" id="slider" tabindex="0" aria-roledescription="carrousel" aria-label="Présentation de Kobo">
       <div class="slides">${slides.map((x, i) => `<div class="slide" role="group" aria-roledescription="diapositive" aria-label="${i + 1} sur ${slides.length}" aria-hidden="${i ? 'true' : 'false'}">
         <div class="slide-visual">${x.v}</div>${x.t}<p>${x.p}</p></div>`).join('')}</div>
       <div class="slider-dots">${slides.map((x, i) => `<button class="${i ? '' : 'on'}" data-act="slide" data-v="${i}" aria-label="Diapositive ${i + 1}"><i></i></button>`).join('')}</div>
@@ -1961,12 +1971,12 @@
   }
 
   async function exportData() {
-    const name = `gestio-sauvegarde-${today()}.json`;
+    const name = `kobo-sauvegarde-${today()}.json`;
     const blob = new Blob([JSON.stringify(Object.assign({}, db, { lastBackup: Date.now(), sync: undefined }))], { type: 'application/json' });
     const file = new File([blob], name, { type: 'application/json' });
     const done = () => { db.lastBackup = Date.now(); save(); if ($('#sheet-backdrop').hidden) render(); };
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: 'Sauvegarde Gestio' }); done(); toast('Sauvegarde envoyée'); return; }
+      try { await navigator.share({ files: [file], title: 'Sauvegarde Kobo' }); done(); toast('Sauvegarde envoyée'); return; }
       catch (e) { if (e.name === 'AbortError') return; }
     }
     downloadBlob(blob, name);
@@ -1985,7 +1995,7 @@
           loadLogo();
           save(); render(); toast('Sauvegarde restaurée');
         }, openSettings);
-      } catch (err) { toast('Ce fichier n’est pas une sauvegarde Gestio'); }
+      } catch (err) { toast('Ce fichier n’est pas une sauvegarde Kobo'); }
     };
     reader.readAsText(file);
   }
@@ -2019,14 +2029,14 @@
   // Chaque enregistrement devient une ligne (kind, id, data) de la table « records ».
   // Une empreinte par ligne mémorise la dernière version synchronisée : ce qui a changé
   // localement est envoyé, ce qui a changé ailleurs est reçu (le serveur date chaque écriture).
-  const CFG = window.GESTIO_SUPABASE || {};
+  const CFG = window.KOBO_SUPABASE || {};
   const SYNC_KINDS = ['sales', 'purchases', 'orders', 'products'];
   const sync = { client: null, session: null, busy: false, again: false, timer: null, status: 'off', error: '', pendingRender: false, chain: Promise.resolve() };
   const syncReady = () => !!(CFG.url && CFG.key && window.supabase && window.supabase.createClient);
   function syncClient() {
     if (!sync.client && syncReady()) {
       sync.client = window.supabase.createClient(CFG.url, CFG.key, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit', storageKey: 'gestio.auth' },
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit', storageKey: 'kobo.auth' },
       });
     }
     return sync.client;

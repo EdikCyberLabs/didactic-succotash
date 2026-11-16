@@ -7,7 +7,7 @@ const S = process.argv[2], out = process.argv[3];
     const ctx = await b.newContext({ ...devices['Pixel 7'], ...(opts || {}) });
     await ctx.exposeFunction('__sb', () => JSON.stringify({ error: null }));
     await ctx.route('**/vendor/supabase.js', (r) => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(S + '/mock-supabase.js', 'utf8') }));
-    await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.GESTIO_SUPABASE = { url: 'https://test.supabase.co', key: 'sb_publishable_test' };" }));
+    await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.KOBO_SUPABASE = { url: 'https://test.supabase.co', key: 'sb_publishable_test' };" }));
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
     await p.goto('http://localhost:8123/'); await p.waitForTimeout(400);

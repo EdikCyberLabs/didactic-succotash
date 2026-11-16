@@ -15,6 +15,7 @@ python3 tests/build-preview.py "$OUT/preview.html" >/dev/null
 
 # nom|commande
 TESTS="basics|node tests/basics.test.js $OUT
+migration|node tests/migration.test.js $OUT
 stock-report|node tests/stock-report.test.js $OUT .
 onboarding-auth|node tests/onboarding-auth.test.js tests $OUT
 sync|node tests/sync.test.js tests $OUT

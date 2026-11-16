@@ -9,7 +9,7 @@ const out = process.argv[2], root = process.argv[3];
   p.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text()); });
   const shot = (n) => p.screenshot({ path: `${out}/${n}.png` });
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
-  const qty = (name) => p.evaluate((n) => JSON.parse(localStorage['gestio.v1']).products.find((x) => x.name === n).qty, name);
+  const qty = (name) => p.evaluate((n) => JSON.parse(localStorage['kobo.v1']).products.find((x) => x.name === n).qty, name);
   const save = () => p.click('#entry-form button.btn:not(.ghost)');
   await p.goto('http://localhost:8123/');
   await act('onb-go', '[data-v="business"]'); await p.fill('#s-name', 'Chez Awa'); await p.waitForTimeout(600); await shot('19-onb2'); await act('onb-next'); await act('onb-next'); await act('onb-finish');
@@ -50,7 +50,7 @@ const out = process.argv[2], root = process.argv[3];
   // logo
   await p.click('#btn-settings'); await p.setInputFiles('#logo-file', root + '/icons/icon-512.png'); await p.waitForTimeout(300);
   await shot('25-settings-logo'); await act('settings-save'); await p.waitForTimeout(300);
-  console.log('logo bytes', await p.evaluate(() => JSON.parse(localStorage['gestio.v1']).settings.logo.length));
+  console.log('logo bytes', await p.evaluate(() => JSON.parse(localStorage['kobo.v1']).settings.logo.length));
   await act('detail'); await act('receipt'); await shot('26-receipt-logo'); await act('close');
   await p.click('#tabbar [data-tab="more"]'); await act('go', '[data-v="card"]'); await p.waitForTimeout(200);
   const fs = require('fs');

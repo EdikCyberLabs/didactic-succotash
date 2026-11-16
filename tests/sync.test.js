@@ -36,7 +36,7 @@ function handle(op, a) {
     const ctx = await b.newContext({ ...devices['Pixel 7'] });
     await ctx.exposeFunction('__sb', (op, args) => JSON.stringify(handle(op, JSON.parse(args))));
     await ctx.route('**/vendor/supabase.js', (r) => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(S + '/mock-supabase.js', 'utf8') }));
-    await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.GESTIO_SUPABASE = { url: 'https://test.supabase.co', key: 'sb_publishable_test' };" }));
+    await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.KOBO_SUPABASE = { url: 'https://test.supabase.co', key: 'sb_publishable_test' };" }));
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errs.push(name + ' PAGEERR ' + e.message));
     p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(name + ' CONSOLE ' + m.text()); });
@@ -44,7 +44,7 @@ function handle(op, a) {
     return p;
   }
   const act = (p, a, e = '') => p.click(`[data-act="${a}"]${e}`);
-  const data = (p) => p.evaluate(() => JSON.parse(localStorage['gestio.v1']));
+  const data = (p) => p.evaluate(() => JSON.parse(localStorage['kobo.v1']));
   const login = async (p, email) => { await p.fill('#sy-email', email); await act(p, 'sync-send'); await p.fill('#sy-code', '123456'); await act(p, 'sync-verify'); await p.waitForTimeout(400); };
 
   // Téléphone A : crée l'entreprise
