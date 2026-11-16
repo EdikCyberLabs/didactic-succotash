@@ -17,6 +17,8 @@ python3 tests/build-preview.py "$OUT/preview.html" >/dev/null
 TESTS="basics|node tests/basics.test.js $OUT
 migration|node tests/migration.test.js $OUT
 splash|node tests/splash.test.js $OUT
+day|node tests/day.test.js $OUT
+debts|node tests/debts.test.js $OUT
 stock-report|node tests/stock-report.test.js $OUT .
 onboarding-auth|node tests/onboarding-auth.test.js tests $OUT
 consent|node tests/consent.test.js tests $OUT

@@ -30,6 +30,12 @@
     { id: 'farm', icon: 'wheat', label: 'Agriculture', cats: ['Semences', 'Intrants', 'Main-d’œuvre'] },
     { id: 'other', icon: 'sparkles', label: 'Autre', cats: ['Stock'] },
   ];
+  // Indicatifs pour transformer un numéro local en lien WhatsApp (wa.me).
+  const DIAL = [['', 'Choisir…'], ['221', 'Sénégal (+221)'], ['225', 'Côte d’Ivoire (+225)'], ['223', 'Mali (+223)'], ['226', 'Burkina Faso (+226)'],
+    ['227', 'Niger (+227)'], ['228', 'Togo (+228)'], ['229', 'Bénin (+229)'], ['224', 'Guinée (+224)'], ['237', 'Cameroun (+237)'],
+    ['241', 'Gabon (+241)'], ['242', 'Congo (+242)'], ['243', 'RD Congo (+243)'], ['235', 'Tchad (+235)'], ['236', 'Centrafrique (+236)'],
+    ['222', 'Mauritanie (+222)'], ['261', 'Madagascar (+261)'], ['212', 'Maroc (+212)'], ['216', 'Tunisie (+216)'], ['213', 'Algérie (+213)'], ['33', 'France (+33)']];
+  const KEEP_TRUNK_ZERO = ['225']; // En Côte d'Ivoire, le 0 de tête fait partie du numéro.
   const COMMON_CATS = ['Loyer', 'Salaires', 'Transport', 'Marketing', 'Impôts & taxes', 'Autre'];
 
   const CURRENCIES = [
@@ -280,9 +286,11 @@
     query: { sales: '', purchases: '', orders: '', stock: '', clients: '', invoices: '' },
     introDone: false,
     period: periodOf('week', today()),
+    day: today(),
+    debtSort: 'age',
   };
-  const SUB = ['stock', 'bilan', 'card', 'invoices', 'purchases', 'orders'];
-  const TITLES = { pos: 'Caisse', sales: 'Ventes', purchases: 'Dépenses', orders: 'Commandes', clients: 'Clients', more: 'Plus', stock: 'Articles & stock', bilan: 'Finances', card: 'Carte de visite', invoices: 'Factures' };
+  const SUB = ['stock', 'bilan', 'card', 'invoices', 'purchases', 'orders', 'today', 'debts'];
+  const TITLES = { today: 'Ma journée', debts: 'Impayés', pos: 'Caisse', sales: 'Ventes', purchases: 'Dépenses', orders: 'Commandes', clients: 'Clients', more: 'Plus', stock: 'Articles & stock', bilan: 'Finances', card: 'Carte de visite', invoices: 'Factures' };
 
   let logoImg = null;
   function loadLogo() {
@@ -318,7 +326,7 @@
     renderBrand();
     const top = SUB.includes(ui.tab) ? 'more' : ui.tab;
     $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === top));
-    $('#fab').hidden = ['home', 'pos', 'more', 'bilan', 'card'].includes(ui.tab);
+    $('#fab').hidden = ['home', 'pos', 'more', 'bilan', 'card', 'today', 'debts'].includes(ui.tab);
     const v = $('#view');
     v.className = 'view' + (home ? ' home' : '') + (home && !ui.introDone ? ' intro' : '');
     if (home) ui.introDone = true;
@@ -327,6 +335,8 @@
     else if (ui.tab === 'more') v.innerHTML = viewMore();
     else if (ui.tab === 'stock') { v.innerHTML = viewStock(); mountSearch('stock', stockBody); }
     else if (ui.tab === 'bilan') v.innerHTML = viewBilan();
+    else if (ui.tab === 'today') v.innerHTML = viewDay();
+    else if (ui.tab === 'debts') v.innerHTML = viewDebts();
     else if (ui.tab === 'invoices') { v.innerHTML = viewInvoices(); mountSearch('invoices', invoicesBody); }
     else if (ui.tab === 'clients') { v.innerHTML = viewClients(); mountSearch('clients', clientsBody); }
     else if (ui.tab === 'card') { v.innerHTML = viewCard(); mountCard(); }
@@ -376,7 +386,7 @@
     return `
       <section class="h-top">
         <span class="cur-pill"><i>${esc(curSym())}</i>${esc(S().currency || '')}</span>
-        <div class="big-amount num">${bigNum(sToday)}</div>
+        <button class="big-amount num" data-act="open-day" aria-label="Voir ma journée">${bigNum(sToday)}</button>
         <div class="h-sub">${esc(sub)}</div>
       </section>
       <section class="h-band">
@@ -399,7 +409,8 @@
           </div>
         </div>
 
-        ${credits.length ? `<button class="row" data-act="go" data-v="invoices">
+        ${dayRow()}
+        ${credits.length ? `<button class="row" data-act="go" data-v="debts">
             <div class="ico">${I.invoice}</div><div class="mid"><div class="title">À encaisser${late ? ` <span class="badge red">${late} en retard</span>` : ''}</div><div class="sub">${credits.length} facture${credits.length > 1 ? 's' : ''} pas encore payée${credits.length > 1 ? 's' : ''}</div></div>
             <div class="amt num">${esc(fmtN(owedTot))}</div></button>` : ''}
         ${lowStock.length ? `<button class="row" data-act="low-stock">
@@ -574,7 +585,9 @@
       <div class="ico">${ico}</div><div class="mid"><div class="title">${title}</div><div class="sub">${esc(sub)}</div></div><div class="chev">›</div></button>`;
     const mS = statsFor(m.start, m.end);
     return `<div class="list">
+      ${row('open-day', '', I.calendar, 'Ma journée', `Aujourd’hui : ${fmt(moneyInOn(today()).total)} entrés`)}
       ${row('open-bilan', '', I.chart, 'Finances', `Ce mois : résultat ${fmt(mS.profit)}`)}
+      ${row('go', 'debts', I.hourglass, 'Impayés', owed.length ? `${fmt(round(owed.reduce((a, r) => a + owedSale(r), 0)))} à encaisser${late ? ` · ${late} en retard` : ''}` : 'Personne ne vous doit d’argent')}
       ${row('go', 'invoices', I.invoice, 'Factures', owed.length ? `${fmt(round(owed.reduce((a, r) => a + owedSale(r), 0)))} à encaisser${late ? ` · ${late} en retard` : ''}` : 'Toutes payées')}
       ${row('go', 'purchases', I.arrowDown, 'Dépenses', `Ce mois : ${fmt(mS.tP)}`)}
       ${row('go', 'orders', I.clip, 'Commandes & devis', `${db.orders.filter((o) => o.status !== 'done').length} en cours`)}
@@ -583,6 +596,93 @@
       ${syncReady() ? row('sync', '', I.cloud, 'Compte et sauvegarde', syncSummary()) : ''}
       ${row('settings', '', I.gear, 'Paramètres', 'Entreprise, taxes, devise, sauvegarde')}
     </div>`;
+  }
+
+  // ---------------------------------------------------------------- Ma journée
+  // Argent réellement entré un jour donné : ventes payées sur-le-champ, versements reçus ce jour-là
+  // (y compris sur des factures plus anciennes) et acomptes de commandes pas encore livrées.
+  function moneyInOn(d) {
+    let sumIn = 0;
+    const byMethod = {}, lines = [];
+    const add = (method, amount, label, kind, id) => {
+      sumIn += amount;
+      byMethod[method] = (byMethod[method] || 0) + amount;
+      lines.push({ method, amount, label, kind, id });
+    };
+    db.sales.forEach((r) => {
+      if (r.payments && r.payments.length) {
+        r.payments.forEach((v) => { if (v.date === d) add(v.method || 'cash', v.amount, r.date === d ? (r.who || 'Client de passage') : `Versement · ${r.who || 'client'} · ${invNo(r)}`, 'sales', r.id); });
+      } else if (r.pay !== 'credit' && r.date === d) add(r.pay, total(r), r.who || 'Client de passage', 'sales', r.id);
+    });
+    db.orders.forEach((o) => { if (!o.saleId && o.deposit && o.date === d) add('cash', o.deposit, `Acompte · ${o.who || 'commande'} · ${ref('orders', o)}`, 'orders', o.id); });
+    return { total: round(sumIn), byMethod, lines };
+  }
+  function dayStats(d) {
+    const inn = moneyInOn(d);
+    const st = statsFor(d, d);
+    const issued = db.sales.filter((r) => r.date === d);
+    const unpaid = issued.filter((r) => owedSale(r) > 0);
+    return {
+      inn, out: st.tP, balance: round(inn.total - st.tP), sales: st.tS, count: issued.length, profit: st.profit,
+      unpaid, unpaidSum: round(unpaid.reduce((a, r) => a + owedSale(r), 0)),
+      owedAll: round(db.sales.reduce((a, r) => a + owedSale(r), 0)),
+      purchases: st.purchases, issued,
+    };
+  }
+  function dayRow() {
+    const t = dayStats(today());
+    return `<button class="row day-row" data-act="open-day">
+      <div class="ico">${I.calendar}</div>
+      <div class="mid"><div class="title">Ma journée</div><div class="sub">Entré ${esc(fmtN(t.inn.total))} · sorti ${esc(fmtN(t.out))} · ${t.count} facture${t.count > 1 ? 's' : ''}</div></div>
+      <div class="amt ${t.balance >= 0 ? '' : 'neg'}">${t.balance > 0 ? '+' : ''}${esc(fmtN(t.balance))}<small>solde du jour</small></div>
+    </button>`;
+  }
+  function dayLabel(d) {
+    const t = toDate(d).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return (d === today() ? 'Aujourd’hui, ' : d === addDays(today(), -1) ? 'Hier, ' : '') + t;
+  }
+  function viewDay() {
+    const d = ui.day, t = dayStats(d);
+    const nav = `<div class="month-nav"><button data-act="day-step" data-v="-1" aria-label="Jour précédent">${I.back}</button><b>${esc(dayLabel(d))}</b><button data-act="day-step" data-v="1" aria-label="Jour suivant" ${d >= today() ? 'disabled' : ''}><span style="display:inline-block;transform:scaleX(-1)">${I.back}</span></button></div>`;
+    const methods = Object.keys(t.inn.byMethod).map((m) => ({ k: PAY[m] ? PAY[m][1] : m, v: round(t.inn.byMethod[m]) })).sort((a, b) => b.v - a.v);
+    const ops = [
+      ...t.inn.lines.filter((l) => !(l.kind === 'sales' && t.issued.some((r) => r.id === l.id))).map((l) => ({ at: 0, html: `<button class="row" data-act="detail" data-kind="${l.kind}" data-id="${l.id}"><div class="ico">${I.arrowDown}</div><div class="mid"><div class="title">${esc(l.label)}</div><div class="sub">${esc(PAY[l.method] ? PAY[l.method][1] : '')}</div></div><div class="amt">+${esc(fmtN(l.amount))}<small>reçu</small></div></button>` })),
+      ...t.issued.map((r) => ({ at: r.at, html: rowHtml('sales', r, true) })),
+      ...t.purchases.map((r) => ({ at: r.at, html: rowHtml('purchases', r, true) })),
+    ].sort((a, b) => b.at - a.at);
+    if (!t.inn.total && !t.out && !t.count) {
+      return `${nav}<div class="empty"><div class="big">${I.calendar}</div><b>Rien d’enregistré ce jour-là</b>${d === today() ? 'Vos ventes, paiements et dépenses de la journée apparaîtront ici.' : 'Aucune vente, aucun paiement, aucune dépense.'}</div>`;
+    }
+    return `${nav}
+      <div class="stats">
+        <div class="stat s-sales"><div class="lbl">Entré</div><div class="val">${esc(fmtN(t.inn.total))}</div></div>
+        <div class="stat"><div class="lbl">Sorti</div><div class="val">${esc(fmtN(t.out))}</div></div>
+        <div class="stat s-profit"><div class="lbl">Solde</div><div class="val">${t.balance > 0 ? '+' : ''}${esc(fmtN(t.balance))}</div></div>
+      </div>
+      <p class="muted small cmp-note">Entré : ventes payées, versements et acomptes reçus ce jour. Sorti : dépenses saisies.</p>
+      <div class="card">
+        <div class="kv"><span>Ventes du jour</span><span>${t.count} · ${esc(fmt(t.sales))}</span></div>
+        <div class="kv"><span>Bénéfice estimé</span><b class="${t.profit >= 0 ? 'pos' : 'neg'}">${t.profit > 0 ? '+' : ''}${esc(fmt(t.profit))}</b></div>
+        <div class="kv"><span>Factures émises</span><span>${t.count}</span></div>
+        <div class="kv"><span>Dont impayées</span><span class="${t.unpaid.length ? 'neg' : ''}">${t.unpaid.length}${t.unpaid.length ? ` · reste ${esc(fmt(t.unpaidSum))}` : ''}</span></div>
+        <div class="kv"><span>Total dû par vos clients</span><b>${esc(fmt(t.owedAll))}</b></div>
+      </div>
+      <p class="muted small cmp-note">Bénéfice estimé = ventes hors taxes − dépenses du jour.</p>
+      ${t.owedAll ? `<button class="btn ghost" data-act="go" data-v="debts">${I.hourglass} Voir les impayés</button>` : ''}
+      ${methods.length ? `<div class="section-title">Entrées par moyen de paiement</div>${barRows(methods)}` : ''}
+      ${ops.length ? `<div class="section-title">Opérations <small>${ops.length}</small></div><div class="list">${ops.map((x) => x.html).join('')}</div>` : ''}
+      <button class="btn" data-act="share-day" style="margin-top:20px">${I.share} Partager le récap</button>`;
+  }
+  function dayText(d) {
+    const t = dayStats(d);
+    const L = [`Ma journée · ${dayLabel(d)}`, S().name, '',
+      `Entré : ${fmt(t.inn.total)}`, `Sorti : ${fmt(t.out)}`, `Solde : ${fmt(t.balance)}`, '',
+      `Ventes : ${t.count} (${fmt(t.sales)})`, `Bénéfice estimé : ${fmt(t.profit)}`,
+      `Factures impayées du jour : ${t.unpaid.length}${t.unpaid.length ? ` (reste ${fmt(t.unpaidSum)})` : ''}`,
+      `Total dû par les clients : ${fmt(t.owedAll)}`];
+    const methods = Object.keys(t.inn.byMethod);
+    if (methods.length) L.push('', 'Par moyen de paiement :', ...methods.map((m) => `- ${PAY[m] ? PAY[m][1] : m} : ${fmt(t.inn.byMethod[m])}`));
+    return L.join('\n');
   }
 
   // ---------------------------------------------------------------- Factures
@@ -958,23 +1058,75 @@
     });
     if (!c) setTimeout(() => { const el = $('#ct-name'); if (el) el.focus(); }, 250);
   }
-  function openRemind(key) {
+  // Numéro au format international (chiffres seuls) pour wa.me, ou '' s'il manque l'indicatif.
+  function intlNumber(phone) {
+    let d = String(phone || '').replace(/[^\d+]/g, '');
+    if (/^\+/.test(d)) d = d.slice(1);
+    else if (/^00/.test(d)) d = d.slice(2);
+    else if (d && S().dial) d = S().dial + (KEEP_TRUNK_ZERO.includes(S().dial) ? d : d.replace(/^0/, ''));
+    else return '';
+    return /^\d{8,15}$/.test(d) ? d : '';
+  }
+  function remindText(c) {
+    const unpaid = c.sales.filter((r) => owedSale(r) > 0).sort((a, b) => a.date.localeCompare(b.date));
+    const lines = unpaid.map((r) => `- Facture ${invNo(r)} du ${fullDate(r.date)} : reste ${fmt(owedSale(r))}`);
+    return `Bonjour ${c.name},\nJ’espère que vous allez bien. Petit rappel de ${S().name || 'notre part'} : il reste ${fmt(c.credit)} à régler.\n${lines.join('\n')}\nVous pouvez régler quand cela vous arrange. Merci beaucoup pour votre confiance !`;
+  }
+  function openRemind(key, from) {
     const c = clientList().find((x) => x.key === key);
     if (!c) return;
-    const lines = c.sales.filter((r) => owedSale(r) > 0).sort((a, b) => a.date.localeCompare(b.date))
-      .map((r) => `- ${fullDate(r.date)} : ${itemsLabel(r)}, reste ${fmt(owedSale(r))}`);
-    const text = `Bonjour ${c.name},\nPetit rappel de ${S().name} : il reste ${fmt(c.credit)} à régler.\n${lines.join('\n')}\nMerci beaucoup !`;
-    const digits = (c.phone || '').replace(/[^\d+]/g, '');
-    const intl = /^(\+|00)\d{8,}$/.test(digits) ? digits.replace(/^(\+|00)/, '') : '';
-    const wa = (t) => `https://wa.me/${intl}?text=${encodeURIComponent(t)}`;
-    openSheet(`${head('Rappel de paiement')}
-      <p class="muted small">Vous pouvez modifier le message avant de l’envoyer.</p>
-      <textarea id="share-text" class="share-text" rows="7">${esc(text)}</textarea>
-      ${intl ? `<a class="btn" id="wa-link" href="${esc(wa(text))}" target="_blank" rel="noopener">${I.message} Envoyer sur WhatsApp</a>` : ''}
-      <button class="btn ${intl ? 'ghost' : ''}" data-act="share-remind">${I.share} Partager ou copier</button>
-      ${intl ? '' : '<p class="muted small">Enregistrez le numéro du client avec l’indicatif (ex. +221…) pour l’envoyer directement sur WhatsApp.</p>'}
-      <button class="btn plain" data-act="client" data-key="${esc(key)}">${I.back} Retour</button>`);
-    if (intl) $('#share-text').addEventListener('input', (e) => { $('#wa-link').href = wa(e.target.value); });
+    const text = remindText(c);
+    const num = intlNumber(c.phone);
+    const local = c.phone && !num;
+    const wa = (t) => `https://wa.me/${num}?text=${encodeURIComponent(t)}`;
+    openSheet(`${head('Relancer ' + esc(c.name))}
+      <div class="card"><div class="kv"><span>Montant dû</span><b>${esc(fmt(c.credit))}</b></div><div class="kv"><span>Téléphone</span><span>${esc(c.phone || 'non renseigné')}</span></div></div>
+      <p class="muted small">Relisez et modifiez le message si besoin. C’est vous qui l’envoyez depuis WhatsApp : rien ne part automatiquement.</p>
+      <textarea id="share-text" class="share-text" rows="8">${esc(text)}</textarea>
+      ${num ? `<a class="btn" id="wa-link" href="${esc(wa(text))}" target="_blank" rel="noopener">${I.message} Ouvrir WhatsApp</a>` : ''}
+      ${local ? `<label class="field"><span>Pays du numéro (pour WhatsApp)</span><select id="rm-dial">${DIAL.map(([v, l]) => `<option value="${v}" ${S().dial === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+      ${!c.phone ? `<button class="btn ghost" data-act="client-edit" data-key="${esc(key)}">${I.edit} Ajouter son numéro</button>` : ''}
+      <button class="btn ${num ? 'ghost' : ''}" data-act="share-remind">${I.share} Partager ou copier</button>
+      <button class="btn plain" data-act="${from === 'debts' ? 'close' : 'client'}" data-key="${esc(key)}">${I.back} Retour</button>`);
+    if (num) $('#share-text').addEventListener('input', (e) => { $('#wa-link').href = wa(e.target.value); });
+    const dial = $('#rm-dial');
+    if (dial) dial.addEventListener('change', () => { db.settings.dial = dial.value; save(); const t = $('#share-text').value; openRemind(key, from); $('#share-text').value = t; $('#share-text').dispatchEvent(new Event('input')); });
+  }
+
+  // ---------------------------------------------------------------- Impayés
+  function debtList() {
+    const t = today();
+    return clientList().filter((c) => c.credit > 0).map((c) => {
+      const unpaid = c.sales.filter((r) => owedSale(r) > 0);
+      const oldest = unpaid.map((r) => r.date).sort()[0];
+      return { c, unpaid, oldest, age: Math.max(0, daysBetween(oldest, t)), late: unpaid.some((r) => r.due && r.due < t) };
+    });
+  }
+  const ageText = (n) => (n === 0 ? 'aujourd’hui' : n === 1 ? 'depuis hier' : `${n} jours`);
+  const ageClass = (n) => (n > 30 ? 'red' : n > 7 ? 'orange' : '');
+  function viewDebts() {
+    const list = debtList();
+    const anon = db.sales.filter((r) => !norm(r.who) && owedSale(r) > 0);
+    const totalDue = round(list.reduce((a, x) => a + x.c.credit, 0) + anon.reduce((a, r) => a + owedSale(r), 0));
+    list.sort(ui.debtSort === 'amount' ? (a, b) => b.c.credit - a.c.credit : (a, b) => b.age - a.age || b.c.credit - a.c.credit);
+    const oldest = list.reduce((m, x) => Math.max(m, x.age), 0);
+    const head2 = `<div class="card summary"><div><div class="muted small">On vous doit${list.length ? ` · ${list.length} client${list.length > 1 ? 's' : ''}` : ''}${oldest ? ` · la plus ancienne date de ${oldest} jour${oldest > 1 ? 's' : ''}` : ''}</div><b class="num">${esc(fmt(totalDue))}</b></div>${I.hourglass}</div>`;
+    if (!list.length && !anon.length) {
+      return `${back}${head2}<div class="empty"><div class="big">${I.ok}</div><b>Personne ne vous doit d’argent</b>Les ventes enregistrées « Plus tard » apparaîtront ici avec leur ancienneté.</div>`;
+    }
+    return `${back}${head2}
+      <div class="chips">${[['age', 'Plus anciennes'], ['amount', 'Plus gros montants']].map(([v, l]) => `<button class="chip ${ui.debtSort === v ? 'on' : ''}" data-act="debt-sort" data-v="${v}">${l}</button>`).join('')}</div>
+      <div class="list">${list.map((x) => `<div class="debt">
+        <button class="debt-main" data-act="client" data-key="${esc(x.c.key)}">
+          <span class="ico initial">${esc(initials(x.c.name))}</span>
+          <span class="mid"><span class="title">${esc(x.c.name)}</span>
+            <span class="sub badges"><span class="badge ${ageClass(x.age)}">${ageText(x.age)}</span>${x.late ? ' <span class="badge red">en retard</span>' : ''}</span></span>
+          <span class="amt">${esc(fmtN(x.c.credit))}<small>${x.unpaid.length} facture${x.unpaid.length > 1 ? 's' : ''}</small></span>
+        </button>
+        <button class="btn sm debt-remind" data-act="remind" data-key="${esc(x.c.key)}" data-from="debts">${I.message} Relancer</button>
+      </div>`).join('')}
+      ${anon.length ? `<div class="day-head"><span>Ventes sans nom de client</span><span>${esc(fmtN(round(anon.reduce((a, r) => a + owedSale(r), 0))))}</span></div>${anon.map((r) => rowHtml('sales', r)).join('')}` : ''}</div>
+      <p class="muted small">Ancienneté comptée depuis la plus ancienne facture non soldée. Les relances s’envoient depuis WhatsApp, par vous.</p>`;
   }
 
   // Partage de texte : feuille de partage du téléphone, sinon presse-papiers, sinon texte à sélectionner.
@@ -1763,6 +1915,7 @@
         <label class="field"><span>E-mail</span><input id="s-email" type="email" value="${esc(s.email)}"></label>
       </div>
       <label class="field"><span>Adresse</span><input id="s-address" value="${esc(s.address)}"></label>
+      <label class="field"><span>Pays (indicatif des numéros pour WhatsApp)</span><select id="s-dial">${DIAL.map(([v, l]) => `<option value="${v}" ${(s.dial || '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
       <div class="section-title">Factures et taxes</div>
       <label class="field"><span>Numéro fiscal ou d’immatriculation</span><input id="s-taxid" placeholder="NIF, NINEA, SIRET, RCCM…" value="${esc(s.taxId)}"></label>
       <div class="grid2">
@@ -2441,12 +2594,16 @@
     edit: (d) => openForm(d.kind, d.id),
     filter: (d) => { ui.filter[ui.tab] = d.v; render(); },
     credits: () => { ui.tab = 'clients'; ui.filter.clients = 'owed'; ui.query.clients = ''; render(); window.scrollTo(0, 0); },
+    'open-day': () => { ui.tab = 'today'; ui.day = today(); render(); window.scrollTo(0, 0); },
+    'day-step': (d) => { const n = addDays(ui.day, Number(d.v)); if (n <= today()) { ui.day = n; render(); } },
+    'share-day': () => shareText(dayText(ui.day), 'Ma journée'),
     'open-bilan': () => { ui.tab = 'bilan'; ui.period = periodOf('week', today()); render(); window.scrollTo(0, 0); },
     'period-type': (d) => { ui.period = periodOf(d.v, today()); render(); },
     period: (d) => { ui.period = stepPeriod(ui.period, Number(d.v)); render(); },
     'share-bilan': () => shareText(bilanText(), 'Bilan'),
     client: (d) => openClient(d.key),
-    remind: (d) => openRemind(d.key),
+    remind: (d) => openRemind(d.key, d.from),
+    'debt-sort': (d) => { ui.debtSort = d.v; render(); },
     'share-remind': () => shareText($('#share-text').value, 'Rappel de paiement'),
     'sale-for': (d) => { const c = clientList().find((x) => x.key === d.key); openForm('sales', null, { who: c ? c.name : '' }); },
     repeat: (d) => { const r = db.sales.find((x) => x.id === d.id); openForm('sales', null, { who: r.who, items: r.items.map((it) => Object.assign({}, it)), disc: r.disc, tax: r.tax }); },
@@ -2588,7 +2745,7 @@
       Object.assign(db.settings, s, {
         phone: $('#s-phone').value.trim(), address: $('#s-address').value.trim(), email: $('#s-email').value.trim(), owner: $('#s-owner').value.trim(),
         taxId: $('#s-taxid').value.trim(), taxRate: num($('#s-tax').value), terms: $('#s-terms').value === '' ? 7 : Math.max(0, Math.round(num($('#s-terms').value))),
-        footer: $('#s-footer').value.trim(), logo: draftLogo, reduceMotion: $('#s-motion').checked,
+        footer: $('#s-footer').value.trim(), logo: draftLogo, reduceMotion: $('#s-motion').checked, dial: $('#s-dial').value,
       });
       loadLogo();
       save(); closeSheet(); render(); toast('Paramètres enregistrés');
