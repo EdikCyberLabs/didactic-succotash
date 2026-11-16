@@ -69,13 +69,13 @@ const out = process.argv[2];
     require('fs').writeFileSync(`${out}/card-${t}.png`, Buffer.from(url.split(',')[1], 'base64'));
   }
   // paramètres
-  await p.click('#btn-settings'); await p.click('[data-group="color"] [data-v="#cfe3d6"]'); await p.fill('#s-phone', '+221 77 123 45 67'); await p.fill('#s-address', 'Médina, Dakar');
+  await p.click('#btn-settings'); await p.fill('#s-phone', '+221 77 123 45 67'); await p.fill('#s-address', 'Médina, Dakar');
   await shot('11-settings'); await act('settings-save');
   await p.click('#tabbar [data-tab="sales"]'); await act('filter', '[data-v="credit"]'); await shot('12-sales-credit');
   await act('detail'); await act('cash-in'); await act('cash-in-save'); await act('delete'); await act('confirm-no'); await act('delete'); await act('confirm-yes');
   // persistance + dark
   await p.reload(); 
-  console.log('state', await p.evaluate(() => { const d = JSON.parse(localStorage['kobo.v1']); return [d.sales.length, d.purchases.length, d.orders.length, d.settings.color, d.orders[0].status, !!d.orders[0].saleId].join(' '); }));
+  console.log('state', await p.evaluate(() => { const d = JSON.parse(localStorage['kobo.v1']); return [d.sales.length, d.purchases.length, d.orders.length, d.settings.phone, d.orders[0].status, !!d.orders[0].saleId].join(' '); }));
   await p.emulateMedia({ colorScheme: 'dark' }); await shot('13-dark');
   console.log('overflowX', await p.evaluate(() => document.documentElement.scrollWidth > innerWidth));
   await p.waitForTimeout(500);

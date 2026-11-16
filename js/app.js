@@ -52,10 +52,11 @@
     done: ['truck', 'Livrée'],
   };
 
-  // Teintes douces pour le panneau du haut (le texte reste noir dessus).
-  const COLORS = ['#d6d5ea', '#cfe3d6', '#ecdfc8', '#cfe0ef', '#efd2d6', '#dddcd3'];
-  // Couleurs franches pour les cartes de visite.
-  const CARD_COLORS = ['#25233a', '#6c72c4', '#dd5f4a', '#5d8736', '#3f86c9', '#cf5a97', '#2f8f86'];
+  // Charte Kobo : bleu électrique, bleu marine, blanc cassé, jaune doré. Aucun vert.
+  const BRAND = { blue: '#1F6BFF', navy: '#0B1F5C', paper: '#F4F8FF', gold: '#FFC53D', soft: '#E3ECFF' };
+  const COLORS = [BRAND.blue, BRAND.navy, BRAND.gold, '#7FA8FF'];
+  // Couleurs des cartes de visite.
+  const CARD_COLORS = [BRAND.navy, BRAND.blue, '#3D4F8F', '#7A5AF8', '#D23B3B', '#C2620A', '#1E2433'];
 
   // Icônes Lucide (js/icons.js) : en SVG pour l'interface, en tracés pour les images générées.
   const I = {};
@@ -71,19 +72,19 @@
   }
 
   // Illustration d'accueil : un reçu, des pièces et quelques étincelles.
-  const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#111114" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#0B1F5C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M36 36v20M26 46h20M222 26v14M215 33h14M232 96v16M224 104h16M22 118v12M16 124h12"/>
     <circle cx="212" cy="62" r="7" fill="#ffffff"/><circle cx="56" cy="84" r="5" fill="#ffffff"/>
     <g transform="rotate(-8 130 110)">
-      <path d="M88 40h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#111114"/>
+      <path d="M88 40h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#0B1F5C"/>
       <path d="M82 34h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#ffffff"/>
-      <path d="M97 56h46" stroke="#5c9a36" stroke-width="7"/><path d="M97 74h66M97 90h38"/>
+      <path d="M97 56h46" stroke="#FFC53D" stroke-width="7"/><path d="M97 74h66M97 90h38"/>
       <rect x="97" y="108" width="46" height="46" rx="5" fill="#fff"/>
-      <path d="M105 116h9v9h-9zM126 116h9v9h-9zM105 137h9v9h-9z" fill="#111114"/><path d="M124 136h5M133 141v6M124 146h4"/>
+      <path d="M105 116h9v9h-9zM126 116h9v9h-9zM105 137h9v9h-9z" fill="#0B1F5C"/><path d="M124 136h5M133 141v6M124 146h4"/>
       <path d="M153 150h10"/>
     </g>
-    <circle cx="211" cy="161" r="25" fill="#111114"/><circle cx="206" cy="156" r="25" fill="#5c9a36"/><path d="M196 156l7 7 13-14"/>
-    <circle cx="51" cy="171" r="19" fill="#111114"/><circle cx="47" cy="167" r="19" fill="#ffffff"/><circle cx="47" cy="167" r="10"/>
+    <circle cx="211" cy="161" r="25" fill="#0B1F5C"/><circle cx="206" cy="156" r="25" fill="#FFC53D"/><path d="M196 156l7 7 13-14"/>
+    <circle cx="51" cy="171" r="19" fill="#0B1F5C"/><circle cx="47" cy="167" r="19" fill="#ffffff"/><circle cx="47" cy="167" r="10"/>
   </svg>`;
 
   const KIND = {
@@ -180,7 +181,7 @@
       d += ` C${cx},${y0.toFixed(1)} ${cx},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
     }
     const g = 'g' + Math.random().toString(36).slice(2, 8);
-    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c9a36" stop-opacity=".32"/><stop offset="1" stop-color="#5c9a36" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W},${H} L0,${H} Z" fill="url(#${g})"/><path class="ln" d="${d}" fill="none" stroke="#5c9a36" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F6BFF" stop-opacity=".32"/><stop offset="1" stop-color="#1F6BFF" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W},${H} L0,${H} Z" fill="url(#${g})"/><path class="ln" d="${d}" fill="none" stroke="#FFC53D" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
   }
   const sum = (list) => round(list.reduce((s, r) => s + total(r), 0));
   const ref = (kind, rec) => `${KIND[kind].prefix}-${String(rec.n).padStart(4, '0')}`;
@@ -294,8 +295,8 @@
   const logoHtml = (src) => (src ? `<img src="${esc(src)}" alt="">` : I[bizType().icon]);
 
   function applyTheme() {
-    const c = COLORS.includes(S().color) ? S().color : COLORS[0];
-    document.documentElement.style.setProperty('--tint', c);
+    // La teinte n'est plus personnalisable : la charte Kobo s'applique partout.
+    document.documentElement.style.removeProperty('--tint');
   }
 
   function renderBrand() {
@@ -447,7 +448,7 @@
         <div class="pos-amount"><span class="cur">${esc(S().currency || '')}</span><span class="val num">${bigNum(t)}</span></div>
         ${cart.items.length ? `<div class="pos-lines">${cart.items.map((it, i) => `<div class="cart-line"><div class="nm">${esc(it.name)}<small>${esc(fmtN(it.price))} × ${fmtQ(it.qty)} = ${esc(fmtN(round(it.qty * it.price)))}</small></div>
           <div class="qty"><button data-act="cart-dec" data-i="${i}" aria-label="Retirer un">${I.minus}</button><b>${fmtQ(it.qty)}</b><button data-act="cart-inc" data-i="${i}" aria-label="Ajouter un">${I.plus}</button></div></div>`).join('')}</div>`
-          : '<p class="small" style="color:#9a9aa3;margin-top:12px">Touchez un article ou saisissez un montant libre.</p>'}
+          : '<p class="small" style="color:var(--band-muted);margin-top:12px">Touchez un article ou saisissez un montant libre.</p>'}
       </div>
       ${cart.items.length ? `<div class="pos-total-pill"><span>${fmtQ(nItems)} article${nItems > 1 ? 's' : ''} · Total : ${esc(fmt(t))}</span></div>` : ''}
       <div class="chips"><button class="chip ${cart.keypad ? '' : 'on'}" data-act="pos-mode" data-v="grid">${I.grid} Articles</button><button class="chip ${cart.keypad ? 'on' : ''}" data-act="pos-mode" data-v="keypad">${I.pos} Montant libre</button></div>
@@ -1409,7 +1410,7 @@
   const docRef = (kind, r) => (kind === 'sales' ? 'R' : 'C') + '-' + String(r.n).padStart(4, '0');
 
   function drawReceipt(kind, r) {
-    const W = 600, P = 40, INK = '#111114', GREY = '#7a7b84';
+    const W = 600, P = 40, INK = BRAND.navy, GREY = '#64739B';
     const tmp = document.createElement('canvas');
     tmp.width = W; tmp.height = 4000;
     const ctx = tmp.getContext('2d');
@@ -1426,7 +1427,7 @@
     const dash = () => { ctx.strokeStyle = '#c9cddd'; ctx.lineWidth = 2; ctx.setLineDash([8, 7]); ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y); ctx.stroke(); ctx.setLineDash([]); y += 38; };
 
     if (logoImg) drawLogo(ctx, W / 2 - 42, 14, 84, 18);
-    else { ctx.fillStyle = '#ecebf5'; ctx.beginPath(); ctx.arc(W / 2, 56, 42, 0, 7); ctx.fill(); drawIcon(ctx, bizType().icon, W / 2 - 22, 34, 44, INK, 1.8); }
+    else { ctx.fillStyle = BRAND.soft; ctx.beginPath(); ctx.arc(W / 2, 56, 42, 0, 7); ctx.fill(); drawIcon(ctx, bizType().icon, W / 2 - 22, 34, 44, INK, 1.8); }
     y += 50;
     center(S().name || 'Mon entreprise', 34, 800, INK, 34);
     if (S().address) center(S().address, 21, 400, GREY, 28);
@@ -1455,7 +1456,7 @@
     if (kind === 'sales') {
       if (r.pay === 'credit') {
         pair('Déjà payé', fmt(r.paid || 0), 22, 400, GREY); y += 32;
-        pair('Reste à payer', fmt(owedSale(r)), 24, 700, '#c8412f'); y += 30;
+        pair('Reste à payer', fmt(owedSale(r)), 24, 700, '#D23B3B'); y += 30;
       } else { pair('Paiement', PAY[r.pay][1], 22, 400, GREY); y += 30; }
     } else {
       if (r.due) { pair('Livraison prévue', fullDate(r.due), 22, 400, GREY); y += 32; }
@@ -1479,8 +1480,8 @@
 
   // Facture au format page : en-tête entreprise, client, lignes, totaux, statut, QR.
   function drawInvoice(r) {
-    const W = 900, P = 56, INK = '#111114', GREY = '#7a7b84', LINE = '#e3e4e8';
-    const tint = COLORS.includes(S().color) ? S().color : COLORS[0];
+    const W = 900, P = 56, INK = BRAND.navy, GREY = '#64739B', LINE = '#E1E8F5';
+    const tint = BRAND.soft;
     const tmp = document.createElement('canvas');
     tmp.width = W; tmp.height = 6000;
     const ctx = tmp.getContext('2d');
@@ -1497,25 +1498,25 @@
     font(ctx, 28, 700); txt(fit(ctx, S().name || 'Mon entreprise', 420), P + 84, ly + 6, 28, 700);
     ly += 36;
     [S().address, [S().phone, S().email].filter(Boolean).join(' · '), S().taxId ? `N° fiscal : ${S().taxId}` : ''].filter(Boolean).forEach((l) => {
-      font(ctx, 17, 500); txt(fit(ctx, l, 440), P + 84, ly, 17, 500, '#3d3d46'); ly += 25;
+      font(ctx, 17, 500); txt(fit(ctx, l, 440), P + 84, ly, 17, 500, '#33467A'); ly += 25;
     });
     txt('FACTURE', W - P, 92, 46, 750, INK, 'right');
     txt(`N° ${invNo(r)}`, W - P, 128, 20, 600, INK, 'right');
-    txt(`Date : ${fullDate(r.date)}`, W - P, 158, 18, 500, '#3d3d46', 'right');
-    if (r.due) txt(`Échéance : ${fullDate(r.due)}`, W - P, 184, 18, 500, '#3d3d46', 'right');
+    txt(`Date : ${fullDate(r.date)}`, W - P, 158, 18, 500, '#33467A', 'right');
+    if (r.due) txt(`Échéance : ${fullDate(r.due)}`, W - P, 184, 18, 500, '#33467A', 'right');
 
     let y = 270;
     txt('FACTURÉ À', P, y, 15, 700, GREY); y += 32;
     txt(fit(ctx, r.who || 'Client de passage', 500), P, y, 24, 700); y += 30;
-    [c.phone, c.email, c.address].filter(Boolean).forEach((l) => { font(ctx, 18, 500); txt(fit(ctx, l, 500), P, y, 18, 500, '#3d3d46'); y += 26; });
+    [c.phone, c.email, c.address].filter(Boolean).forEach((l) => { font(ctx, 18, 500); txt(fit(ctx, l, 500), P, y, 18, 500, '#33467A'); y += 26; });
     const badgeW = 210;
-    ctx.fillStyle = st[0] === 'paid' ? '#e3f0da' : st[0] === 'late' ? '#f8dcd7' : '#f4e7cf';
+    ctx.fillStyle = st[0] === 'paid' ? BRAND.gold : st[0] === 'late' ? '#F8DCDA' : BRAND.soft;
     rrect(ctx, W - P - badgeW, 252, badgeW, 50, 25); ctx.fill();
-    txt(st[1].toUpperCase(), W - P - badgeW / 2, 284, 19, 750, st[0] === 'paid' ? '#3d7a1d' : st[0] === 'late' ? '#b23a2a' : '#94621a', 'center');
+    txt(st[1].toUpperCase(), W - P - badgeW / 2, 284, 19, 750, st[0] === 'paid' ? BRAND.navy : st[0] === 'late' ? '#B22F2F' : BRAND.blue, 'center');
     y = Math.max(y, 320) + 24;
 
     const cQ = W - P - 300, cP = W - P - 160, cT = W - P;
-    ctx.fillStyle = '#f3f3f5'; rrect(ctx, P - 14, y, W - 2 * P + 28, 48, 14); ctx.fill();
+    ctx.fillStyle = BRAND.paper; rrect(ctx, P - 14, y, W - 2 * P + 28, 48, 14); ctx.fill();
     y += 31;
     txt('DÉSIGNATION', P, y, 14, 700, GREY); txt('QTÉ', cQ, y, 14, 700, GREY, 'right'); txt('PRIX UNIT.', cP, y, 14, 700, GREY, 'right'); txt('TOTAL', cT, y, 14, 700, GREY, 'right');
     y += 44;
@@ -1536,14 +1537,14 @@
     ctx.fillStyle = INK; rrect(ctx, tl - 18, y - 8, W - P - tl + 36, 64, 18); ctx.fill();
     y += 34; txt('TOTAL', tl, y, 20, 700, '#ffffff'); txt(fmt(total(r)), W - P, y, 28, 750, '#ffffff', 'right'); y += 52;
     trow('Déjà payé', fmt(paidOf(r)), 19, 500);
-    if (owedSale(r) > 0) trow('Reste à payer', fmt(owedSale(r)), 21, 750, '#b23a2a');
+    if (owedSale(r) > 0) trow('Reste à payer', fmt(owedSale(r)), 21, 750, '#B22F2F');
 
     y += 20;
     const Q = 170, qy = y;
     drawQR(ctx, receiptText('sales', r), P, qy, Q, INK);
     font(ctx, 17, 500);
     let fy = qy + 26;
-    [`Paiement : ${r.pay === 'credit' ? 'à régler avant le ' + (r.due ? fullDate(r.due) : 'terme convenu') : PAY[r.pay][1]}`, `Code de contrôle : ${controlCode(r)}`].forEach((l) => { txt(fit(ctx, l, W - 2 * P - Q - 30), P + Q + 30, fy, 17, 500, '#3d3d46'); fy += 28; });
+    [`Paiement : ${r.pay === 'credit' ? 'à régler avant le ' + (r.due ? fullDate(r.due) : 'terme convenu') : PAY[r.pay][1]}`, `Code de contrôle : ${controlCode(r)}`].forEach((l) => { txt(fit(ctx, l, W - 2 * P - Q - 30), P + Q + 30, fy, 17, 500, '#33467A'); fy += 28; });
     fy += 8;
     font(ctx, 18, 600);
     wrap(ctx, S().footer || 'Merci pour votre confiance !', W - 2 * P - Q - 30, 3).forEach((l) => { txt(l, P + Q + 30, fy, 18, 600, INK); fy += 26; });
@@ -1603,7 +1604,7 @@
 
   function drawCard(canvas) {
     const c = cardData();
-    const W = 1050, H = 600, INK = '#111114', GREY = '#6b6c75';
+    const W = 1050, H = 600, INK = BRAND.navy, GREY = '#64739B';
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
@@ -1642,7 +1643,7 @@
       font(ctx, 26, 500); ctx.fillStyle = GREY;
       if (logoImg) drawLogo(ctx, 70, 230, 38, 10); else drawIcon(ctx, bizIcon, 72, 232, 32, GREY, 2);
       ctx.fillStyle = GREY; ctx.fillText(fit(ctx, biz, 590), 120, 258);
-      ctx.fillStyle = '#e6e8f2'; ctx.fillRect(70, 292, 90, 4);
+      ctx.fillStyle = BRAND.soft; ctx.fillRect(70, 292, 90, 4);
       list(70, 362, 46, 25, INK, 640);
       drawQR(ctx, qr, W - 270, 190, 200, INK);
       font(ctx, 20, 500); ctx.fillStyle = GREY; ctx.textAlign = 'center'; ctx.fillText('Scannez-moi', W - 170, 424);
@@ -1660,7 +1661,7 @@
       ctx.textAlign = 'left';
       font(ctx, 52, 800); ctx.fillStyle = INK; ctx.fillText(fit(ctx, name, 620), 400, 140);
       font(ctx, 28, 600); ctx.fillStyle = c.color; ctx.fillText(fit(ctx, role, 620), 400, 186);
-      ctx.fillStyle = '#e6e8f2'; ctx.fillRect(400, 220, 90, 4);
+      ctx.fillStyle = BRAND.soft; ctx.fillRect(400, 220, 90, 4);
       list(400, 300, 48, 25, INK, 410);
       drawQR(ctx, qr, W - 220, H - 220, 170, INK);
     }
@@ -1768,8 +1769,6 @@
         <label class="field"><span>Délai de paiement (jours)</span><input id="s-terms" type="number" inputmode="numeric" min="0" step="1" placeholder="7" value="${s.terms != null ? s.terms : ''}"></label>
       </div>
       <label class="field"><span>Message en bas des reçus et factures</span><input id="s-footer" placeholder="Merci pour votre confiance !" value="${esc(s.footer)}"></label>
-      <div class="section-title">Apparence</div>
-      <div class="field"><span>Teinte du panneau d’accueil</span><div class="swatches" data-group="color">${COLORS.map((c) => `<button type="button" style="background:${c}" class="${(COLORS.includes(s.color) ? s.color : COLORS[0]) === c ? 'on' : ''}" data-act="pick" data-v="${c}" aria-label="Couleur ${c}"></button>`).join('')}</div></div>
       <button class="btn" data-act="settings-save">Enregistrer</button>
       ${syncReady() ? `<div class="section-title">Compte</div>
       <button class="row" data-act="sync"><div class="ico">${I.cloud}</div><div class="mid"><div class="title">Compte et sauvegarde en ligne</div><div class="sub">${esc(syncSummary())}</div></div><div class="chev">›</div></button>` : ''}
