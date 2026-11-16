@@ -42,7 +42,7 @@ const out = process.argv[2];
   await gone(s.p, s.t0);
   // L'interrupteur des paramètres enregistre le choix
   await s.p.click('#btn-settings'); console.log('switch checked', await s.p.isChecked('#s-motion'));
-  await s.p.click('label.switch-row'); await s.p.click('[data-act="settings-save"]');
+  await s.p.click('label.switch-row:has(#s-motion)'); await s.p.click('[data-act="settings-save"]');
   console.log('saved reduceMotion', await s.p.evaluate(() => JSON.parse(localStorage['kobo.v1']).settings.reduceMotion), 'html class', await s.p.evaluate(() => document.documentElement.className || '(aucune)'));
 
   console.log(errs.length ? errs.join('\n') : 'no errors');

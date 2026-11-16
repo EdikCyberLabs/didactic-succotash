@@ -651,7 +651,7 @@
       ...t.purchases.map((r) => ({ at: r.at, html: rowHtml('purchases', r, true) })),
     ].sort((a, b) => b.at - a.at);
     if (!t.inn.total && !t.out && !t.count) {
-      return `${nav}<div class="empty"><div class="big">${I.calendar}</div><b>Rien d’enregistré ce jour-là</b>${d === today() ? 'Vos ventes, paiements et dépenses de la journée apparaîtront ici.' : 'Aucune vente, aucun paiement, aucune dépense.'}</div>`;
+      return `${nav}<div class="empty"><div class="big">${I.calendar}</div><b>Rien d’enregistré ce jour-là</b>${d === today() ? 'Vos ventes, paiements et dépenses de la journée apparaîtront ici.' : 'Aucune vente, aucun paiement, aucune dépense.'}</div>${reminderNudge()}`;
     }
     return `${nav}
       <div class="stats">
@@ -671,8 +671,11 @@
       ${t.owedAll ? `<button class="btn ghost" data-act="go" data-v="debts">${I.hourglass} Voir les impayés</button>` : ''}
       ${methods.length ? `<div class="section-title">Entrées par moyen de paiement</div>${barRows(methods)}` : ''}
       ${ops.length ? `<div class="section-title">Opérations <small>${ops.length}</small></div><div class="list">${ops.map((x) => x.html).join('')}</div>` : ''}
-      <button class="btn" data-act="share-day" style="margin-top:20px">${I.share} Partager le récap</button>`;
+      <button class="btn" data-act="share-day" style="margin-top:20px">${I.share} Partager le récap</button>
+      ${reminderNudge()}`;
   }
+  const reminderNudge = () => (isNative() && !S().reminder ? `<div class="note" style="margin-top:14px">${I.clock}<span>Recevoir un rappel chaque soir pour consulter ce récap ?</span></div>
+      <button class="btn ghost" data-act="reminder-on">${I.clock} Activer le rappel de ${esc((S().reminderAt || REMINDER_DEFAULT).replace(':', ' h '))}</button>` : '');
   function dayText(d) {
     const t = dayStats(d);
     const L = [`Ma journée · ${dayLabel(d)}`, S().name, '',
@@ -683,6 +686,39 @@
     const methods = Object.keys(t.inn.byMethod);
     if (methods.length) L.push('', 'Par moyen de paiement :', ...methods.map((m) => `- ${PAY[m] ? PAY[m][1] : m} : ${fmt(t.inn.byMethod[m])}`));
     return L.join('\n');
+  }
+
+  // ---------------------------------------------------------------- Rappel du soir
+  // Notification locale quotidienne (application Android uniquement) : programmée sur le téléphone,
+  // sans serveur ni envoi de données. La toucher ouvre « Ma journée ».
+  const REMINDER_ID = 7001;
+  const REMINDER_DEFAULT = '20:30';
+  const notifPlugin = () => (isNative() && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+  async function scheduleReminder(fromUser) {
+    const N = notifPlugin();
+    if (!N) return false;
+    try {
+      await N.cancel({ notifications: [{ id: REMINDER_ID }] }).catch(() => {});
+      if (!S().reminder) { if (fromUser) toast('Rappel du soir désactivé'); return true; }
+      const perm = fromUser ? await N.requestPermissions() : await N.checkPermissions();
+      if (perm.display !== 'granted') {
+        if (fromUser) { db.settings.reminder = false; saveLocal(); toast('Notifications refusées : autorisez-les dans les réglages Android pour recevoir le rappel'); }
+        return false;
+      }
+      const [h, m] = String(S().reminderAt || REMINDER_DEFAULT).split(':').map(Number);
+      await N.schedule({ notifications: [{
+        id: REMINDER_ID,
+        title: 'Kobo · Ma journée',
+        body: 'Votre récap du jour est prêt : entrées, dépenses et impayés. Touchez pour le voir.',
+        schedule: { on: { hour: h, minute: m }, allowWhileIdle: true },
+        extra: { open: 'today' },
+      }] });
+      if (fromUser) toast(`Rappel programmé chaque jour à ${pad(h)} h ${pad(m)}`);
+      return true;
+    } catch (e) {
+      if (fromUser) toast('Rappel impossible : ' + ((e && e.message) || e));
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------- Factures
@@ -1923,6 +1959,9 @@
         <label class="field"><span>Délai de paiement (jours)</span><input id="s-terms" type="number" inputmode="numeric" min="0" step="1" placeholder="7" value="${s.terms != null ? s.terms : ''}"></label>
       </div>
       <label class="field"><span>Message en bas des reçus et factures</span><input id="s-footer" placeholder="Merci pour votre confiance !" value="${esc(s.footer)}"></label>
+      <div class="section-title">Rappel du soir</div>
+      <label class="switch-row"><span><b>Rappel quotidien « Ma journée »</b><small>${isNative() ? 'Une notification chaque soir pour consulter votre récap. Rien n’est envoyé : tout reste sur le téléphone.' : 'Disponible dans l’application Android.'}</small></span><input type="checkbox" id="s-reminder" ${s.reminder && isNative() ? 'checked' : ''} ${isNative() ? '' : 'disabled'}></label>
+      <label class="field"><span>Heure du rappel</span><input id="s-reminder-at" type="time" value="${esc(s.reminderAt || REMINDER_DEFAULT)}" ${isNative() ? '' : 'disabled'}></label>
       <div class="section-title">Affichage</div>
       <label class="switch-row"><span><b>Réduire les animations</b><small>Démarrage plus rapide et moins d’effets, pour les téléphones lents.</small></span><input type="checkbox" id="s-motion" ${s.reduceMotion ? 'checked' : ''}></label>
       <button class="btn" data-act="settings-save">Enregistrer</button>
@@ -2597,6 +2636,7 @@
     'open-day': () => { ui.tab = 'today'; ui.day = today(); render(); window.scrollTo(0, 0); },
     'day-step': (d) => { const n = addDays(ui.day, Number(d.v)); if (n <= today()) { ui.day = n; render(); } },
     'share-day': () => shareText(dayText(ui.day), 'Ma journée'),
+    'reminder-on': () => { db.settings.reminder = true; db.settings.reminderAt = db.settings.reminderAt || REMINDER_DEFAULT; saveLocal(); scheduleReminder(true).then(() => render()); },
     'open-bilan': () => { ui.tab = 'bilan'; ui.period = periodOf('week', today()); render(); window.scrollTo(0, 0); },
     'period-type': (d) => { ui.period = periodOf(d.v, today()); render(); },
     period: (d) => { ui.period = stepPeriod(ui.period, Number(d.v)); render(); },
@@ -2746,9 +2786,11 @@
         phone: $('#s-phone').value.trim(), address: $('#s-address').value.trim(), email: $('#s-email').value.trim(), owner: $('#s-owner').value.trim(),
         taxId: $('#s-taxid').value.trim(), taxRate: num($('#s-tax').value), terms: $('#s-terms').value === '' ? 7 : Math.max(0, Math.round(num($('#s-terms').value))),
         footer: $('#s-footer').value.trim(), logo: draftLogo, reduceMotion: $('#s-motion').checked, dial: $('#s-dial').value,
+        reminder: $('#s-reminder').checked, reminderAt: $('#s-reminder-at').value || REMINDER_DEFAULT,
       });
       loadLogo();
       save(); closeSheet(); render(); toast('Paramètres enregistrés');
+      if (isNative()) scheduleReminder(true);
     },
     export: exportData,
     import: () => $('#import-file').click(),
@@ -2865,6 +2907,14 @@
   if (!db.settings) openOnboarding();
 
   // Synchronisation : session enregistrée, retour d'un lien de connexion, reprise en ligne.
+  // Rappel du soir : ouvrir « Ma journée » depuis la notification, et reprogrammer au démarrage.
+  if (notifPlugin()) {
+    notifPlugin().addListener('localNotificationActionPerformed', (a) => {
+      if (a && a.notification && a.notification.extra && a.notification.extra.open === 'today' && db.settings) { closeSheet(); actions['open-day'](); }
+    });
+    if (S().reminder) scheduleReminder(false);
+  }
+
   // Téléphone déjà en service avant l'ajout du consentement : on demande une fois.
   if (syncReady() && db.settings && db.cloudConsent === undefined) openConsent('existing');
 

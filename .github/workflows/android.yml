@@ -18,6 +18,7 @@ on:
       - capacitor.config.json
       - scripts/**
       - android-signing/**
+      - android-res/**
       - .github/workflows/android.yml
   workflow_dispatch:
 
@@ -66,6 +67,7 @@ jobs:
             convert icons/icon-512.png -resize "${size}x${size}" \( +clone -alpha extract -fill black -colorize 100 -fill white -draw "circle $((size/2)),$((size/2)) $((size/2)),0" \) -alpha off -compose CopyOpacity -composite "$dir/ic_launcher_round.png"
             rm -f "$dir/ic_launcher_foreground.png"
           done
+          cp -R android-res/drawable-* "$RES"/
           sed -i -E "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]+\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
           grep -E "versionCode|versionName|applicationId" android/app/build.gradle
 

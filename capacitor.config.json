@@ -7,6 +7,10 @@
     "allowMixedContent": false
   },
   "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_kobo",
+      "iconColor": "#111114"
+    },
     "SystemBars": {
       "insetsHandling": "css",
       "initialViewportFitValueHint": "cover"
