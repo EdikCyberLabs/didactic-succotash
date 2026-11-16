@@ -49,7 +49,7 @@ function handle(op, a) {
 
   // Téléphone A : crée l'entreprise
   const A = await device('A');
-  await act(A, 'onb-go', '[data-v="business"]'); await A.fill('#s-name', 'Studio Nova'); await A.fill('#s-owner', 'Awa'); await act(A, 'onb-next'); await act(A, 'onb-next'); await A.waitForTimeout(800); await act(A, 'onb-finish'); await A.waitForTimeout(300);
+  await act(A, 'onb-go', '[data-v="business"]'); await A.fill('#s-name', 'Studio Nova'); await A.fill('#s-owner', 'Awa'); await act(A, 'onb-next'); await act(A, 'onb-next'); await act(A, 'consent', '[data-v="yes"]'); await A.waitForTimeout(800); await act(A, 'onb-finish'); await A.waitForTimeout(300);
   await act(A, 'fab-menu'); await A.click('#sheet [data-act="product"]'); await A.fill('#p-name', 'Coupe'); await A.fill('#p-price', '5000'); await A.click('#product-form .btn');
   await A.click('#tabbar [data-tab="pos"]'); await A.click('.pos-grid [data-act="pos-add"]'); await act(A, 'pos-pay'); await act(A, 'pos-confirm'); await act(A, 'close');
   await A.click('#tabbar [data-tab="more"]'); await A.screenshot({ path: `${out}/s1-more.png` });

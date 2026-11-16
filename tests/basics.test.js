@@ -3,6 +3,8 @@ const out = process.argv[2];
 (async () => {
   const b = await chromium.launch();
   const ctx = await b.newContext({ ...devices['Pixel 7'], acceptDownloads: true });
+  // Jamais le vrai serveur Supabase pendant les tests.
+  await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.KOBO_SUPABASE = { url: '', key: '' };" }));
   const p = await ctx.newPage();
   const errs = [];
   p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));

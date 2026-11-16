@@ -483,6 +483,11 @@ button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px soli
 .splash.static, .splash.static * { animation: none !important; }
 .splash.static .splash-bar { display: none; }
 
+/* Consentement */
+.consent-list { list-style: none; padding: 0; margin: 4px 0; display: grid; gap: 10px; }
+.consent-list li { display: flex; gap: 12px; align-items: flex-start; background: var(--card); border-radius: 16px; padding: 12px 14px; font-size: 14px; line-height: 1.45; }
+.consent-list li .i { flex: none; font-size: 19px; margin-top: 1px; color: var(--tint); }
+
 /* Interrupteur des paramètres */
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--card); border-radius: 18px; padding: 14px 16px; cursor: pointer; }
 .switch-row b { display: block; font-size: 15px; }

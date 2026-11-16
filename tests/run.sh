@@ -19,6 +19,7 @@ migration|node tests/migration.test.js $OUT
 splash|node tests/splash.test.js $OUT
 stock-report|node tests/stock-report.test.js $OUT .
 onboarding-auth|node tests/onboarding-auth.test.js tests $OUT
+consent|node tests/consent.test.js tests $OUT
 sync|node tests/sync.test.js tests $OUT
 slider|node tests/slider.test.js tests $OUT
 pos-invoices|node tests/pos-invoices.test.js $OUT/preview.html $OUT

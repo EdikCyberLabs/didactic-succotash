@@ -54,7 +54,9 @@ function handle(op, a) {
   await act(A, 'onb-next'); console.log('empty name toast:', await A.textContent('#toast'));
   await A.fill('#s-name', 'Studio Nova'); await A.fill('#s-owner', 'Awa'); await A.click('[data-group="type"] [data-v="beauty"]');
   await act(A, 'onb-next'); await A.waitForTimeout(350); await shot(A, 'a3-prefs');
-  await A.fill('#s-tax', '18'); await A.fill('#s-phone', '+221 77 000 00 00'); await act(A, 'onb-next'); await A.waitForTimeout(1200); await shot(A, 'a4-done');
+  await A.fill('#s-tax', '18'); await A.fill('#s-phone', '+221 77 000 00 00'); await act(A, 'onb-next'); await A.waitForTimeout(400); await shot(A, 'a4a-consent');
+  console.log('nothing sent before consent:', store.records.size === 0 && store.anon === 0);
+  await act(A, 'consent', '[data-v="yes"]'); await A.waitForTimeout(1200); await shot(A, 'a4-done');
   console.log('A cloud label:', await A.textContent('#onb-cloud'), '| server records', store.records.size, '| biz', store.biz.map((x) => x.name).join());
   await act(A, 'onb-finish'); await A.waitForTimeout(1500);
   await A.click('#tabbar [data-tab="pos"]'); await A.click('.pos-grid [data-act="product"]'); await A.fill('#p-name', 'Coupe'); await A.fill('#p-price', '5000'); await A.click('#product-form .btn');

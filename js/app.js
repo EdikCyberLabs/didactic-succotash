@@ -1822,7 +1822,7 @@
         <button class="btn plain" data-act="auth" data-v="signin">J’ai déjà un compte · <u>Se connecter</u></button>` : ''}
       </div>`;
     } else if (onb.step === 'business') {
-      html = onbFrame(1, 3, `<h2>Votre entreprise</h2><p>L’application s’adapte à votre métier.</p>
+      html = onbFrame(1, onbTotal(), `<h2>Votre entreprise</h2><p>L’application s’adapte à votre métier.</p>
         <div class="left stack">
           <label class="field"><span>Nom de l’entreprise</span><input id="s-name" placeholder="Ex. Studio Nova" value="${esc(d.name)}" autocomplete="organization"></label>
           <label class="field"><span>Votre prénom</span><input id="s-owner" placeholder="Facultatif" value="${esc(d.owner)}" autocomplete="given-name"></label>
@@ -1830,7 +1830,7 @@
         </div>
         <button class="btn" data-act="onb-next">Continuer ${I.arrowR}</button>`, 'welcome');
     } else if (onb.step === 'prefs') {
-      html = onbFrame(2, 3, `<h2>Vos préférences</h2><p>Modifiables à tout moment dans les paramètres.</p>
+      html = onbFrame(2, onbTotal(), `<h2>Vos préférences</h2><p>Modifiables à tout moment dans les paramètres.</p>
         <div class="left stack">
           <div class="grid2">
             <label class="field"><span>Devise</span>${currencySelect(d.currency)}</label>
@@ -1839,9 +1839,12 @@
           <label class="field"><span>Objectif de ventes par jour</span><input id="s-goal" type="number" inputmode="decimal" min="0" step="any" placeholder="Facultatif, ex. 50000" value="${d.goal || ''}"></label>
           <label class="field"><span>Téléphone de l’entreprise</span><input id="s-phone" type="tel" placeholder="Facultatif, affiché sur les reçus" value="${esc(d.phone)}" autocomplete="tel"></label>
         </div>
-        <button class="btn" data-act="onb-next">Terminer ${I.check}</button>`, 'business');
+        <button class="btn" data-act="onb-next">${cloud ? `Continuer ${I.arrowR}` : `Terminer ${I.check}`}</button>`, 'business');
+    } else if (onb.step === 'consent') {
+      consentMode = 'onb';
+      html = onbFrame(3, 4, consentBody(), 'prefs');
     } else if (onb.step === 'done') {
-      html = onbFrame(3, 3, `<div class="done-badge">${I.ok}</div>
+      html = onbFrame(onbTotal(), onbTotal(), `<div class="done-badge">${I.ok}</div>
         <h2>Tout est prêt${S().owner ? `, ${esc(S().owner)}` : ''} !</h2>
         <p>${esc(S().name)} est configurée.</p>
         <div class="card left">
@@ -1849,7 +1852,7 @@
           <div class="kv"><span>Devise</span><span>${esc(S().currency)}</span></div>
           ${cloud ? `<div class="kv"><span>Sauvegarde en ligne</span><span id="onb-cloud">${esc(cloudLabel())}</span></div>` : ''}
         </div>
-        ${cloud ? '<p class="small muted">Vos données sont enregistrées en ligne automatiquement. Créez un compte quand vous voulez, depuis Plus › Compte, pour les retrouver sur un autre téléphone.</p>' : ''}
+        ${cloud ? `<p class="small muted">${cloudAllowed() ? 'Vos données sont enregistrées en ligne automatiquement. Créez un compte quand vous voulez, depuis Plus › Compte, pour les retrouver sur un autre téléphone.' : 'Vos données restent sur ce téléphone. Vous pourrez activer la sauvegarde en ligne à tout moment dans Plus › Compte.'}</p>` : ''}
         <button class="btn" data-act="onb-finish">Ouvrir mon tableau de bord</button>`, null);
     } else if (onb.step === 'join') {
       html = onbFrame(0, 0, `<div class="done-badge alt">${I.users}</div>
@@ -1858,6 +1861,7 @@
         <div class="left stack">
           <label class="field"><span>Code d’invitation</span><input id="onb-code" class="code-input" autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="7F3A9C21"></label>
           <div class="auth-err" id="onb-err" hidden></div>
+          <p class="small muted">En rejoignant une entreprise, ses données sont partagées en ligne entre ses membres, sur un serveur sécurisé. Rien d’autre n’est envoyé, à personne d’autre.</p>
         </div>
         <button class="btn" data-act="onb-join" ${onb.joining ? 'disabled' : ''}>${onb.joining ? 'Connexion à l’entreprise…' : `${I.login} Rejoindre`}</button>`, 'welcome');
     }
@@ -1866,6 +1870,36 @@
     const first = $('#sheet input');
     if (first && onb.step !== 'welcome') setTimeout(() => { if (document.activeElement === document.body) first.focus(); }, 300);
   }
+  const onbTotal = () => (syncReady() ? 4 : 3);
+
+  // Consentement à la sauvegarde en ligne : rien ne part sans un « oui » explicite.
+  let consentMode = 'onb';
+  function consentBody() {
+    return `<div class="done-badge alt">${I.shield}</div>
+      <h2>Sauvegarde en ligne</h2>
+      <p>Kobo peut garder une copie de vos données sur un serveur sécurisé, pour ne rien perdre et pour travailler à plusieurs.</p>
+      <ul class="consent-list left">
+        <li>${I.cloudUp}<span><b>Ce qui est envoyé :</b> ventes, factures, dépenses, commandes, articles, fiches clients (nom, téléphone) et informations du commerce.</span></li>
+        <li>${I.lock}<span><b>Qui y a accès :</b> seulement les membres de votre entreprise. Les données sont hébergées chez Supabase.</span></li>
+        <li>${I.shield}<span><b>Jamais :</b> ni publicité, ni revente, ni partage avec d’autres services. Kobo ne touche jamais à votre argent.</span></li>
+      </ul>
+      <p class="small muted">Sans sauvegarde en ligne, tout reste sur ce téléphone : s’il est perdu ou réinitialisé, les données le sont aussi. Vous pouvez changer d’avis à tout moment dans Plus › Compte.</p>
+      <button class="btn" data-act="consent" data-v="yes">${I.cloudUp} Oui, sauvegarder en ligne</button>
+      <button class="btn ghost" data-act="consent" data-v="no">Non, garder sur ce téléphone</button>`;
+  }
+  function openConsent(mode) {
+    consentMode = mode;
+    if (mode === 'settings') openSheet(`${head('Sauvegarde en ligne')}<div class="onb-form">${consentBody()}</div>`);
+    else openSheet(`<div class="onb onb-form">${consentBody()}</div>`, { locked: true, cls: 'full' });
+  }
+  function setConsent(yes) {
+    db.cloudConsent = !!yes;
+    db.cloudConsentAt = new Date().toISOString();
+    if (yes) db.cloudOff = false;
+    else { sync.status = 'off'; clearTimeout(sync.timer); }
+    saveLocal();
+  }
+
   // Carrousel de bienvenue : défilement automatique, points de progression, glisser au doigt.
   function welcomeSlider(cloud) {
     let qr = '';
@@ -1966,8 +2000,7 @@
       db.settings = { name: d.name, owner: d.owner, type: d.type, currency: d.currency, goal: d.goal, taxRate: d.tax, terms: 7, color: COLORS[0], phone: d.phone, email: '', address: '', taxId: '', footer: '' };
       db.cloudOff = false;
       save();
-      onb.step = 'done';
-      ensureCloud();
+      onb.step = syncReady() ? 'consent' : 'done';
     }
     openOnboarding();
   }
@@ -2114,7 +2147,7 @@
     else sync.pendingRender = true;
   }
   async function runSync(manual) {
-    if (!sync.client || !sync.session || !db.sync || !db.sync.business) return;
+    if (!sync.client || !sync.session || !db.sync || !db.sync.business || !cloudAllowed()) return;
     if (sync.busy) { sync.again = true; return; }
     if (!navigator.onLine) { sync.status = 'offline'; if (manual) toast('Pas de connexion internet : la synchronisation reprendra plus tard'); return; }
     sync.busy = true; sync.status = 'syncing';
@@ -2141,8 +2174,9 @@
     sync.timer = setTimeout(() => runSync(false), 1500);
   }
   const isAnon = () => !!(sync.session && (sync.session.user.is_anonymous || !sync.session.user.email));
+  const cloudAllowed = () => db.cloudConsent === true && !db.cloudOff;
   function cloudLabel() {
-    if (!syncReady()) return 'Désactivée';
+    if (!syncReady() || !cloudAllowed()) return 'Désactivée';
     if (db.cloudOff && !sync.session) return 'Désactivée sur ce téléphone';
     if (!navigator.onLine || sync.status === 'offline') return 'Hors ligne, envoi dès le retour du réseau';
     if (sync.status === 'error') return 'Erreur, nouvel essai automatique';
@@ -2150,7 +2184,8 @@
     return db.sync.last ? `À jour (${new Date(db.sync.last).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })})` : 'Active';
   }
   function syncSummary() {
-    if (!sync.session) return db.cloudOff ? 'Données sur ce téléphone uniquement' : 'Sauvegarde en ligne en préparation';
+    if (!cloudAllowed()) return 'Données sur ce téléphone uniquement';
+    if (!sync.session) return 'Sauvegarde en ligne en préparation';
     return `${isAnon() ? 'Sans compte' : sync.session.user.email} · ${cloudLabel()}`;
   }
   function refreshCloudUi() {
@@ -2168,7 +2203,7 @@
   }
   // Sauvegarde en ligne sans inscription : une identité anonyme par téléphone.
   async function ensureCloud() {
-    if (!syncClient() || db.cloudOff || !db.settings) return;
+    if (!syncClient() || !cloudAllowed() || !db.settings) return;
     if (sync.session) { sync.chain = sync.chain.then(() => handleSession(sync.session)); return; }
     if (!navigator.onLine) { sync.status = 'offline'; return; }
     const { error } = await sync.client.auth.signInAnonymously();
@@ -2177,6 +2212,7 @@
   async function handleSession(session) {
     sync.session = session;
     if (!session) { sync.status = 'off'; refreshCloudUi(); return; }
+    if (!cloudAllowed()) { refreshCloudUi(); return; }
     try {
       if (db.sync && db.sync.business && db.sync.user === session.user.id) { await runSync(false); return; }
       const { data, error } = await sync.client.rpc('my_business');
@@ -2190,7 +2226,7 @@
         await attachBusiness(j.data[0], false);
         return;
       }
-      if (db.settings && !db.cloudOff) {
+      if (db.settings && cloudAllowed()) {
         const c = await sync.client.rpc('create_business', { p_name: S().name || '' });
         if (c.error) throw c.error;
         await attachBusiness(c.data[0], false);
@@ -2213,10 +2249,15 @@
         ${st ? `<div class="kv"><span>Entreprise</span><b>${esc(st.business.name || S().name || '')}</b></div>` : ''}
         <div class="kv"><span>Sauvegarde en ligne</span><span class="${sync.status === 'error' ? 'neg' : ''}">${esc(cloudLabel())}</span></div>
       </div>`;
-    if (sync.session && anon) {
+    if (!cloudAllowed()) {
+      body += `<div class="note">${I.cloudOff}<span>Les données ne sont enregistrées que sur ce téléphone. S’il est perdu ou réinitialisé, elles le sont aussi.</span></div>
+        <button class="btn" data-act="cloud-on">${I.cloudUp} Activer la sauvegarde en ligne</button>
+        ${!sync.session || anon ? `<button class="btn ghost" data-act="auth" data-v="signin">${I.login} Se connecter</button>` : ''}`;
+    } else if (sync.session && anon) {
       body += `<div class="note">${I.shield}<span>Vos données sont enregistrées en ligne et liées à ce téléphone. Créez un compte pour les retrouver sur un autre appareil ou après une réinstallation.</span></div>
         <button class="btn" data-act="auth" data-v="signup">${I.userPlus} Créer un compte</button>
-        <button class="btn ghost" data-act="auth" data-v="signin">${I.login} J’ai déjà un compte</button>`;
+        <button class="btn ghost" data-act="auth" data-v="signin">${I.login} J’ai déjà un compte</button>
+        <button class="btn plain" data-act="cloud-stop">${I.cloudOff} Arrêter la sauvegarde en ligne</button>`;
     } else if (sync.session) {
       body += `<button class="btn ghost" data-act="sync-logout">${I.logout} Se déconnecter</button>`;
     } else {
@@ -2224,13 +2265,13 @@
         <button class="btn" data-act="cloud-on">${I.cloudUp} Activer la sauvegarde en ligne</button>
         <button class="btn ghost" data-act="auth" data-v="signin">${I.login} Se connecter</button>`;
     }
-    if (st) {
+    if (st && cloudAllowed()) {
       body += `<div class="section-title">Inviter un collaborateur</div>
         <p class="muted small">Sur son téléphone, à l’accueil : « Rejoindre une entreprise », puis ce code.</p>
         <div class="invite"><b>${esc(st.business.invite_code)}</b><button class="btn ghost sm" data-act="sync-copy">${I.share} Copier</button></div>
         <button class="btn ghost" data-act="sync-now" ${sync.busy ? 'disabled' : ''}>${I.repeat} Synchroniser maintenant</button>`;
     }
-    if (sync.session) {
+    if (sync.session && cloudAllowed()) {
       body += `<details class="more"><summary>Rejoindre une autre entreprise</summary>
         <p class="muted small" style="margin-bottom:10px">Les données de ce téléphone y seront ajoutées.</p>
         <label class="field"><span>Code d’invitation</span><input id="sy-invite" class="code-input" autocapitalize="characters" maxlength="12" placeholder="7F3A9C21"></label>
@@ -2275,7 +2316,7 @@
         <button class="btn ghost" data-act="auth" data-v="magic">${I.mail} Recevoir un lien de connexion</button>
         <p class="auth-switch">Pas encore de compte ? <button class="link" data-act="auth" data-v="signup">Créer un compte</button></p>`;
     } else if (auth.mode === 'signup') {
-      body = `<div class="auth-ico">${I.userPlus}</div><h2>Créer un compte</h2><p class="muted">${db.settings ? `Les données de ${esc(S().name)} seront rattachées à ce compte.` : 'Gratuit, en moins d’une minute.'}</p>
+      body = `<div class="auth-ico">${I.userPlus}</div><h2>Créer un compte</h2><p class="muted">${db.settings ? `Les données de ${esc(S().name)} seront rattachées à ce compte et sauvegardées en ligne.` : 'Gratuit, en moins d’une minute. Les données de votre entreprise seront sauvegardées en ligne.'}</p>
         <form class="stack" data-auth>${em}${pwField('au-pass', 'Mot de passe', 'new-password', '8 caractères minimum')}
           <div class="pw-meter" id="au-meter"><i></i><i></i><i></i><i></i></div>
           ${pwField('au-pass2', 'Confirmer le mot de passe', 'new-password')}
@@ -2334,16 +2375,17 @@
         if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
         const { error } = await c.auth.signInWithPassword({ email, password: p1.value });
         if (error) throw error;
-        db.cloudOff = false; saveLocal();
+        setConsent(true);
         authDone('Connecté');
       } else if (auth.mode === 'signup') {
         // Les données de ce téléphone suivent le compte : on retient le code de son entreprise.
         if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
         saveLocal();
+        setConsent(true);
         const { data, error } = await c.auth.signUp({ email, password: p1.value, options: { emailRedirectTo: redirect } });
         if (error) throw error;
         if (data && data.user && Array.isArray(data.user.identities) && !data.user.identities.length) throw new Error('already registered');
-        if (data && data.session) { db.cloudOff = false; saveLocal(); authDone('Compte créé'); }
+        if (data && data.session) { setConsent(true); authDone('Compte créé'); }
         else { auth.sentFrom = 'signup'; auth.busy = false; openAuth('sent'); }
       } else if (auth.mode === 'reset') {
         const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: redirect });
@@ -2352,6 +2394,7 @@
       } else if (auth.mode === 'magic') {
         if (db.sync && db.sync.business) db.authJoin = db.sync.business.invite_code;
         saveLocal();
+        setConsent(true);
         const { error } = await c.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirect } });
         if (error) throw error;
         auth.sentFrom = 'magic'; auth.busy = false; openAuth('sent');
@@ -2577,6 +2620,7 @@
       if (!code) { err.textContent = 'Saisissez le code d’invitation.'; err.hidden = false; return; }
       if (!navigator.onLine) { err.textContent = 'Pas de connexion internet. Réessayez une fois en ligne.'; err.hidden = false; return; }
       onb.joining = true; openOnboarding();
+      setConsent(true);
       try {
         if (!sync.session) {
           const { error } = await sync.client.auth.signInAnonymously();
@@ -2585,7 +2629,6 @@
         }
         const { data, error } = await sync.client.rpc('join_business', { p_code: code });
         if (error) throw error;
-        db.cloudOff = false;
         sync.chain = sync.chain.then(() => attachBusiness(data[0], true));
         await sync.chain;
         onb.joining = false;
@@ -2597,7 +2640,18 @@
         $('#onb-code').value = code;
       }
     },
-    'cloud-on': () => { db.cloudOff = false; saveLocal(); ensureCloud(); refreshCloudUi(); },
+    'cloud-on': () => openConsent('settings'),
+    'cloud-stop': () => ask('Arrêter la sauvegarde en ligne ? Les nouvelles données resteront seulement sur ce téléphone. La copie déjà en ligne n’est pas effacée.', 'Arrêter', () => {
+      setConsent(false); toast('Sauvegarde en ligne arrêtée'); openSyncSheet();
+    }, openSyncSheet),
+    consent: (d) => {
+      const yes = d.v === 'yes';
+      setConsent(yes);
+      if (consentMode === 'onb') { onb.step = 'done'; openOnboarding(); if (yes) ensureCloud(); return; }
+      if (yes) ensureCloud();
+      if (consentMode === 'settings') { openSyncSheet(); toast(yes ? 'Sauvegarde en ligne activée' : 'Données gardées sur ce téléphone'); }
+      else { closeSheet(); render(); toast(yes ? 'Sauvegarde en ligne activée' : 'Vos données restent sur ce téléphone'); }
+    },
     'sync-join': () => syncCall(async () => {
       const code = $('#sy-invite').value.trim();
       if (!code) { toast('Saisissez le code d’invitation'); return; }
@@ -2654,6 +2708,9 @@
   if (!db.settings) openOnboarding();
 
   // Synchronisation : session enregistrée, retour d'un lien de connexion, reprise en ligne.
+  // Téléphone déjà en service avant l'ajout du consentement : on demande une fois.
+  if (syncReady() && db.settings && db.cloudConsent === undefined) openConsent('existing');
+
   if (syncClient()) {
     let first = true;
     sync.client.auth.onAuthStateChange((evt, session) => {
