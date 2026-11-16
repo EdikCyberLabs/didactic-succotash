@@ -1,8 +1,10 @@
 # Kobo
 
-Application mobile de caisse et de gestion pour tous les types d'entreprise : commerce, restauration, services, beauté, artisans, santé, formation, transport, agriculture…
+Application de gestion pour les petits commerces d'Afrique francophone (anciennement Gestio) : faire ses comptes, émettre des factures et des reçus, suivre son activité au quotidien, même avec une connexion faible ou nulle.
 
-Le design reprend un langage « portefeuille » : panneau d'accueil lavande avec un gros montant, bande noire avec pastille de tendance et boutons pilules, feuille gris clair à poignée, cartes sans bordure, courbe de revenus verte, clavier numérique lavande pour la caisse. Police Inter, icônes Lucide.
+Kobo n'est pas une fintech : elle ne détient, ne stocke et ne déplace jamais d'argent. Elle enregistre seulement les informations saisies par l'utilisateur.
+
+Design : panneau d'accueil lavande avec un gros montant, bande noire avec pastille de tendance et boutons pilules, feuille gris clair, cartes sans bordure, accents jaune doré pour les bonnes nouvelles (aucun vert). Logo animé au démarrage. Police Inter, icônes Lucide.
 
 ## Fonctionnalités
 
@@ -13,7 +15,11 @@ Le design reprend un langage « portefeuille » : panneau d'accueil lavande avec
 - **Dépenses** — catégories adaptées au métier plus les charges courantes (loyer, salaires, transport, marketing, impôts).
 - **Commandes & devis** — acompte, date de livraison, statut ; à la livraison, la commande devient une vente.
 - **Articles & stock** — prix de vente, coût de revient, stock suivi avec alerte.
-- **Recherche globale**, **carte de visite** avec QR de contact, **logo**, teinte d'accueil personnalisable, thème sombre.
+- **Ma journée** — argent entré (ventes payées, versements, acomptes), argent sorti (dépenses), solde, bénéfice estimé, factures émises et impayées, répartition par moyen de paiement, opérations du jour, jours précédents, récap à partager.
+- **Impayés** — une ligne par client avec montant dû et ancienneté de la dette ; « Relancer » ouvre WhatsApp avec un message poli et modifiable (factures concernées, montant). L'envoi est toujours fait par l'utilisateur.
+- **Rappel du soir** (application Android) — notification locale quotidienne à heure réglable (20 h 30 par défaut) qui ouvre « Ma journée ».
+- **Écran de démarrage** — logo animé (environ 2,7 s), remplacé par une image fixe sur les téléphones lents, si le système demande moins d'animations ou si l'utilisateur coche « Réduire les animations ».
+- **Recherche globale**, **carte de visite** avec QR de contact, **logo du commerce** sur les factures, thème sombre.
 - **Hors ligne** — les données restent sur le téléphone ; sauvegarde à envoyer sur WhatsApp, e-mail ou Drive, avec rappel hebdomadaire.
 
 ## Lancer l'application
@@ -32,7 +38,9 @@ Pour l'utiliser sur un téléphone, publier le dossier sur un hébergement stati
 
 Projet : `sktrzibeinhbblnovrct` (adresse et clé publishable dans `js/config.js`).
 
-**Sans inscription.** À la fin de l'accueil, chaque téléphone reçoit une identité anonyme Supabase, sans e-mail ni mot de passe. L'entreprise est créée en ligne et toutes ses données y sont envoyées automatiquement : ventes, factures, paiements, dépenses, commandes, articles, clients et paramètres. Chaque téléphone garde aussi une copie locale et continue de fonctionner hors ligne ; les changements partent dès le retour du réseau.
+**Avec l'accord de l'utilisateur.** Rien ne part en ligne sans un « oui » explicite : l'accueil explique ce qui est envoyé, à qui, et ce qui ne l'est jamais. On peut refuser (tout reste sur le téléphone), activer plus tard ou arrêter dans Plus › Compte.
+
+**Sans inscription.** Une fois la sauvegarde acceptée, chaque téléphone reçoit une identité anonyme Supabase, sans e-mail ni mot de passe. L'entreprise est créée en ligne et ses données y sont envoyées automatiquement : ventes, factures, paiements, dépenses, commandes, articles, clients et paramètres. Chaque téléphone garde aussi une copie locale et continue de fonctionner hors ligne ; les changements partent dès le retour du réseau.
 
 **Plusieurs téléphones.** Dans Plus › Compte, un code d'invitation est affiché. Sur l'autre téléphone, à l'accueil : « Rejoindre une entreprise », puis ce code.
 
@@ -50,6 +58,21 @@ Projet : `sktrzibeinhbblnovrct` (adresse et clé publishable dans `js/config.js`
 - Si deux téléphones modifient la même fiche avant de se synchroniser, c'est la dernière modification envoyée qui l'emporte. C'est aussi le cas pour la quantité en stock d'un article vendu au même moment sur deux téléphones.
 - Le service d'e-mails intégré à Supabase n'envoie que quelques e-mails par heure. Pour une équipe, configurez votre propre serveur d'envoi (**Authentication › Emails › SMTP**).
 
+## Application Android
+
+Le workflow `Android APK` construit l'APK avec Capacitor à chaque modification et le publie ici :
+https://github.com/EdikCyberLabs/didactic-succotash/releases/download/android-latest/kobo.apk
+
+L'APK est signé avec une clé de test fixe (`android-signing/`) : chaque version s'installe par-dessus la précédente, mais il ne convient pas au Play Store.
+
+## Tests
+
+```bash
+npm test
+```
+
+Lance les tests de bout en bout (Playwright) : accueil, consentement, synchronisation (serveur Supabase simulé), caisse, factures, Ma journée, impayés, rappel, écran de démarrage, reprise des données Gestio. Les tests n'utilisent jamais le vrai projet Supabase.
+
 ## Structure
 
 | Fichier | Rôle |
@@ -64,4 +87,7 @@ Projet : `sktrzibeinhbblnovrct` (adresse et clé publishable dans `js/config.js`
 | `js/config.js` | Adresse et clé publishable du projet Supabase |
 | `supabase/schema.sql` | Tables, règles de sécurité et fonctions pour la synchronisation |
 | `vendor/supabase.js` | Client officiel [supabase-js](https://github.com/supabase/supabase-js) 2.118 (licence MIT) |
+| `tests/` | Tests de bout en bout, serveur Supabase simulé, aperçu avec données d'exemple |
+| `scripts/` | Préparation des fichiers web pour Android, génération des icônes, adaptation du logo |
+| `android-res/` | Icône de notification Android |
 | `vendor/qrcode.js` | Génération des codes QR ([qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator), licence MIT) |
