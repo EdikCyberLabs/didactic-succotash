@@ -2,7 +2,7 @@
   "appId": "com.edikcyberlabs.gestio",
   "appName": "Kobo",
   "webDir": "www",
-  "backgroundColor": "#0B1F5C",
+  "backgroundColor": "#D6D5EA",
   "android": {
     "allowMixedContent": false
   },

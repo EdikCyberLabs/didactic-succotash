@@ -52,11 +52,11 @@
     done: ['truck', 'Livrée'],
   };
 
-  // Charte Kobo : bleu électrique, bleu marine, blanc cassé, jaune doré. Aucun vert.
-  const BRAND = { blue: '#1F6BFF', navy: '#0B1F5C', paper: '#F4F8FF', gold: '#FFC53D', soft: '#E3ECFF' };
-  const COLORS = [BRAND.blue, BRAND.navy, BRAND.gold, '#7FA8FF'];
+  // Charte Kobo : lavande, noir, gris clair, jaune doré. Aucun vert.
+  const BRAND = { ink: '#111114', tint: '#D6D5EA', paper: '#F3F3F5', gold: '#FFC53D', soft: '#D6D5EA', accent: '#6C72C4' };
+  const COLORS = [BRAND.tint, BRAND.ink, BRAND.gold, BRAND.accent];
   // Couleurs des cartes de visite.
-  const CARD_COLORS = [BRAND.navy, BRAND.blue, '#3D4F8F', '#7A5AF8', '#D23B3B', '#C2620A', '#1E2433'];
+  const CARD_COLORS = ['#25233A', BRAND.accent, '#3F86C9', '#CF5A97', '#DD5F4A', '#B7651F', '#1E2433'];
 
   // Icônes Lucide (js/icons.js) : en SVG pour l'interface, en tracés pour les images générées.
   const I = {};
@@ -72,19 +72,19 @@
   }
 
   // Illustration d'accueil : un reçu, des pièces et quelques étincelles.
-  const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#0B1F5C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  const ART = `<svg viewBox="0 0 260 220" fill="none" stroke="#111114" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M36 36v20M26 46h20M222 26v14M215 33h14M232 96v16M224 104h16M22 118v12M16 124h12"/>
     <circle cx="212" cy="62" r="7" fill="#ffffff"/><circle cx="56" cy="84" r="5" fill="#ffffff"/>
     <g transform="rotate(-8 130 110)">
-      <path d="M88 40h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#0B1F5C"/>
+      <path d="M88 40h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#111114"/>
       <path d="M82 34h96v150l-12-9-12 9-12-9-12 9-12-9-12 9-12-9-12 9z" fill="#ffffff"/>
       <path d="M97 56h46" stroke="#FFC53D" stroke-width="7"/><path d="M97 74h66M97 90h38"/>
       <rect x="97" y="108" width="46" height="46" rx="5" fill="#fff"/>
-      <path d="M105 116h9v9h-9zM126 116h9v9h-9zM105 137h9v9h-9z" fill="#0B1F5C"/><path d="M124 136h5M133 141v6M124 146h4"/>
+      <path d="M105 116h9v9h-9zM126 116h9v9h-9zM105 137h9v9h-9z" fill="#111114"/><path d="M124 136h5M133 141v6M124 146h4"/>
       <path d="M153 150h10"/>
     </g>
-    <circle cx="211" cy="161" r="25" fill="#0B1F5C"/><circle cx="206" cy="156" r="25" fill="#FFC53D"/><path d="M196 156l7 7 13-14"/>
-    <circle cx="51" cy="171" r="19" fill="#0B1F5C"/><circle cx="47" cy="167" r="19" fill="#ffffff"/><circle cx="47" cy="167" r="10"/>
+    <circle cx="211" cy="161" r="25" fill="#111114"/><circle cx="206" cy="156" r="25" fill="#FFC53D"/><path d="M196 156l7 7 13-14"/>
+    <circle cx="51" cy="171" r="19" fill="#111114"/><circle cx="47" cy="167" r="19" fill="#ffffff"/><circle cx="47" cy="167" r="10"/>
   </svg>`;
 
   const KIND = {
@@ -181,7 +181,7 @@
       d += ` C${cx},${y0.toFixed(1)} ${cx},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
     }
     const g = 'g' + Math.random().toString(36).slice(2, 8);
-    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F6BFF" stop-opacity=".32"/><stop offset="1" stop-color="#1F6BFF" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W},${H} L0,${H} Z" fill="url(#${g})"/><path class="ln" d="${d}" fill="none" stroke="#FFC53D" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC53D" stop-opacity=".32"/><stop offset="1" stop-color="#FFC53D" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W},${H} L0,${H} Z" fill="url(#${g})"/><path class="ln" d="${d}" fill="none" stroke="#E0A400" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
   }
   const sum = (list) => round(list.reduce((s, r) => s + total(r), 0));
   const ref = (kind, rec) => `${KIND[kind].prefix}-${String(rec.n).padStart(4, '0')}`;
@@ -1411,7 +1411,7 @@
   const docRef = (kind, r) => (kind === 'sales' ? 'R' : 'C') + '-' + String(r.n).padStart(4, '0');
 
   function drawReceipt(kind, r) {
-    const W = 600, P = 40, INK = BRAND.navy, GREY = '#64739B';
+    const W = 600, P = 40, INK = BRAND.ink, GREY = '#7A7B84';
     const tmp = document.createElement('canvas');
     tmp.width = W; tmp.height = 4000;
     const ctx = tmp.getContext('2d');
@@ -1457,7 +1457,7 @@
     if (kind === 'sales') {
       if (r.pay === 'credit') {
         pair('Déjà payé', fmt(r.paid || 0), 22, 400, GREY); y += 32;
-        pair('Reste à payer', fmt(owedSale(r)), 24, 700, '#D23B3B'); y += 30;
+        pair('Reste à payer', fmt(owedSale(r)), 24, 700, '#C8412F'); y += 30;
       } else { pair('Paiement', PAY[r.pay][1], 22, 400, GREY); y += 30; }
     } else {
       if (r.due) { pair('Livraison prévue', fullDate(r.due), 22, 400, GREY); y += 32; }
@@ -1481,7 +1481,7 @@
 
   // Facture au format page : en-tête entreprise, client, lignes, totaux, statut, QR.
   function drawInvoice(r) {
-    const W = 900, P = 56, INK = BRAND.navy, GREY = '#64739B', LINE = '#E1E8F5';
+    const W = 900, P = 56, INK = BRAND.ink, GREY = '#7A7B84', LINE = '#E3E4E8';
     const tint = BRAND.soft;
     const tmp = document.createElement('canvas');
     tmp.width = W; tmp.height = 6000;
@@ -1499,21 +1499,21 @@
     font(ctx, 28, 700); txt(fit(ctx, S().name || 'Mon entreprise', 420), P + 84, ly + 6, 28, 700);
     ly += 36;
     [S().address, [S().phone, S().email].filter(Boolean).join(' · '), S().taxId ? `N° fiscal : ${S().taxId}` : ''].filter(Boolean).forEach((l) => {
-      font(ctx, 17, 500); txt(fit(ctx, l, 440), P + 84, ly, 17, 500, '#33467A'); ly += 25;
+      font(ctx, 17, 500); txt(fit(ctx, l, 440), P + 84, ly, 17, 500, '#3D3D46'); ly += 25;
     });
     txt('FACTURE', W - P, 92, 46, 750, INK, 'right');
     txt(`N° ${invNo(r)}`, W - P, 128, 20, 600, INK, 'right');
-    txt(`Date : ${fullDate(r.date)}`, W - P, 158, 18, 500, '#33467A', 'right');
-    if (r.due) txt(`Échéance : ${fullDate(r.due)}`, W - P, 184, 18, 500, '#33467A', 'right');
+    txt(`Date : ${fullDate(r.date)}`, W - P, 158, 18, 500, '#3D3D46', 'right');
+    if (r.due) txt(`Échéance : ${fullDate(r.due)}`, W - P, 184, 18, 500, '#3D3D46', 'right');
 
     let y = 270;
     txt('FACTURÉ À', P, y, 15, 700, GREY); y += 32;
     txt(fit(ctx, r.who || 'Client de passage', 500), P, y, 24, 700); y += 30;
-    [c.phone, c.email, c.address].filter(Boolean).forEach((l) => { font(ctx, 18, 500); txt(fit(ctx, l, 500), P, y, 18, 500, '#33467A'); y += 26; });
+    [c.phone, c.email, c.address].filter(Boolean).forEach((l) => { font(ctx, 18, 500); txt(fit(ctx, l, 500), P, y, 18, 500, '#3D3D46'); y += 26; });
     const badgeW = 210;
     ctx.fillStyle = st[0] === 'paid' ? BRAND.gold : st[0] === 'late' ? '#F8DCDA' : BRAND.soft;
     rrect(ctx, W - P - badgeW, 252, badgeW, 50, 25); ctx.fill();
-    txt(st[1].toUpperCase(), W - P - badgeW / 2, 284, 19, 750, st[0] === 'paid' ? BRAND.navy : st[0] === 'late' ? '#B22F2F' : BRAND.blue, 'center');
+    txt(st[1].toUpperCase(), W - P - badgeW / 2, 284, 19, 750, st[0] === 'paid' ? BRAND.ink : st[0] === 'late' ? '#B23A2A' : BRAND.accent, 'center');
     y = Math.max(y, 320) + 24;
 
     const cQ = W - P - 300, cP = W - P - 160, cT = W - P;
@@ -1538,14 +1538,14 @@
     ctx.fillStyle = INK; rrect(ctx, tl - 18, y - 8, W - P - tl + 36, 64, 18); ctx.fill();
     y += 34; txt('TOTAL', tl, y, 20, 700, '#ffffff'); txt(fmt(total(r)), W - P, y, 28, 750, '#ffffff', 'right'); y += 52;
     trow('Déjà payé', fmt(paidOf(r)), 19, 500);
-    if (owedSale(r) > 0) trow('Reste à payer', fmt(owedSale(r)), 21, 750, '#B22F2F');
+    if (owedSale(r) > 0) trow('Reste à payer', fmt(owedSale(r)), 21, 750, '#B23A2A');
 
     y += 20;
     const Q = 170, qy = y;
     drawQR(ctx, receiptText('sales', r), P, qy, Q, INK);
     font(ctx, 17, 500);
     let fy = qy + 26;
-    [`Paiement : ${r.pay === 'credit' ? 'à régler avant le ' + (r.due ? fullDate(r.due) : 'terme convenu') : PAY[r.pay][1]}`, `Code de contrôle : ${controlCode(r)}`].forEach((l) => { txt(fit(ctx, l, W - 2 * P - Q - 30), P + Q + 30, fy, 17, 500, '#33467A'); fy += 28; });
+    [`Paiement : ${r.pay === 'credit' ? 'à régler avant le ' + (r.due ? fullDate(r.due) : 'terme convenu') : PAY[r.pay][1]}`, `Code de contrôle : ${controlCode(r)}`].forEach((l) => { txt(fit(ctx, l, W - 2 * P - Q - 30), P + Q + 30, fy, 17, 500, '#3D3D46'); fy += 28; });
     fy += 8;
     font(ctx, 18, 600);
     wrap(ctx, S().footer || 'Merci pour votre confiance !', W - 2 * P - Q - 30, 3).forEach((l) => { txt(l, P + Q + 30, fy, 18, 600, INK); fy += 26; });
@@ -1605,7 +1605,7 @@
 
   function drawCard(canvas) {
     const c = cardData();
-    const W = 1050, H = 600, INK = BRAND.navy, GREY = '#64739B';
+    const W = 1050, H = 600, INK = BRAND.ink, GREY = '#7A7B84';
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
     ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';

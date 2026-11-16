@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#d6d5ea"/>
-  <rect x="96" y="300" width="320" height="212" fill="#0f0f12"/>
-  <rect x="136" y="342" width="110" height="64" rx="22" fill="#2a2a30"/>
-  <rect x="266" y="342" width="110" height="64" rx="22" fill="#d6d5ea"/>
-  <text x="256" y="236" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="700" font-size="176" letter-spacing="-12" fill="#111114">G</text>
-  <rect x="196" y="282" width="120" height="36" rx="18" fill="#5c9a36" stroke="#0f0f12" stroke-width="6"/>
-  <path d="M224 306l14-12 10 8 18-16" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Icône provisoire de Kobo (sera refaite à partir du logo officiel). -->
+  <rect width="512" height="512" fill="#D6D5EA"/>
+  <rect x="106" y="106" width="300" height="300" rx="86" fill="#111114"/>
+  <path d="M206 181v150M206 261l75-80M236 231l55 100" fill="none" stroke="#D6D5EA" stroke-width="33" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="326" cy="191" r="23" fill="#FFC53D"/>
 </svg>
