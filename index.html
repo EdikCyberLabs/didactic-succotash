@@ -14,6 +14,35 @@
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+  <!-- Écran de démarrage : affiché avant le chargement de l'application, puis retiré. -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <img class="splash-logo" src="icons/logo.svg" alt="" width="104" height="104">
+    <div class="splash-name">Kobo</div>
+    <div class="splash-tag">Vos comptes, simplement</div>
+    <div class="splash-bar"><i></i></div>
+  </div>
+  <script>
+    /* Animé pendant 2,5 s ; version fixe et courte si le téléphone est lent, si le système
+       demande moins d'animations ou si l'utilisateur l'a choisi dans les paramètres. */
+    (function () {
+      var el = document.getElementById('splash');
+      if (/[?&]nosplash\b/.test(location.search)) { el.parentNode.removeChild(el); return; }
+      var lite = false;
+      try {
+        var saved = JSON.parse(localStorage.getItem('kobo.v1') || localStorage.getItem('gestio.v1') || 'null');
+        lite = !!(saved && saved.settings && saved.settings.reduceMotion);
+      } catch (e) { /* stockage indisponible */ }
+      var system = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var weak = (navigator.deviceMemory && navigator.deviceMemory < 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+      var still = lite || system || weak;
+      if (still) el.className += ' static';
+      if (lite) document.documentElement.className += ' reduce-motion';
+      setTimeout(function () {
+        el.className += ' out';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+      }, still ? 900 : 2500);
+    })();
+  </script>
   <div id="app">
     <header class="topbar">
       <div class="brand" id="brand"></div>

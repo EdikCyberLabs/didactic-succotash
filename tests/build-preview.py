@@ -6,6 +6,7 @@ font=base64.b64encode(open(root+'fonts/inter.woff2','rb').read()).decode()
 css=open(root+'css/app.css').read().replace('../fonts/inter.woff2','data:font/woff2;base64,'+font); js=open(root+'js/app.js').read(); icons=open(root+'js/icons.js').read(); qr=open(root+'vendor/qrcode.js').read()
 html=open(root+'index.html').read()
 body=html[html.index('<body>')+6:html.index('<script src="vendor')]
+body=body.replace('src="icons/logo.svg"', 'src="data:image/svg+xml;base64,'+base64.b64encode(open(root+'icons/logo.svg','rb').read()).decode()+'"')
 extra='''
 /* Aperçu : gouttières et zones sûres gérées par l'hôte, actions de fichier masquées */
 .topbar { top: env(safe-area-inset-top, 0px); padding: 12px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }

@@ -467,6 +467,31 @@ details.more .field input { background: var(--bg); }
 
 button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { animation: none !important; transition: none !important; }
+
+/* ---------- Écran de démarrage ---------- */
+.splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: radial-gradient(120% 75% at 50% 32%, #1F6BFF 0%, #0B1F5C 72%); color: #fff; text-align: center; transition: opacity .35s ease, visibility .35s ease; }
+.splash.out { opacity: 0; visibility: hidden; }
+.splash-logo { width: 104px; height: 104px; border-radius: 30px; box-shadow: 0 18px 50px rgba(3, 10, 40, .45); animation: splash-pop .9s cubic-bezier(.2, 1.4, .4, 1) both; }
+.splash-name { font-size: 46px; font-weight: 750; letter-spacing: -.05em; margin-top: 12px; animation: splash-rise .6s .35s ease both; }
+.splash-tag { font-size: 15px; font-weight: 500; opacity: .78; animation: splash-rise .6s .5s ease both; }
+.splash-bar { position: absolute; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); width: 120px; height: 4px; margin-left: -60px; border-radius: 99px; background: rgba(255, 255, 255, .2); overflow: hidden; }
+.splash-bar i { display: block; width: 100%; height: 100%; border-radius: 99px; background: #FFC53D; transform-origin: left; animation: splash-load 2.2s .15s ease-in-out both; }
+@keyframes splash-pop { 0% { transform: scale(.4) rotate(-14deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
+@keyframes splash-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes splash-load { from { transform: scaleX(0); } }
+.splash.static, .splash.static * { animation: none !important; }
+.splash.static .splash-bar { display: none; }
+
+/* Interrupteur des paramètres */
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--card); border-radius: 18px; padding: 14px 16px; cursor: pointer; }
+.switch-row b { display: block; font-size: 15px; }
+.switch-row small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.switch-row input { appearance: none; -webkit-appearance: none; flex: none; width: 50px; height: 30px; border-radius: 99px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; }
+.switch-row input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); transition: transform .2s var(--ease); }
+.switch-row input:checked { background: var(--tint); }
+.switch-row input:checked::after { transform: translateX(20px); }
+.switch-row input:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 /* ---------- Carrousel de bienvenue ---------- */
 .onb-welcome { display: flex; flex-direction: column; }

@@ -297,6 +297,7 @@
   function applyTheme() {
     // La teinte n'est plus personnalisable : la charte Kobo s'applique partout.
     document.documentElement.style.removeProperty('--tint');
+    document.documentElement.classList.toggle('reduce-motion', !!S().reduceMotion);
   }
 
   function renderBrand() {
@@ -1769,6 +1770,8 @@
         <label class="field"><span>Délai de paiement (jours)</span><input id="s-terms" type="number" inputmode="numeric" min="0" step="1" placeholder="7" value="${s.terms != null ? s.terms : ''}"></label>
       </div>
       <label class="field"><span>Message en bas des reçus et factures</span><input id="s-footer" placeholder="Merci pour votre confiance !" value="${esc(s.footer)}"></label>
+      <div class="section-title">Affichage</div>
+      <label class="switch-row"><span><b>Réduire les animations</b><small>Démarrage plus rapide et moins d’effets, pour les téléphones lents.</small></span><input type="checkbox" id="s-motion" ${s.reduceMotion ? 'checked' : ''}></label>
       <button class="btn" data-act="settings-save">Enregistrer</button>
       ${syncReady() ? `<div class="section-title">Compte</div>
       <button class="row" data-act="sync"><div class="ico">${I.cloud}</div><div class="mid"><div class="title">Compte et sauvegarde en ligne</div><div class="sub">${esc(syncSummary())}</div></div><div class="chev">›</div></button>` : ''}
@@ -1894,7 +1897,7 @@
   }
   const SLIDE_MS = 4200;
   const slider = { i: 0, timer: null, n: 0, paused: false };
-  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = () => !!S().reduceMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function showSlide(i, user) {
     const el = $('#slider');
     if (!el) return;
@@ -2001,7 +2004,7 @@
 
   // ---------------------------------------------------------------- Confettis
   function confetti(count) {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (reducedMotion()) return;
     const cv = $('#confetti');
     const ctx = cv.getContext('2d');
     const W = (cv.width = innerWidth), H = (cv.height = innerHeight);
@@ -2542,7 +2545,7 @@
       Object.assign(db.settings, s, {
         phone: $('#s-phone').value.trim(), address: $('#s-address').value.trim(), email: $('#s-email').value.trim(), owner: $('#s-owner').value.trim(),
         taxId: $('#s-taxid').value.trim(), taxRate: num($('#s-tax').value), terms: $('#s-terms').value === '' ? 7 : Math.max(0, Math.round(num($('#s-terms').value))),
-        footer: $('#s-footer').value.trim(), color: picked('color') || COLORS[0], logo: draftLogo,
+        footer: $('#s-footer').value.trim(), logo: draftLogo, reduceMotion: $('#s-motion').checked,
       });
       loadLogo();
       save(); closeSheet(); render(); toast('Paramètres enregistrés');

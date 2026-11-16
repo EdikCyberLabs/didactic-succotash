@@ -11,7 +11,7 @@ const out = process.argv[2], root = process.argv[3];
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
   const qty = (name) => p.evaluate((n) => JSON.parse(localStorage['kobo.v1']).products.find((x) => x.name === n).qty, name);
   const save = () => p.click('#entry-form button.btn:not(.ghost)');
-  await p.goto('http://localhost:8123/');
+  await p.goto('http://localhost:8123/?nosplash');
   await act('onb-go', '[data-v="business"]'); await p.fill('#s-name', 'Chez Awa'); await p.waitForTimeout(600); await shot('19-onb2'); await act('onb-next'); await act('onb-next'); await act('onb-finish');
   // articles
   await p.click('#tabbar [data-tab="more"]'); await shot('20-more');

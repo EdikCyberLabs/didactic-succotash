@@ -7,7 +7,7 @@ const out = process.argv[3];
   const errs = []; p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text()); });
   const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>' + fs.readFileSync(process.argv[2], 'utf8');
   fs.writeFileSync(process.argv[2] + '.wrapped.html', html);
-  await p.goto('file://' + process.argv[2] + '.wrapped.html'); await p.waitForTimeout(600);
+  await p.goto('file://' + process.argv[2] + '.wrapped.html?nosplash'); await p.waitForTimeout(600);
   const shot = (n, full) => p.screenshot({ path: `${out}/${n}.png`, fullPage: !!full });
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
   const db = () => p.evaluate(() => JSON.parse(localStorage['kobo.v1'] || 'null'));

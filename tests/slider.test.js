@@ -10,7 +10,7 @@ const S = process.argv[2], out = process.argv[3];
     await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.KOBO_SUPABASE = { url: 'https://test.supabase.co', key: 'sb_publishable_test' };" }));
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
-    await p.goto('http://localhost:8123/'); await p.waitForTimeout(400);
+    await p.goto('http://localhost:8123/?nosplash'); await p.waitForTimeout(400);
     return p;
   }
   const idx = (p) => p.evaluate(() => [...document.querySelectorAll('.slider-dots button')].findIndex((x) => x.classList.contains('on')));

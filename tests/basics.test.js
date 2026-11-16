@@ -10,7 +10,7 @@ const out = process.argv[2];
   p.on('dialog', (d) => d.accept());
   const shot = (n) => p.screenshot({ path: `${out}/${n}.png` });
   const act = (a, extra = '') => p.click(`[data-act="${a}"]${extra}`);
-  await p.goto('http://localhost:8123/');
+  await p.goto('http://localhost:8123/?nosplash');
   await p.waitForTimeout(700); await shot('01-onb');
   await act('onb-go', '[data-v="business"]');
   await p.fill('#s-name', 'Chez Awa');

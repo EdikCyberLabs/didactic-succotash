@@ -40,7 +40,7 @@ function handle(op, a) {
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errs.push(name + ' PAGEERR ' + e.message));
     p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(name + ' CONSOLE ' + m.text()); });
-    await p.goto('http://localhost:8123/'); await p.waitForTimeout(400);
+    await p.goto('http://localhost:8123/?nosplash'); await p.waitForTimeout(400);
     return p;
   }
   const act = (p, a, e = '') => p.click(`[data-act="${a}"]${e}`);

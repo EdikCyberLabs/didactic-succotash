@@ -7,7 +7,7 @@ const [, , html, out] = process.argv;
   fs.writeFileSync(wrapped, '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>' + fs.readFileSync(html, 'utf8'));
   for (const scheme of ['light', 'dark']) {
     const p = await (await b.newContext({ ...devices['Pixel 7'], colorScheme: scheme })).newPage();
-    await p.goto('file://' + wrapped); await p.waitForTimeout(1600);
+    await p.goto('file://' + wrapped + '?nosplash'); await p.waitForTimeout(1600);
     const act = (a, e = '') => p.click(`[data-act="${a}"]${e}`);
     const shot = (n) => p.screenshot({ path: `${out}/screen-${scheme}-${n}.png` });
     await shot('1-home');

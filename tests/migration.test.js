@@ -20,7 +20,7 @@ const out = process.argv[2];
   await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.KOBO_SUPABASE = { url: '', key: '' };" }));
   const p = await ctx.newPage();
   p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
-  await p.goto('http://localhost:8123/'); await p.waitForTimeout(800);
+  await p.goto('http://localhost:8123/?nosplash'); await p.waitForTimeout(800);
   const st = await p.evaluate(() => ({
     kobo: !!localStorage.getItem('kobo.v1'), gestio: !!localStorage.getItem('gestio.v1'),
     auth: localStorage.getItem('kobo.auth'), oldAuth: localStorage.getItem('gestio.auth'),
