@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kobo</title>
+  <meta name="description" content="Caisse, factures, clients et finances pour toutes les entreprises.">
+  <meta name="theme-color" content="#D6D5EA">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!-- Écran de démarrage : affiché avant le chargement de l'application, puis retiré. -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <svg class="splash-mascot" viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <defs>
+        <!-- Forme du corps (image 1) -->
+        <path id="k-bodyShape" d="M92 130 Q92 70 152 70 L248 70 Q300 76 330 118 Q352 150 352 196 L352 290 Q352 372 270 372 L170 372 Q92 372 92 296 Z"/>
+        <clipPath id="k-bodyClip"><use href="#k-bodyShape"/></clipPath>
+    
+        <!-- Couleurs (image 2) -->
+        <linearGradient id="k-paper" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FFFFFF"/>
+          <stop offset="1" stop-color="#E7E6F4"/>
+        </linearGradient>
+        <linearGradient id="k-rim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3B3B43"/>
+          <stop offset="0.55" stop-color="#1F1F25"/>
+          <stop offset="1" stop-color="#111114"/>
+        </linearGradient>
+        <linearGradient id="k-curlBack" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#F6F6F7"/>
+          <stop offset="1" stop-color="#C9C7E2"/>
+        </linearGradient>
+        <linearGradient id="k-curlBlue" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#C99300"/>
+          <stop offset="0.5" stop-color="#FFC53D"/>
+          <stop offset="1" stop-color="#FFE08A"/>
+        </linearGradient>
+        <linearGradient id="k-curlNavy" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#111114"/>
+          <stop offset="1" stop-color="#1F1F25"/>
+        </linearGradient>
+    
+        <filter id="k-drop" x="-30%" y="-30%" width="160%" height="170%">
+          <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#111114" flood-opacity="0.45"/>
+        </filter>
+        <filter id="k-sheetShadow" x="-30%" y="-30%" width="160%" height="170%">
+          <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#111114" flood-opacity="0.35"/>
+        </filter>
+        <filter id="k-soft" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+    
+        <!-- Une feuille de facture avec ses insignes -->
+        <g id="k-invoice">
+          <use href="#k-bodyShape" fill="url(#k-paper)" filter="url(#k-sheetShadow)"/>
+          <use href="#k-bodyShape" fill="none" stroke="url(#k-rim)" stroke-width="10"/>
+          <g clip-path="url(#k-bodyClip)">
+            <rect x="92" y="70" width="260" height="46" fill="#D6D5EA"/>
+            <circle cx="130" cy="94" r="16" fill="#3B3B43"/>
+            <text x="130" y="101" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="800" fill="#FFFFFF">$</text>
+            <rect x="158" y="84" width="74" height="8" rx="4" fill="#1F1F25"/>
+            <rect x="158" y="98" width="48" height="6" rx="3" fill="#FFE08A"/>
+            <rect x="116" y="140" width="120" height="8" rx="4" fill="#B4B2D4"/>
+            <rect x="116" y="160" width="170" height="8" rx="4" fill="#DCDBEC"/>
+            <rect x="116" y="180" width="150" height="8" rx="4" fill="#DCDBEC"/>
+            <rect x="116" y="200" width="100" height="8" rx="4" fill="#DCDBEC"/>
+            <line x1="116" y1="232" x2="320" y2="232" stroke="#B4B2D4" stroke-width="2" stroke-dasharray="6 5"/>
+            <rect x="116" y="246" width="40" height="9" rx="4.5" fill="#1F1F25"/>
+            <rect x="236" y="246" width="84" height="9" rx="4.5" fill="#1F1F25"/>
+            <g fill="#B4B2D4">
+              <rect x="116" y="300" width="3" height="26"/><rect x="124" y="300" width="6" height="26"/>
+              <rect x="135" y="300" width="3" height="26"/><rect x="143" y="300" width="5" height="26"/>
+              <rect x="153" y="300" width="3" height="26"/><rect x="161" y="300" width="6" height="26"/>
+              <rect x="172" y="300" width="3" height="26"/><rect x="180" y="300" width="5" height="26"/>
+            </g>
+          </g>
+        </g>
+    
+        <!-- La feuille « PAYE » -->
+        <g id="k-invoicePaid">
+          <use href="#k-invoice"/>
+          <g transform="translate(222 214) rotate(-12)">
+            <rect x="-70" y="-26" width="140" height="52" rx="8" fill="#FFFFFF" fill-opacity="0.9" stroke="#FFC53D" stroke-width="5"/>
+            <text x="0" y="12" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#111114" letter-spacing="3">PAYÉ</text>
+          </g>
+        </g>
+      </defs>
+    
+      <g id="k-settle">
+      <g id="k-block">
+    
+        <!-- Epaisseur du bloc -->
+        <g filter="url(#k-drop)">
+          <use href="#k-bodyShape" transform="translate(0 18)" fill="#111114"/>
+          <use href="#k-bodyShape" transform="translate(0 12)" fill="url(#k-rim)"/>
+          <use href="#k-bodyShape" transform="translate(0 6)" fill="#C9C7E2"/>
+        </g>
+    
+        <!-- Les 5 feuilles qui se detachent -->
+        <g id="k-s5" class="sheet"><use href="#k-invoicePaid"/></g>
+        <g id="k-s4" class="sheet"><use href="#k-invoice"/></g>
+        <g id="k-s3" class="sheet"><use href="#k-invoice"/></g>
+        <g id="k-s2" class="sheet"><use href="#k-invoice"/></g>
+        <g id="k-s1" class="sheet"><use href="#k-invoice"/></g>
+    
+        <!-- Feuille du dessus : forme image 1, couleurs et visage image 2 -->
+        <g id="k-top">
+          <use href="#k-bodyShape" fill="url(#k-paper)" filter="url(#k-sheetShadow)"/>
+          <use href="#k-bodyShape" fill="none" stroke="url(#k-rim)" stroke-width="14"/>
+    
+          <g clip-path="url(#k-bodyClip)">
+            <path d="M240 70 Q290 90 320 140 Q344 184 336 250 L352 250 L352 70 Z" fill="#111114" opacity="0.28" filter="url(#k-soft)"/>
+          </g>
+    
+          <!-- Coin qui se decolle en plis -->
+          <g id="k-curl">
+            <g id="k-curlInner">
+              <path d="M236 70 Q292 56 346 84 Q386 106 372 142 Q360 172 330 150 Q300 128 276 100 Q252 80 236 70 Z" fill="url(#k-curlBack)"/>
+              <path d="M246 72 Q282 64 318 82 Q300 96 288 112 Q264 92 246 72 Z" fill="url(#k-curlNavy)" opacity="0.9"/>
+              <path d="M262 76 Q310 100 336 150 Q352 190 350 250 Q364 200 356 160 Q340 100 296 74 Z" fill="url(#k-curlBlue)"/>
+              <path d="M290 84 Q326 116 340 160 Q350 196 348 236 Q338 196 322 160 Q308 126 282 92 Z" fill="#E0A400" opacity="0.9"/>
+              <path d="M300 80 Q332 98 348 130" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+            </g>
+          </g>
+    
+          <!-- Visage : point bleu, deux grands yeux ronds, sourire -->
+          <circle id="k-dot" cx="222" cy="128" r="11" fill="#FFC53D"/>
+          <circle cx="218" cy="124" r="3.5" fill="#FFFFFF" opacity="0.8"/>
+    
+          <ellipse class="eye" cx="170" cy="236" rx="40" ry="42" fill="#FFFFFF" stroke="#111114" stroke-width="5"/>
+          <ellipse class="eye" cx="236" cy="236" rx="40" ry="42" fill="#FFFFFF" stroke="#111114" stroke-width="5"/>
+          <circle class="pupil" cx="180" cy="242" r="16" fill="#111114"/>
+          <circle class="pupil" cx="246" cy="242" r="16" fill="#111114"/>
+          <circle class="pupil" cx="186" cy="234" r="5" fill="#FFFFFF"/>
+          <circle class="pupil" cx="252" cy="234" r="5" fill="#FFFFFF"/>
+    
+          <path id="k-smile" d="M146 306 Q206 350 262 300" fill="none" stroke="#111114" stroke-width="14" stroke-linecap="round"/>
+          <path id="k-dimple" d="M262 300 Q274 296 280 284" fill="none" stroke="#111114" stroke-width="11" stroke-linecap="round"/>
+        </g>
+    
+      </g>
+      </g>
+    </svg>
+    <div class="splash-name">Kobo</div>
+    <div class="splash-tag">Vos comptes, simplement</div>
+    <div class="splash-bar"><i></i></div>
+  </div>
+  <script>
+    /* Animé pendant 2,7 s ; version fixe et courte si le téléphone est lent, si le système
+       demande moins d'animations ou si l'utilisateur l'a choisi dans les paramètres. */
+    (function () {
+      var el = document.getElementById('splash');
+      if (/[?&]nosplash\b/.test(location.search)) { el.parentNode.removeChild(el); return; }
+      var lite = false;
+      try {
+        var saved = JSON.parse(localStorage.getItem('kobo.v1') || localStorage.getItem('gestio.v1') || 'null');
+        lite = !!(saved && saved.settings && saved.settings.reduceMotion);
+      } catch (e) { /* stockage indisponible */ }
+      var system = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var weak = (navigator.deviceMemory && navigator.deviceMemory < 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
+      var still = lite || system || weak;
+      if (still) el.className += ' static';
+      if (lite) document.documentElement.className += ' reduce-motion';
+      setTimeout(function () {
+        el.className += ' out';
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+      }, still ? 900 : 2700);
+    })();
+  </script>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand" id="brand"></div>
+      <div class="top-actions">
+        <button class="icon-btn" id="btn-search" data-icon="search" aria-label="Rechercher"></button>
+        <button class="icon-btn" id="btn-settings" data-icon="gear" aria-label="Paramètres"></button>
+      </div>
+    </header>
+
+    <main id="view" class="view"></main>
+
+    <button class="fab" id="fab" data-icon="plus" aria-label="Ajouter"></button>
+
+    <!-- Barre d'onglets en bas sur téléphone ; menu latéral complet sur grand écran (entrées .nav-wide). -->
+    <nav class="tabbar" id="tabbar" aria-label="Navigation">
+      <div class="nav-brand" aria-hidden="true"><img src="icons/logo.svg" alt="" width="36" height="40"><b>Kobo</b></div>
+      <button data-tab="home" data-icon="home" class="active"><span></span>Accueil</button>
+      <button data-tab="pos" data-icon="pos"><span></span>Caisse</button>
+      <button data-tab="sales" data-icon="coin"><span></span>Ventes</button>
+      <button data-tab="clients" data-icon="user"><span></span>Clients</button>
+      <div class="nav-sep">Suivi</div>
+      <button class="nav-wide" data-tab="today" data-icon="calendar"><span></span>Ma journée</button>
+      <button class="nav-wide" data-tab="debts" data-icon="hourglass"><span></span>Impayés</button>
+      <button class="nav-wide" data-tab="bilan" data-icon="chart"><span></span>Finances</button>
+      <button class="nav-wide" data-tab="invoices" data-icon="invoice"><span></span>Factures</button>
+      <div class="nav-sep">Gestion</div>
+      <button class="nav-wide" data-tab="purchases" data-icon="arrowDown"><span></span>Dépenses</button>
+      <button class="nav-wide" data-tab="orders" data-icon="clip"><span></span>Commandes</button>
+      <button class="nav-wide" data-tab="stock" data-icon="box"><span></span>Articles &amp; stock</button>
+      <button class="nav-wide" data-tab="card" data-icon="idcard"><span></span>Carte de visite</button>
+      <button data-tab="more" data-icon="grid"><span></span>Plus</button>
+    </nav>
+  </div>
+
+  <div class="sheet-backdrop" id="sheet-backdrop" hidden>
+    <section class="sheet" id="sheet" role="dialog" aria-modal="true"></section>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script src="vendor/qrcode.js"></script>
+  <script src="vendor/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

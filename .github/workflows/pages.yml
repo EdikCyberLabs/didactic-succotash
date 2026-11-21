@@ -1,0 +1,45 @@
+# Publie la version web de Kobo sur GitHub Pages à chaque modification de la branche principale.
+# Prérequis (une fois) : Settings › Pages › Source : « GitHub Actions ».
+name: Site web (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - manifest.webmanifest
+      - sw.js
+      - css/**
+      - js/**
+      - vendor/**
+      - fonts/**
+      - icons/**
+      - scripts/build-web.sh
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare web files
+        run: sh scripts/build-web.sh
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+      - id: deployment
+        uses: actions/deploy-pages@v4

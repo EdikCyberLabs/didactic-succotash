@@ -1,0 +1,16 @@
+{
+  "name": "Kobo — comptes, factures et caisse",
+  "short_name": "Kobo",
+  "description": "Caisse, factures, clients et finances pour toutes les entreprises.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#D6D5EA",
+  "theme_color": "#D6D5EA",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

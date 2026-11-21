@@ -1,0 +1,21 @@
+{
+  "name": "kobo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Caisse, factures, clients et finances pour toutes les entreprises.",
+  "scripts": {
+    "build:web": "sh scripts/build-web.sh",
+    "android:sync": "npm run build:web && npx cap sync android",
+    "test": "sh tests/run.sh"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
+}
