@@ -187,8 +187,6 @@
   const expenseCats = () => Array.from(new Set(bizType().cats.concat(COMMON_CATS)));
   const initials = (name) => String(name || '').split(/\s+/).map((w) => (w.match(/[\p{L}\d]/u) || [''])[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
   const curSym = () => (S().currency ? curInfo(S().currency).sym : '');
-  // Pastille de l'accueil : le code ISO quand la devise s'écrit avec un seul symbole (€ → EUR, ₽ → RUB).
-  const curLabel = () => { const v = S().currency || ''; return v.length > 1 ? v : v ? curInfo(v).code : ''; };
   const curIco = (c) => `<span class="cur-ico${c.sym.length > 1 ? ' sm' : ''}" aria-hidden="true">${esc(c.sym)}</span>`;
   function bigNum(n) {
     const d = decimals();
@@ -413,7 +411,7 @@
 
     return `
       <section class="h-top">
-        <span class="cur-pill"><i class="${curSym().length > 1 ? 'sm' : ''}">${esc(curSym())}</i>${esc(curLabel())}</span>
+        <span class="cur-pill"><i class="${curSym().length > 1 ? 'sm' : ''}">${esc(curSym())}</i>${esc(S().currency || '')}</span>
         <button class="big-amount num" data-act="open-day" aria-label="Voir ma journée">${bigNum(sToday)}</button>
         <div class="h-sub">${esc(sub)}</div>
       </section>
