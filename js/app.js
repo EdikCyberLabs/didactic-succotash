@@ -319,16 +319,25 @@
     }
   }
 
+  // Grand écran (ordinateur, tablette en paysage) : menu latéral, tableau de bord, fenêtres centrées.
+  const WIDE_QUERY = window.matchMedia('(min-width: 1024px)');
+  const isWide = () => WIDE_QUERY.matches;
+
   function render() {
     applyTheme();
     const home = ui.tab === 'home';
     document.body.classList.toggle('is-home', home);
     renderBrand();
-    const top = SUB.includes(ui.tab) ? 'more' : ui.tab;
-    $$('#tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === top));
+    // Sur grand écran, chaque rubrique a son entrée dans le menu latéral ; sur téléphone, elles sont dans « Plus ».
+    const own = isWide() && $(`#tabbar .nav-wide[data-tab="${ui.tab}"]`);
+    $$('#tabbar button').forEach((b) => {
+      const on = b.dataset.tab === ui.tab ? (!b.classList.contains('nav-wide') || isWide()) : (b.dataset.tab === 'more' && SUB.includes(ui.tab) && !own);
+      b.classList.toggle('active', on);
+      if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
     $('#fab').hidden = ['home', 'pos', 'more', 'bilan', 'card', 'today', 'debts'].includes(ui.tab);
     const v = $('#view');
-    v.className = 'view' + (home ? ' home' : '') + (home && !ui.introDone ? ' intro' : '');
+    v.className = `view view-${ui.tab}` + (home ? ' home' : '') + (home && !ui.introDone ? ' intro' : '');
     if (home) ui.introDone = true;
     if (home) v.innerHTML = viewHome();
     else if (ui.tab === 'pos') { v.innerHTML = viewPos(); mountPos(); }
@@ -452,7 +461,7 @@
     const prods = db.products.slice().sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     const nItems = cart.items.reduce((a, it) => a + it.qty, 0);
     return `
-      <div class="pos-top">
+      <div class="pos-cart"><div class="pos-top">
         <div class="who">
           <button data-act="pos-client"><span class="av">${cart.who ? esc(initials(cart.who)) : I.user}</span><span>${esc(cart.who || 'Client de passage')}</span></button>
           ${cart.items.length ? '<button class="clear" data-act="pos-clear">Vider</button>' : ''}
@@ -463,16 +472,62 @@
           : '<p class="small" style="color:var(--band-muted);margin-top:12px">Touchez un article ou saisissez un montant libre.</p>'}
       </div>
       ${cart.items.length ? `<div class="pos-total-pill"><span>${fmtQ(nItems)} article${nItems > 1 ? 's' : ''} · Total : ${esc(fmt(t))}</span></div>` : ''}
+      ${cart.items.length ? `<button class="btn pos-pay" data-act="pos-pay">${I.check} Encaisser ${esc(fmt(t))}</button>` : ''}</div>
+      <div class="pos-pick">
       <div class="chips"><button class="chip ${cart.keypad ? '' : 'on'}" data-act="pos-mode" data-v="grid">${I.grid} Articles</button><button class="chip ${cart.keypad ? 'on' : ''}" data-act="pos-mode" data-v="keypad">${I.pos} Montant libre</button></div>
-      ${cart.keypad ? keypadHtml() : `<div class="pos-grid">${prods.map((p) => `<button class="ptile ${tracked(p) && p.qty <= 0 ? 'out' : ''}" data-act="pos-add" data-id="${p.id}">
+      ${cart.keypad ? '' : `<input class="search pos-search" id="pos-q" type="search" placeholder="Rechercher un article…" value="${esc(cart.query || '')}" autocomplete="off" aria-label="Rechercher un article">`}
+      ${cart.keypad ? keypadHtml() : `<div class="pos-grid">${prods.map((p) => `<button class="ptile ${tracked(p) && p.qty <= 0 ? 'out' : ''}" data-act="pos-add" data-id="${p.id}" data-name="${esc(norm(p.name))}">
           ${counts.get(norm(p.name)) ? `<span class="count">${fmtQ(counts.get(norm(p.name)))}</span>` : ''}
           <span class="av">${esc(initials(p.name))}</span><span class="nm">${esc(p.name)}</span><span class="pr">${esc(fmt(p.price))}${tracked(p) ? ` · ${fmtQ(p.qty)} en stock` : ''}</span></button>`).join('')}
           <button class="ptile add" data-act="product"><span class="av">${I.plus}</span><span class="nm">Nouvel article</span></button></div>`}
-      ${cart.items.length ? `<button class="btn" data-act="pos-pay">${I.check} Encaisser ${esc(fmt(t))}</button>` : ''}`;
+      <p class="pos-keys small muted">Clavier : tapez pour chercher, Entrée pour ajouter · chiffres = montant libre · + / − = quantité du dernier article · Ctrl + Entrée = encaisser</p>
+      </div>`;
   }
   function mountPos() {
     const el = $('#kp-label');
     if (el) el.addEventListener('input', (e) => { cart.label = e.target.value; });
+    const q = $('#pos-q');
+    if (q) {
+      const filter = () => {
+        const v = norm(q.value);
+        cart.query = q.value;
+        $$('.pos-grid .ptile[data-name]').forEach((t) => { t.hidden = !!v && !t.dataset.name.includes(v); });
+      };
+      q.addEventListener('input', filter);
+      q.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          const first = $('.pos-grid .ptile[data-name]:not([hidden])');
+          if (first) { cart.focusSearch = true; cart.query = ''; actions['pos-add'](first.dataset, first); }
+        } else if (e.key === 'Escape' && q.value) { e.stopPropagation(); q.value = ''; filter(); }
+      });
+      filter();
+      if (cart.focusSearch) { cart.focusSearch = false; q.focus(); q.select(); }
+    }
+  }
+  // Raccourcis de la caisse sur grand écran (clavier physique).
+  function posKeys(e) {
+    if (ui.tab !== 'pos' || !$('#sheet-backdrop').hidden || e.altKey) return;
+    const typing = e.target.matches && e.target.matches('input, textarea, select');
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { if (cart.items.length) { e.preventDefault(); openCheckout(); } return; }
+    if (e.ctrlKey || e.metaKey) return;
+    if (typing && e.target.id !== 'pos-q') return;
+    const last = cart.items.length - 1;
+    if ((e.key === '+' || e.key === '-') && last >= 0 && !(typing && e.target.value)) {
+      e.preventDefault(); actions[e.key === '+' ? 'cart-inc' : 'cart-dec']({ i: String(last) }); return;
+    }
+    if (typing) return;
+    if (/^[0-9]$/.test(e.key) || (e.key === ',' && cart.keypad)) {
+      e.preventDefault();
+      if (!cart.keypad) { cart.keypad = true; cart.entry = ''; }
+      actions.key({ v: e.key });
+    } else if (e.key === 'Backspace' && cart.keypad) { e.preventDefault(); actions.key({ v: '⌫' }); }
+    else if (e.key === 'Enter' && cart.keypad && cart.entry) { e.preventDefault(); actions['kp-add'](); }
+    else if (e.key.length === 1 && /\p{L}/u.test(e.key)) {
+      // Une lettre : on revient aux articles et on cherche.
+      if (cart.keypad) { cart.keypad = false; render(); }
+      const q = $('#pos-q'); if (q) { q.focus(); }
+    }
   }
   function openCheckout() {
     const t = cartTotal();
@@ -1067,7 +1122,7 @@
       ${c.credit > 0 ? `<button class="btn" data-act="remind" ${k}>${I.message} Envoyer un rappel de paiement</button>` : ''}
       <button class="btn ghost" data-act="sale-for" ${k}>${I.plus} Nouvelle vente pour ${esc(c.name)}</button>
       <div class="section-title">Historique <small>${hist.length} opération${hist.length > 1 ? 's' : ''}</small></div>
-      <div class="list">${hist.map(([kd, r]) => rowHtml(kd, r, true)).join('')}</div>`);
+      <div class="list">${hist.map(([kd, r]) => rowHtml(kd, r, true)).join('')}</div>`, { cls: 'side' });
   }
   function openClientForm(key) {
     const c = key ? clientList().find((x) => x.key === key) : null;
@@ -1437,7 +1492,7 @@
       <div class="btn-row">
         <button class="btn plain" data-act="edit" ${d}>${I.edit} Modifier</button>
         <button class="btn danger" data-act="delete" ${d}>${I.trash} Supprimer</button>
-      </div>`);
+      </div>`, { cls: 'side' });
   }
 
   function openCashIn(id) {
@@ -1756,11 +1811,26 @@
       ${head(inv ? `Facture ${invNo(r)}` : kind === 'orders' ? 'Bon de commande' : 'Reçu')}
       <img class="preview ${inv ? '' : 'ticket'}" alt="Aperçu du document" src="${receiptCanvas.toDataURL('image/png')}">
       <p class="muted small" style="text-align:center">Le code QR contient le résumé du document. Votre client peut le scanner pour le vérifier.</p>
+      ${isNative() ? '' : `<button class="btn ghost" data-act="receipt-print" data-format="${inv ? 'page' : 'ticket'}">${I.printer} Imprimer</button>`}
       <div class="btn-row">
         <button class="btn" data-act="receipt-share">${I.share} Partager</button>
         <button class="btn ghost" data-act="receipt-dl">${I.download} Télécharger</button>
       </div>
       <button class="btn plain" data-act="detail" data-kind="${kind}" data-id="${id}">${I.back} Retour</button>`);
+  }
+
+  // Impression : seule l'image du document est imprimée (page A4 pour une facture, ticket 80 mm pour un reçu).
+  function printCanvas(canvas, format) {
+    if (!canvas) return;
+    let area = document.getElementById('print-area');
+    if (!area) { area = document.createElement('div'); area.id = 'print-area'; document.body.appendChild(area); }
+    area.className = format === 'page' ? 'page' : 'ticket';
+    area.innerHTML = `<img alt="" src="${canvas.toDataURL('image/png')}">`;
+    const done = () => { area.innerHTML = ''; window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    const img = area.querySelector('img');
+    const go = () => setTimeout(() => window.print(), 50);
+    if (img.complete) go(); else img.onload = go;
   }
 
   // ---------------------------------------------------------------- Carte de visite
@@ -2011,6 +2081,7 @@
         ${welcomeSlider(cloud)}
         <button class="btn" data-act="onb-go" data-v="business">Créer mon entreprise</button>
         ${cloud ? `<button class="btn ghost" data-act="onb-go" data-v="join">${I.users} Rejoindre une entreprise</button>
+        <p class="desk-only small">Vous utilisez déjà Kobo sur votre téléphone ? Connectez-vous avec votre compte pour retrouver les mêmes données ici.</p>
         <button class="btn plain" data-act="auth" data-v="signin">J’ai déjà un compte · <u>Se connecter</u></button>` : ''}
       </div>`;
     } else if (onb.step === 'business') {
@@ -2774,6 +2845,7 @@
     'to-sale': (d) => openDeliver(d.id),
     receipt: (d) => openReceipt(d.kind, d.id),
     'receipt-share': () => shareCanvas(receiptCanvas, receiptCanvas.dataset.name, 'Reçu'),
+    'receipt-print': (d) => printCanvas(receiptCanvas, d.format),
     'receipt-dl': () => downloadCanvas(receiptCanvas, receiptCanvas.dataset.name),
     'card-tpl': (d) => { db.card = Object.assign(cardData(), { tpl: d.v }); save(); render(); },
     'card-color': (d) => { db.card = Object.assign(cardData(), { color: d.v }); save(); render(); },
@@ -2899,6 +2971,9 @@
   $('#btn-search').addEventListener('click', () => { if (db.settings) openSearch(); });
   $('#btn-settings').addEventListener('click', () => { if (db.settings) openSettings(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheetLocked && !$('#sheet-backdrop').hidden) closeSheet(); });
+  document.addEventListener('keydown', posKeys);
+  const onWideChange = () => { if (db.settings) render(); };
+  if (WIDE_QUERY.addEventListener) WIDE_QUERY.addEventListener('change', onWideChange); else WIDE_QUERY.addListener(onWideChange);
 
   // ---------------------------------------------------------------- Démarrage
   $$('[data-icon]').forEach((el) => { (el.querySelector('span') || el).innerHTML = I[el.dataset.icon]; });

@@ -186,11 +186,23 @@
 
     <button class="fab" id="fab" data-icon="plus" aria-label="Ajouter"></button>
 
-    <nav class="tabbar" id="tabbar">
+    <!-- Barre d'onglets en bas sur téléphone ; menu latéral complet sur grand écran (entrées .nav-wide). -->
+    <nav class="tabbar" id="tabbar" aria-label="Navigation">
+      <div class="nav-brand" aria-hidden="true"><img src="icons/logo.svg" alt="" width="36" height="40"><b>Kobo</b></div>
       <button data-tab="home" data-icon="home" class="active"><span></span>Accueil</button>
       <button data-tab="pos" data-icon="pos"><span></span>Caisse</button>
       <button data-tab="sales" data-icon="coin"><span></span>Ventes</button>
       <button data-tab="clients" data-icon="user"><span></span>Clients</button>
+      <div class="nav-sep">Suivi</div>
+      <button class="nav-wide" data-tab="today" data-icon="calendar"><span></span>Ma journée</button>
+      <button class="nav-wide" data-tab="debts" data-icon="hourglass"><span></span>Impayés</button>
+      <button class="nav-wide" data-tab="bilan" data-icon="chart"><span></span>Finances</button>
+      <button class="nav-wide" data-tab="invoices" data-icon="invoice"><span></span>Factures</button>
+      <div class="nav-sep">Gestion</div>
+      <button class="nav-wide" data-tab="purchases" data-icon="arrowDown"><span></span>Dépenses</button>
+      <button class="nav-wide" data-tab="orders" data-icon="clip"><span></span>Commandes</button>
+      <button class="nav-wide" data-tab="stock" data-icon="box"><span></span>Articles &amp; stock</button>
+      <button class="nav-wide" data-tab="card" data-icon="idcard"><span></span>Carte de visite</button>
       <button data-tab="more" data-icon="grid"><span></span>Plus</button>
     </nav>
   </div>

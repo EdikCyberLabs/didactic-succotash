@@ -17,7 +17,7 @@ M = {
  'cash':'banknote','card':'credit-card','bank':'landmark','clock':'clock','inbox':'inbox','timer':'timer','ready':'package-check',
  # points clés, états vides
  'trophy':'trophy','calendar':'calendar-check','bulb':'lightbulb','hourglass':'hourglass','heart':'heart','searchX':'search-x',
- 'sprout':'sprout','ok':'circle-check','del':'delete','cloud':'cloud','eye':'eye','eyeOff':'eye-off','lock':'lock','login':'log-in','logout':'log-out','userPlus':'user-plus','key':'key-round','shield':'shield-check','cloudOff':'cloud-off','cloudUp':'cloud-upload','wallet':'wallet',
+ 'sprout':'sprout','ok':'circle-check','del':'delete','cloud':'cloud','eye':'eye','eyeOff':'eye-off','lock':'lock','login':'log-in','logout':'log-out','userPlus':'user-plus','key':'key-round','shield':'shield-check','cloudOff':'cloud-off','cloudUp':'cloud-upload','wallet':'wallet','printer':'printer',
  # carte de visite
  'phone':'phone','mail':'mail','pin':'map-pin','globe':'globe',
 }

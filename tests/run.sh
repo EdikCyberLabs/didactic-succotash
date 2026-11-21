@@ -26,7 +26,8 @@ consent|node tests/consent.test.js tests $OUT
 sync|node tests/sync.test.js tests $OUT
 slider|node tests/slider.test.js tests $OUT
 pos-invoices|node tests/pos-invoices.test.js $OUT/preview.html $OUT
-debts-search|node tests/debts-search.test.js $OUT/preview.html $OUT"
+debts-search|node tests/debts-search.test.js $OUT/preview.html $OUT
+desktop|node tests/desktop.test.js $OUT/preview.html $OUT"
 
 failed=0
 echo "$TESTS" | while IFS='|' read -r name cmd; do

@@ -121,7 +121,7 @@ body.is-home #app { background: var(--bg); }
 .tile .av { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--tint-soft); color: var(--on-soft); font-weight: 650; font-size: 17px; }
 .tile .nm { font-size: 11px; font-weight: 600; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile.add .av { background: var(--band); color: #fff; width: 32px; height: 32px; border-radius: 10px; font-size: 18px; }
-.income { position: relative; display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 31px); min-height: 160px; border-radius: 20px; background: var(--card); padding: 12px 12px 12px; overflow: hidden; }
+.income { width: 100%; text-align: left; position: relative; display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 31px); min-height: 160px; border-radius: 20px; background: var(--card); padding: 12px 12px 12px; overflow: hidden; }
 .income .lbl { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
 .income .lbl .i { font-size: 18px; color: var(--text); }
 .income svg.spark { display: block; width: 100%; height: 64px; margin: 6px 0; }
@@ -461,6 +461,110 @@ details.more .field input { background: var(--bg); }
 .sheet.sun .btn.ghost { background: var(--glass) !important; color: var(--on-tint) !important; }
 .sheet.sun .btn.plain { color: var(--on-tint) !important; }
 .left { text-align: left; }
+
+/* Entrées du menu latéral : seulement sur grand écran */
+.nav-brand, .nav-sep, .tabbar .nav-wide, .desk-only, .pos-search, .pos-keys { display: none; }
+/* Caisse : sur téléphone, le bouton « Encaisser » reste en bas, sous les articles */
+.view-pos { display: flex; flex-direction: column; gap: 14px; }
+.view-pos > * + * { margin-top: 0; }
+.pos-cart { display: contents; }
+.pos-pick { display: flex; flex-direction: column; gap: 14px; }
+.pos-pay { order: 10; }
+#print-area { display: none; }
+@media print {
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block !important; }
+  #print-area img { display: block; margin: 0 auto; }
+  #print-area.page img { width: 100%; max-width: 190mm; }
+  #print-area.ticket img { width: 80mm; }
+  @page { margin: 10mm; }
+}
+
+/* ================================================================
+   Grand écran (ordinateur, tablette en paysage) : à partir de 1024 px
+   ================================================================ */
+@media (min-width: 1024px) {
+  :root { --side: 260px; --content: 1180px; --gutter: max(32px, calc((100% - var(--content)) / 2)); }
+  body.is-home { background: var(--bg); }
+  #app { max-width: none; display: grid; grid-template-columns: var(--side) minmax(0, 1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
+
+  /* Menu latéral */
+  .tabbar {
+    position: sticky; top: 0; left: auto; bottom: auto; transform: none; grid-column: 1; grid-row: 1 / span 2;
+    width: auto; max-width: none; height: 100vh; display: flex; flex-direction: column; gap: 2px;
+    border-radius: 0; padding: 22px 14px; box-shadow: none; overflow-y: auto;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; color: #fff; padding: 4px 10px 18px; }
+  .nav-brand img { width: 36px; height: 40px; }
+  .nav-brand b { font-size: 24px; letter-spacing: -.04em; }
+  .nav-sep { display: block; color: #6c6c76; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: 16px 12px 6px; }
+  .tabbar button, .tabbar .nav-wide { display: flex; justify-content: flex-start; gap: 12px; height: 44px; padding: 0 12px; border-radius: 14px; font-size: 14px; color: #b4b4bd; flex: none; }
+  .tabbar button span { font-size: 20px; }
+  .tabbar button:hover { background: rgba(255, 255, 255, .06); color: #fff; }
+  .tabbar button.active { background: var(--tint); color: var(--on-tint); }
+  .tabbar button[data-tab="more"] { margin-top: auto; }
+
+  /* Barre du haut et contenu */
+  .topbar { grid-column: 2; padding: 20px var(--gutter) 12px; }
+  body.is-home .topbar { background: var(--bg); color: var(--text); }
+  body.is-home .icon-btn { background: var(--card); color: var(--text); }
+  .view { grid-column: 2; padding: 8px var(--gutter) 56px; min-width: 0; }
+  .back { display: none; }
+  .desk-only { display: block; }
+  .fab { right: 32px; bottom: 32px; }
+  .toast { bottom: 32px; left: calc(50% + var(--side) / 2); }
+
+  /* Accueil en tableau de bord */
+  .view.home { display: grid; grid-template-columns: minmax(330px, 400px) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 28px; padding: 8px var(--gutter) 56px; align-items: start; }
+  .view.home > * + * { margin-top: 0; }
+  .h-top { grid-column: 1; grid-row: 1; border-radius: 28px 28px 0 0; padding-top: 22px; }
+  .h-band { grid-column: 1; grid-row: 2; align-self: start; border-radius: 0 0 28px 28px; }
+  .h-sheet { grid-column: 2; grid-row: 1 / span 2; background: none; border-radius: 0; margin: 0; padding: 0; }
+  .h-sheet::before, .h-sheet::after { display: none; }
+  .h-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+}
+/* Écran moyen (1024 à 1279 px) : la carte du jour au-dessus, le reste en dessous */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .view.home { grid-template-columns: minmax(0, 1fr); }
+  .h-top, .h-band { grid-column: 1; }
+  .h-top { grid-row: 1; }
+  .h-band { grid-row: 2; }
+  .h-sheet { grid-column: 1; grid-row: 3; margin-top: 24px; }
+}
+@media (min-width: 1024px) {
+
+  /* Listes sur deux colonnes, recherche toujours visible */
+  .view > .list, #list-body > .list, .h-sheet > .list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .list > .day-head, .list > .section-title, .list > p { grid-column: 1 / -1; }
+  .sheet .list { display: flex; }
+  .view > .chips { position: sticky; top: 78px; z-index: 4; background: var(--bg); box-shadow: 0 -12px 0 var(--bg), 0 8px 0 var(--bg); }
+  .view > .search { position: sticky; top: 128px; z-index: 4; box-shadow: 0 0 0 8px var(--bg); }
+  .stats { gap: 14px; }
+
+  /* Fenêtres : centrées ; fiches dans un panneau à droite */
+  .sheet-backdrop { align-items: center; }
+  .sheet { width: min(560px, calc(100vw - 48px)); max-width: none; max-height: 88vh; border-radius: 28px; padding: 22px 24px 24px; animation: pop-in .22s var(--ease); }
+  .sheet::before { display: none; }
+  .sheet.side { position: fixed; top: 0; right: 0; width: min(480px, 100vw); height: 100vh; max-height: 100vh; border-radius: 28px 0 0 28px; animation: side-in .28s var(--ease); }
+  .sheet.full { width: 100vw; height: 100vh; max-height: none; border-radius: 0; padding-top: 24px; }
+  @keyframes pop-in { from { opacity: 0; transform: scale(.96); } }
+  @keyframes side-in { from { transform: translateX(40px); opacity: 0; } }
+
+  /* Caisse : articles à gauche, panier à droite */
+  .view-pos { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 24px; align-items: start; }
+  .pos-cart { display: flex; }
+  .view-pos > * + * { margin-top: 0; }
+  .pos-pick { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 14px; }
+  .pos-cart { grid-column: 2; grid-row: 1; position: sticky; top: 84px; display: flex; flex-direction: column; gap: 12px; }
+  .pos-cart .pos-lines { max-height: 44vh; overflow-y: auto; }
+  .pos-total-pill { margin-top: -26px !important; }
+  .pos-pay { order: 0; }
+  .pos-search { display: block; }
+  .pos-keys { display: block; }
+  .pos-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .keypad-wrap { max-width: 460px; }
+  .ptile:hover, .row:hover, .tile:hover { box-shadow: inset 0 0 0 2px var(--tint); }
+}
 
 /* ---------- Message et confettis ---------- */
 .toast { position: fixed; z-index: 40; left: 50%; bottom: calc(104px + var(--safe-b)); transform: translateX(-50%); background: var(--band); color: #fff; padding: 12px 18px; border-radius: 18px; font-weight: 600; font-size: 14px; animation: up .25s var(--ease); width: max-content; max-width: 90vw; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); }
