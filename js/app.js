@@ -38,10 +38,26 @@
   const KEEP_TRUNK_ZERO = ['225']; // En Côte d'Ivoire, le 0 de tête fait partie du numéro.
   const COMMON_CATS = ['Loyer', 'Salaires', 'Transport', 'Marketing', 'Impôts & taxes', 'Autre'];
 
+  // v : valeur enregistrée (inchangée pour les commerces existants), dec : décimales, sym : mini icône.
   const CURRENCIES = [
-    ['FCFA', 0], ['€', 2], ['$', 2], ['£', 2], ['CHF', 2], ['MAD', 2], ['DZD', 2], ['TND', 2],
-    ['GNF', 0], ['CDF', 0], ['MGA', 0], ['NGN', 0], ['GHS', 2], ['HTG', 2], ['CAD', 2],
+    { v: 'FCFA', dec: 0, code: 'XOF / XAF', nom: 'Franc CFA', sym: 'F' },
+    { v: 'GNF', dec: 0, code: 'GNF', nom: 'Franc guinéen', sym: 'FG' },
+    { v: 'CDF', dec: 0, code: 'CDF', nom: 'Franc congolais', sym: 'FC' },
+    { v: 'MGA', dec: 0, code: 'MGA', nom: 'Ariary', sym: 'Ar' },
+    { v: 'NGN', dec: 0, code: 'NGN', nom: 'Naira', sym: '₦' },
+    { v: 'GHS', dec: 2, code: 'GHS', nom: 'Cedi', sym: '₵' },
+    { v: 'MAD', dec: 2, code: 'MAD', nom: 'Dirham marocain', sym: 'DH' },
+    { v: 'DZD', dec: 2, code: 'DZD', nom: 'Dinar algérien', sym: 'DA' },
+    { v: 'TND', dec: 2, code: 'TND', nom: 'Dinar tunisien', sym: 'DT' },
+    { v: '€', dec: 2, code: 'EUR', nom: 'Euro', sym: '€' },
+    { v: '$', dec: 2, code: 'USD', nom: 'Dollar américain', sym: '$' },
+    { v: '£', dec: 2, code: 'GBP', nom: 'Livre sterling', sym: '£' },
+    { v: 'CHF', dec: 2, code: 'CHF', nom: 'Franc suisse', sym: 'Fr' },
+    { v: 'CAD', dec: 2, code: 'CAD', nom: 'Dollar canadien', sym: 'C$' },
+    { v: 'HTG', dec: 2, code: 'HTG', nom: 'Gourde', sym: 'G' },
+    { v: '₽', dec: 2, code: 'RUB', nom: 'Rouble russe', sym: '₽' },
   ];
+  const curInfo = (v) => CURRENCIES.find((x) => x.v === v) || (v ? { v, dec: 0, code: v, nom: v, sym: v.slice(0, 2) } : CURRENCIES[0]);
 
   const PAY = {
     cash: ['cash', 'Espèces'],
@@ -159,7 +175,7 @@
 
   const S = () => db.settings || {};
   const bizType = () => TYPES.find((t) => t.id === S().type) || TYPES[TYPES.length - 1];
-  const decimals = () => { const c = CURRENCIES.find((x) => x[0] === S().currency); return c ? c[1] : 0; };
+  const decimals = () => { const c = CURRENCIES.find((x) => x.v === S().currency); return c ? c.dec : 0; };
   const round = (n) => { const f = Math.pow(10, decimals()); return Math.round(n * f) / f; };
   const fmtN = (n) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: decimals(), maximumFractionDigits: decimals() }).format(n || 0).replace(/\s/g, ' ');
   const fmt = (n) => `${fmtN(n)} ${S().currency || ''}`.trim();
@@ -170,7 +186,8 @@
   const total = (rec) => round(netOf(rec) + taxOf(rec));
   const expenseCats = () => Array.from(new Set(bizType().cats.concat(COMMON_CATS)));
   const initials = (name) => String(name || '').split(/\s+/).map((w) => (w.match(/[\p{L}\d]/u) || [''])[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
-  const curSym = () => { const c = S().currency || ''; return c.length <= 2 ? c : c.charAt(0); };
+  const curSym = () => (S().currency ? curInfo(S().currency).sym : '');
+  const curIco = (c) => `<span class="cur-ico${c.sym.length > 1 ? ' sm' : ''}" aria-hidden="true">${esc(c.sym)}</span>`;
   function bigNum(n) {
     const d = decimals();
     const str = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0).replace(/\s/g, ' ');
@@ -394,7 +411,7 @@
 
     return `
       <section class="h-top">
-        <span class="cur-pill"><i>${esc(curSym())}</i>${esc(S().currency || '')}</span>
+        <span class="cur-pill"><i class="${curSym().length > 1 ? 'sm' : ''}">${esc(curSym())}</i>${esc(S().currency || '')}</span>
         <button class="big-amount num" data-act="open-day" aria-label="Voir ma journée">${bigNum(sToday)}</button>
         <div class="h-sub">${esc(sub)}</div>
       </section>
@@ -1963,7 +1980,51 @@
   // ---------------------------------------------------------------- Paramètres & bienvenue
   const typePicker = (val) => `<div class="emoji-pick" data-group="type">${TYPES.map((t) =>
     `<button type="button" class="${t.id === val ? 'on' : ''}" data-act="pick" data-v="${t.id}"><span>${I[t.icon]}</span>${t.label}</button>`).join('')}</div>`;
-  const currencySelect = (val) => `<select id="s-currency">${CURRENCIES.map(([c]) => `<option ${c === val ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+  // Choix de la devise : un bouton (sa valeur se lit comme celle d'un champ) qui ouvre une liste avec icônes.
+  const curBtnInner = (c) => `${curIco(c)}<span class="cur-name">${esc(c.nom)}</span><span class="cur-chev">${I.down}</span>`;
+  const currencySelect = (val) => { const c = curInfo(val || 'FCFA');
+    return `<button type="button" id="s-currency" class="cur-btn" value="${esc(c.v)}" data-act="cur-open" aria-haspopup="listbox" aria-label="Devise : ${esc(c.nom)}">${curBtnInner(c)}</button>`; };
+  const fold = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function openCurPick(btn) {
+    const cur = btn.value;
+    const el = document.createElement('div');
+    el.className = 'cur-modal';
+    el.innerHTML = `<div class="cur-panel" role="dialog" aria-modal="true" aria-label="Choisir la devise">
+      <div class="sheet-head"><h2>Devise</h2><button type="button" class="x" data-cur-close aria-label="Fermer">${I.x}</button></div>
+      <input class="cur-q" type="search" placeholder="Rechercher : nom ou code" aria-label="Rechercher une devise" autocomplete="off">
+      <div class="cur-list" role="listbox" aria-label="Devises">${CURRENCIES.map((c) =>
+        `<div role="option" class="cur-opt" tabindex="-1" data-v="${esc(c.v)}" data-q="${esc(fold(`${c.nom} ${c.code} ${c.v}`))}" aria-selected="${c.v === cur}">${curIco(c)}<span class="cur-name">${esc(c.nom)}</span><span class="cur-code">${esc(c.code)}</span>${c.v === cur ? `<span class="cur-ok">${I.check}</span>` : ''}</div>`).join('')}</div>
+      <div class="cur-none" hidden>Aucune devise trouvée</div></div>`;
+    document.body.appendChild(el);
+    const q = $('.cur-q', el);
+    const opts = () => $$('.cur-opt:not([hidden])', el);
+    const done = (v) => {
+      if (v != null) { const c = curInfo(v); btn.value = c.v; btn.innerHTML = curBtnInner(c); btn.setAttribute('aria-label', `Devise : ${c.nom}`); }
+      el.parentNode.removeChild(el); btn.focus();
+    };
+    q.addEventListener('input', () => {
+      const t = fold(q.value.trim());
+      $$('.cur-opt', el).forEach((o) => { o.hidden = !!t && !o.dataset.q.includes(t); });
+      $('.cur-none', el).hidden = opts().length > 0;
+    });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const o = e.target.closest('.cur-opt');
+      if (o) done(o.dataset.v);
+      else if (e.target === el || e.target.closest('[data-cur-close]')) done();
+    });
+    el.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      const list = opts(); const i = list.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); done(); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); (list[i + 1] || list[0] || q).focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); (i > 0 ? list[i - 1] : q).focus(); }
+      else if (e.key === 'Enter') { e.preventDefault(); const o = i >= 0 ? list[i] : list[0]; if (o) done(o.dataset.v); }
+    });
+    const sel = $('.cur-opt[aria-selected="true"]', el);
+    if (sel) sel.scrollIntoView({ block: 'center' });
+    if (isWide()) q.focus(); else (sel || $('.cur-opt', el)).focus({ preventScroll: true });
+  }
 
   let draftLogo = '';
   function pickLogo(e) {
@@ -2013,7 +2074,7 @@
       </div></div>
       <div class="field"><span>Type d’activité</span>${typePicker(s.type)}</div>
       <div class="grid2">
-        <label class="field"><span>Devise</span>${currencySelect(s.currency)}</label>
+        <div class="field"><span>Devise</span>${currencySelect(s.currency)}</div>
         <label class="field"><span>Objectif de ventes / jour</span><input id="s-goal" type="number" inputmode="decimal" min="0" step="any" placeholder="Facultatif" value="${s.goal || ''}"></label>
       </div>
       <div class="grid2">
@@ -2096,7 +2157,7 @@
       html = onbFrame(2, onbTotal(), `<h2>Vos préférences</h2><p>Modifiables à tout moment dans les paramètres.</p>
         <div class="left stack">
           <div class="grid2">
-            <label class="field"><span>Devise</span>${currencySelect(d.currency)}</label>
+            <div class="field"><span>Devise</span>${currencySelect(d.currency)}</div>
             <label class="field"><span>Taxe / TVA (%)</span><input id="s-tax" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${d.tax || ''}"></label>
           </div>
           <label class="field"><span>Objectif de ventes par jour</span><input id="s-goal" type="number" inputmode="decimal" min="0" step="any" placeholder="Facultatif, ex. 50000" value="${d.goal || ''}"></label>
@@ -2699,6 +2760,7 @@
   // ---------------------------------------------------------------- Actions
   const actions = {
     close: closeSheet,
+    'cur-open': (d, el) => openCurPick(el),
     new: (d) => openForm(d.kind),
     detail: (d) => openDetail(d.kind, d.id),
     edit: (d) => openForm(d.kind, d.id),
