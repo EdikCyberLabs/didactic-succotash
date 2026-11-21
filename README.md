@@ -65,6 +65,13 @@ https://github.com/EdikCyberLabs/didactic-succotash/releases/download/android-la
 
 L'APK est signé avec une clé de test fixe (`android-signing/`) : chaque version s'installe par-dessus la précédente, mais il ne convient pas au Play Store.
 
+## Version web
+
+Le workflow `Site web (GitHub Pages)` publie l'application à chaque modification de `main` :
+https://edikcyberlabs.github.io/didactic-succotash/
+
+À activer une fois : Settings › Pages › Source : « GitHub Actions ». Sur grand écran (1024 px et plus), menu latéral, tableau de bord, fenêtres latérales, caisse au clavier (Entrée, +/−, chiffres, Ctrl+Entrée) et impression des factures et reçus. Le site fonctionne aussi hors ligne une fois ouvert.
+
 ## Tests
 
 ```bash
